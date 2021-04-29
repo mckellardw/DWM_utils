@@ -60,7 +60,6 @@ bedGraphToBigWig ${OUTDIR}/${PREFIX}\_log10_sorted_minus.bedGraph ${CHINFO} ${OU
 
 # Remove tmp files
 echo "Removing tmp files..."
-rm ${OUTDIR}/${PREFIX}\.bedGraph
 rm ${OUTDIR}/${PREFIX}\_minus.noinv.bedGraph
 rm ${OUTDIR}/${PREFIX}\_minus.bedGraph
 rm ${OUTDIR}/${PREFIX}\_plus.bedGraph
