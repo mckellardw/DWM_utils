@@ -48,8 +48,8 @@ sort -k1,1 -k2,2n ${OUTDIR}/${PREFIX}\_minus.bedGraph > ${OUTDIR}/${PREFIX}\_sor
 bedGraphToBigWig ${OUTDIR}/${PREFIX}\_sorted_minus.bedGraph ${CHINFO} ${OUTDIR}/${PREFIX}_minus.bw
 
 # Generate log scale bedGraphs
-cat ${OUTDIR}/${PREFIX}\_minus.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,-1*log(-1*$4)/log(10)}' > ${OUTDIR}/${CURRID}\_log10.minus.bedGraph ## Invert read counts on the minus strand and take log
-cat ${OUTDIR}/${PREFIX}\_plus.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,log($4)/log(10)}' > ${OUTDIR}/${PREFIX}\_log10.plus.bedGraph
+cat ${OUTDIR}/${PREFIX}\_minus.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,-1*log(-1*$4)/log(10)}' > ${OUTDIR}/${PREFIX}\_log10_minus.bedGraph ## Invert read counts on the minus strand and take log
+cat ${OUTDIR}/${PREFIX}\_plus.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,log($4)/log(10)}' > ${OUTDIR}/${PREFIX}\_log10_plus.bedGraph
 
 # Generate log scale bigWigs
 sort -k1,1 -k2,2n ${OUTDIR}/${PREFIX}\_log10_plus.bedGraph > ${OUTDIR}/${PREFIX}\_log10_sorted_plus.bedGraph
