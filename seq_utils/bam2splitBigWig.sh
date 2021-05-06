@@ -31,7 +31,7 @@ bedtools bamtobed -i ${INBAM}  2> ${OUTDIR}/bam2splitBigWig.kill.warnings | \
 # bedtools genomecov -bg -i ${OUTDIR}/${PREFIX}.bed.gz -g ${CHINFO} > ${OUTDIR}/${PREFIX}.bedGraph
 
 
- echo "Converting to bedGraph and splitting strands..."
+echo "Converting to bedGraph and splitting strands..."
 # Stranded
 bedtools genomecov -bg -i ${OUTDIR}/${PREFIX}.bed.gz -g ${CHINFO} -strand + > ${OUTDIR}/${PREFIX}\_plus.bedGraph
 bedtools genomecov -bg -i ${OUTDIR}/${PREFIX}.bed.gz -g ${CHINFO} -strand - > ${OUTDIR}/${PREFIX}\_minus.noinv.bedGraph
