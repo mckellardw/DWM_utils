@@ -1,0 +1,30 @@
+## Configuration for the STARsolo_10x Snakemake workflow.
+
+########################################################################################################
+# Run settings
+########################################################################################################
+
+# sample name, pointing to cellranger count output directory (same as the ""--id" input for cellranger count)
+Samples:
+    C2Cnuc_ctrl1_Mini_mm39:
+    C2Cnuc_yPAP1_Mini_mm39:
+
+CORES: 10 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+
+########################################################################################################
+# Important directory file paths
+########################################################################################################
+DATADIR: /workdir/dwm269/totalRNA/data/cr_count/mm39 # directory where cellranger_count outputs are stored - be sure to use an absolute path (starting with root)
+TMPDIR: ./tmp # directory for temporary files
+
+########################################################################################################
+# Executables - file paths
+########################################################################################################
+STAREXEC:
+
+
+########################################################################################################
+# Resources - file paths
+########################################################################################################
+STAR_REF: STAR # path to STAR-formatted reference genome
+CB_WHITELIST: ./resources/barcodes_10x/... # path to cell barcodes (CB) whitelist - https://kb.10xgenomics.com/hc/en-us/articles/115004506263-What-is-a-barcode-whitelist-

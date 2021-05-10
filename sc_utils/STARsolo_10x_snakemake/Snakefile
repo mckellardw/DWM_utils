@@ -1,0 +1,126 @@
+########################################################################################################
+# STARsolo_10x
+#   Snakemake workflow to use STARsolo to align and quantify 10x Chromium datasets
+#   v1.0
+#   Written by David McKellar
+#   Last edited: 5/10/21, DWM
+########################################################################################################
+
+import pdb
+########################################################################################################
+# Config file
+########################################################################################################
+configfile:'config.yaml'
+########################################################################################################
+# Directories and locations
+########################################################################################################
+DATADIR = config['DATADIR']
+TMPDIR = config['TMPDIR']
+OUTDIR = config['OUTDIR']
+########################################################################################################
+# Variables and references
+########################################################################################################
+
+
+########################################################################################################
+# Executables
+########################################################################################################
+STAREXEC = config['STAREXEC']
+
+########################################################################################################
+rule all:
+    input:
+        expand(INSERT_OUTPUT_HERE ,DATADIR=config['DATADIR'], sample=config['Samples'])
+
+# Align fastqs
+rule: STARsolo_align:
+    params:
+        STAREXEC = config['STAR_EXEC'],
+        STAR_REF = config['STAR_REF'],
+        CB_WHITELIST = config['CB_WHITELIST']
+    threads:
+        config['CORES']
+    shell:
+        """
+        $STAREXEC \
+        --genomeDir $STAR_REF \
+        --readFilesIn ...  \
+        [...other parameters...] \
+        --soloType ... \
+        --soloCBwhitelist $CB_WHTELIST
+        """
+
+# Generate raw feature-cell_barcode matrix
+rule STARsolo_count:
+    input:
+
+    output:
+
+    params:
+
+    threads:
+
+    shell:
+    """
+
+    """
+
+# Remove empty or low-read-count droplets
+rule STARsolo_filterCells:
+    input:
+
+    output:
+
+    params:
+
+    threads:
+
+    shell:
+    """
+    $STAR_EXEC \
+    --runMode soloCellFiltering  \
+    /path/to/count/dir/raw/   \
+    /path/to/output/prefix   \
+    --soloCellFilter EmptyDrops_CR
+    """
+
+rule STARsolo_multiMap_uniform:
+    input:
+
+    output:
+
+    params:
+
+    threads:
+
+    shell:
+    """
+    $STAR_EXEC \
+    --runMode soloCellFiltering  \
+    /path/to/count/dir/raw/   \
+    /path/to/output/prefix   \
+    --soloCellFilter EmptyDrops_CR \
+    --soloMultiMappers Uniform
+    """
+
+rule STARsolo_multiMap_EM:
+    input:
+
+    output:
+
+    params:
+
+    threads:
+
+    shell:
+    """
+    $STAR_EXEC \
+    --runMode soloCellFiltering  \
+    /path/to/count/dir/raw/   \
+    /path/to/output/prefix   \
+    --soloCellFilter EmptyDrops_CR \
+    --soloMultiMappers EM
+    """
+
+
+#TODO rule bamToSplitBigWig
