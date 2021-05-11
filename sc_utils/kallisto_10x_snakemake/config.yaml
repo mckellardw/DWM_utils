@@ -1,4 +1,6 @@
 ## Configuration for the kallisto_10x Snakemake workflow.
+## Written by David McKellar
+## Last edited:
 
 ########################################################################################################
 # Run settings
