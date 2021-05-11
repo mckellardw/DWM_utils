@@ -7,6 +7,7 @@
 ########################################################################################################
 
 import pdb
+import pandas as pd
 ########################################################################################################
 # Config file
 ########################################################################################################
@@ -17,10 +18,15 @@ configfile:'config.yaml'
 DATADIR = config['DATADIR']
 TMPDIR = config['TMPDIR']
 OUTDIR = config['OUTDIR']
+
 ########################################################################################################
 # Variables and references
 ########################################################################################################
+SAMPLE = list(pd.read_table(config['SAMPLE_SHEET'], names=['sample', 'fq_dir'])['sample'])
+DATADIR = list(pd.read_table(config['SAMPLE_SHEET'], names=['sample', 'fq_dir'])['fq_dir'])
 
+STAR_REF = config['STAR_REF']
+FQ_EXTENSION = config['FQ_EXTENSION']
 
 ########################################################################################################
 # Executables
@@ -32,95 +38,92 @@ rule all:
     input:
         expand(INSERT_OUTPUT_HERE ,DATADIR=config['DATADIR'], sample=config['Samples'])
 
-# Align fastqs
+#############################################
+## Pre-alignment set up
+#############################################
+# Unzip the whitelist file if it hasn't been done yet
+rule gunzipWhitelist:
+    input:
+        config['CB_WHITELIST']+'.gz'
+    output:
+        config['CB_WHITELIST']
+    shell:
+    """
+        gunzip {input}
+    """
+
+#############################################
+## Alignment
+#############################################
+# Make output directory, align fastqs, and generate first-pas raw/filtered feature/cell-barcode matrices
+#   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
 rule: STARsolo_align:
+    input:
+        R1_FQ = {DATADIR}/{sample}{FQ_EXTENSION}, #TODO
+        R2_FQ = {DATADIR}/{sample}{FQ_EXTENSION}, #TODO
+        CB_WHITELIST = config['CB_WHITELIST']
+    output:
+        SORTEDBAM = {OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam,
+        RAWMAT = {OUTDIR}/{sample}_STARsolo/Gene/raw/matrix.mtx,
+        FILTEREDMAT = {OUTDIR}/{sample}_STARsolo/Gene/filtered/matrix.mtx
     params:
+        OUTDIR = config['OUTDIR'],
         STAREXEC = config['STAR_EXEC'],
         STAR_REF = config['STAR_REF'],
-        CB_WHITELIST = config['CB_WHITELIST']
+        UMIlen = config['UMIlen']
     threads:
         config['CORES']
     shell:
         """
-        $STAREXEC \
-        --genomeDir $STAR_REF \
-        --readFilesIn ...  \
-        [...other parameters...] \
-        --soloType ... \
-        --soloCBwhitelist $CB_WHTELIST
+        mkdir -p {params.OUTDIR}/{sample}/
+
+        {params.STAREXEC} \
+        --runThreadN {threads} \
+        --outFileNamePrefix {params.OUTDIR}/{sample}_STARsolo/ \
+        --outSAMtype BAM SortedByCoordinate \
+        --readFilesCommand zcat \
+        --soloUMIlen {params.UMIlen} \
+        --genomeDir {params.STAR_REF} \
+        --genomeLoad LoadAndKeep \
+        --readFilesIn {input.R2_FQ} {input.R1_FQ} \
+        --soloType CB_UMI_Simple \
+        --soloCBwhitelist {input.CB_WHTELIST} \
+        --soloCellFilter EmptyDrops_CR
         """
 
-# Generate raw feature-cell_barcode matrix
-rule STARsolo_count:
-    input:
+# STAR \
+# --runThreadN 24 \
+# --outFileNamePrefix ./test/STARsolo_ \
+# --outSAMtype BAM SortedByCoordinate \
+# --readFilesCommand zcat \
+# --soloUMIlen 12 \
+# --genomeDir /workdir/dwm269/genomes/mm39_STAR \
+# --readFilesIn /workdir/dwm269/totalRNA/data/fastq/cr_mkfastq-MiniSeq-C2Cnuc_yPAP1-C2Cnuc_ctrl1/outs/fastq_path/yPAP/C2Cnuc_yPAP1/C2Cnuc_yPAP1_S1_L001_R2_001.fastq.gz /workdir/dwm269/totalRNA/data/fastq/cr_mkfastq-MiniSeq-C2Cnuc_yPAP1-C2Cnuc_ctrl1/outs/fastq_path/yPAP/C2Cnuc_yPAP1/C2Cnuc_yPAP1_S1_L001_R1_001.fastq.gz \
+# --soloType CB_UMI_Simple \
+# --soloCBwhitelist /home/dwm269/DWM_utils/sc_utils/STARsolo_10x_snakemake/resources/barcodes_10x/3M-february-2018.txt \
+# --soloCellFilter EmptyDrops_CR
 
-    output:
+#############################################
+## Counting transcripts
+#############################################
 
-    params:
-
-    threads:
-
-    shell:
-    """
-
-    """
-
-# Remove empty or low-read-count droplets
-rule STARsolo_filterCells:
-    input:
-
-    output:
-
-    params:
-
-    threads:
-
-    shell:
-    """
-    $STAR_EXEC \
-    --runMode soloCellFiltering  \
-    /path/to/count/dir/raw/   \
-    /path/to/output/prefix   \
-    --soloCellFilter EmptyDrops_CR
-    """
-
-rule STARsolo_multiMap_uniform:
-    input:
-
-    output:
-
-    params:
-
-    threads:
-
-    shell:
-    """
-    $STAR_EXEC \
-    --runMode soloCellFiltering  \
-    /path/to/count/dir/raw/   \
-    /path/to/output/prefix   \
-    --soloCellFilter EmptyDrops_CR \
-    --soloMultiMappers Uniform
-    """
-
-rule STARsolo_multiMap_EM:
-    input:
-
-    output:
-
-    params:
-
-    threads:
-
-    shell:
-    """
-    $STAR_EXEC \
-    --runMode soloCellFiltering  \
-    /path/to/count/dir/raw/   \
-    /path/to/output/prefix   \
-    --soloCellFilter EmptyDrops_CR \
-    --soloMultiMappers EM
-    """
-
+# Re-count multi transcripts, but account for multi-mapping reads. Uses EM to distribute reads across loci
+#   requires STAR version >= 2.9
+# rule STARsolo_multiMap_EM:
+#     input:
+#         RAWMATDIR = {OUTDIR}/{sample}_STARsolo/Gene/raw
+#     output:
+#
+#     params:
+#
+#     shell:
+#     """
+#     $STAR_EXEC \
+#     --runMode soloCellFiltering \
+#     {input.RAWMATDIR} \
+#     /path/to/output/prefix   \
+#     --soloCellFilter EmptyDrops_CR \
+#     --soloMultiMappers EM
+#     """
 
 #TODO rule bamToSplitBigWig
