@@ -8,6 +8,8 @@
 
 import pdb
 import pandas as pd
+import glob
+
 ########################################################################################################
 # Config file
 ########################################################################################################
@@ -15,28 +17,47 @@ configfile:'config.yaml'
 ########################################################################################################
 # Directories and locations
 ########################################################################################################
-DATADIR = config['DATADIR']
+# DATADIR = config['DATADIR']
 TMPDIR = config['TMPDIR']
 OUTDIR = config['OUTDIR']
 
 ########################################################################################################
 # Variables and references
 ########################################################################################################
-SAMPLE = list(pd.read_table(config['SAMPLE_SHEET'], names=['sample', 'fq_dir'])['sample'])
-DATADIR = list(pd.read_table(config['SAMPLE_SHEET'], names=['sample', 'fq_dir'])['fq_dir'])
+SAMPLES = list(pd.read_csv(config['SAMPLE_SHEET'])['sampleID'])
+FASTQDIR = list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_dir'])
+#import glob #TODO - account for multi fastq input
+
+# Find R1 fastqs
+# R1_FASTQS = ['{FASTQDIR}/{sample}{FQ_EXTENSION1}R1{FQ_EXTENSION2}'.format(FASTQDIR=FASTQDIR, sample=sample, FQ_EXTENSION1=config['FQ_EXTENSION1'], FQ_EXTENSION2=config['FQ_EXTENSION2']) for FASTQDIR, sample in zip(FASTQDIR, SAMPLES)]
+# R1_FASTQS_GLOB = []
+# for fastq in R1_FASTQS:
+#     R1_FASTQS_GLOB += glob.glob(fastq)
+
+# Find R2 fastqs
+# R2_FASTQS = ['{FASTQDIR}/{sample}{FQ_EXTENSION1}R2{FQ_EXTENSION2}'.format(FASTQDIR=FASTQDIR, sample=sample, FQ_EXTENSION1=config['FQ_EXTENSION1'], FQ_EXTENSION2=config['FQ_EXTENSION2']) for FASTQDIR, sample in zip(FASTQDIR, SAMPLES)]
+# R2_FASTQS_GLOB = []
+# for fastq in R2_FASTQS:
+#     R2_FASTQS_GLOB += glob.glob(fastq)
+
+# print(R1_FASTQS)
 
 STAR_REF = config['STAR_REF']
-FQ_EXTENSION = config['FQ_EXTENSION']
+FQ_EXTENSION1 = config['FQ_EXTENSION1']
+FQ_EXTENSION2 = config['FQ_EXTENSION2']
 
 ########################################################################################################
 # Executables
 ########################################################################################################
-STAREXEC = config['STAREXEC']
+STAR_EXEC = config['STAR_EXEC']
 
 ########################################################################################################
 rule all:
     input:
-        expand(INSERT_OUTPUT_HERE ,DATADIR=config['DATADIR'], sample=config['Samples'])
+        # expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/filtered/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES)
+        # expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES)
+        
+        expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES)
 
 #############################################
 ## Pre-alignment set up
@@ -48,60 +69,66 @@ rule gunzipWhitelist:
     output:
         config['CB_WHITELIST']
     shell:
-    """
+        """
         gunzip {input}
-    """
+        """
 
 #############################################
 ## Alignment
 #############################################
 # Make output directory, align fastqs, and generate first-pas raw/filtered feature/cell-barcode matrices
 #   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
-rule: STARsolo_align:
+rule STARsolo_align:
     input:
-        R1_FQ = {DATADIR}/{sample} + FQ_EXTENSION1 + 'R1' + FQ_EXTENSION2,
-        R2_FQ = {DATADIR}/{sample} + FQ_EXTENSION1 + 'R2' + FQ_EXTENSION2,
+        R1_FQ = pd.DataFrame(['{dir}/{id}{FQ_EXTENSION1}R1{FQ_EXTENSION2}'.format(dir=FASTQDIR, id=SAMPLES, FQ_EXTENSION1=config['FQ_EXTENSION1'], FQ_EXTENSION2=config['FQ_EXTENSION2']) for FASTQDIR, SAMPLES in zip(FASTQDIR, SAMPLES)]).applymap(glob.glob).values.tolist(),
+        R2_FQ = pd.DataFrame(['{dir}/{id}{FQ_EXTENSION1}R2{FQ_EXTENSION2}'.format(dir=FASTQDIR, id=SAMPLES, FQ_EXTENSION1=config['FQ_EXTENSION1'], FQ_EXTENSION2=config['FQ_EXTENSION2']) for FASTQDIR, SAMPLES in zip(FASTQDIR, SAMPLES)]).applymap(glob.glob).values.tolist(),
         CB_WHITELIST = config['CB_WHITELIST']
     output:
-        SORTEDBAM = {OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam,
-        RAWMAT = {OUTDIR}/{sample}_STARsolo/Gene/raw/matrix.mtx,
-        FILTEREDMAT = {OUTDIR}/{sample}_STARsolo/Gene/filtered/matrix.mtx
+        SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam',
+        RAWMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/raw/matrix.mtx',
+        FILTEREDMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/filtered/matrix.mtx'
     params:
         OUTDIR = config['OUTDIR'],
-        STAREXEC = config['STAR_EXEC'],
+        STAR_EXEC = config['STAR_EXEC'],
         STAR_REF = config['STAR_REF'],
-        UMIlen = config['UMIlen']
+        UMIlen = config['UMIlen'],
+        MEMLIMIT = config['MEMLIMIT']
     threads:
         config['CORES']
     shell:
         """
-        mkdir -p {params.OUTDIR}/{sample}/
+        echo {input.R1_FQ}
 
-        {params.STAREXEC} \
+        mkdir -p {params.OUTDIR}/{wildcards.sample}_STARsolo
+
+        {params.STAR_EXEC} \
         --runThreadN {threads} \
-        --outFileNamePrefix {params.OUTDIR}/{sample}_STARsolo/ \
+        --outFileNamePrefix {params.OUTDIR}/{wildcards.sample}_STARsolo/ \
         --outSAMtype BAM SortedByCoordinate \
         --readFilesCommand zcat \
         --soloUMIlen {params.UMIlen} \
         --genomeDir {params.STAR_REF} \
         --genomeLoad LoadAndKeep \
+        --limitBAMsortRAM={params.MEMLIMIT} \
         --readFilesIn {input.R2_FQ} {input.R1_FQ} \
         --soloType CB_UMI_Simple \
-        --soloCBwhitelist {input.CB_WHTELIST} \
-        --soloCellFilter EmptyDrops_CR
+        --soloCBwhitelist {input.CB_WHITELIST} \
+        --soloCellFilter EmptyDrops_CR \
+        --soloFeatures Gene GeneFull SJ Velocyto \
+        --soloMultiMappers EM
         """
 
-# STAR \
-# --runThreadN 24 \
-# --outFileNamePrefix ./test/STARsolo_ \
-# --outSAMtype BAM SortedByCoordinate \
-# --readFilesCommand zcat \
-# --soloUMIlen 12 \
-# --genomeDir /workdir/dwm269/genomes/mm39_STAR \
-# --readFilesIn /workdir/dwm269/totalRNA/data/fastq/cr_mkfastq-MiniSeq-C2Cnuc_yPAP1-C2Cnuc_ctrl1/outs/fastq_path/yPAP/C2Cnuc_yPAP1/C2Cnuc_yPAP1_S1_L001_R2_001.fastq.gz /workdir/dwm269/totalRNA/data/fastq/cr_mkfastq-MiniSeq-C2Cnuc_yPAP1-C2Cnuc_ctrl1/outs/fastq_path/yPAP/C2Cnuc_yPAP1/C2Cnuc_yPAP1_S1_L001_R1_001.fastq.gz \
-# --soloType CB_UMI_Simple \
-# --soloCBwhitelist /home/dwm269/DWM_utils/sc_utils/STARsolo_10x_snakemake/resources/barcodes_10x/3M-february-2018.txt \
-# --soloCellFilter EmptyDrops_CR
+rule indexBAM:
+    input:
+        SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam'
+    output:
+        BAI = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam.bai'
+    threads:
+        config['CORES']
+    shell:
+        """
+        samtools index -@ {threads} {input.SORTEDBAM}
+        """
 
 #############################################
 ## Counting transcripts
@@ -111,19 +138,45 @@ rule: STARsolo_align:
 #   requires STAR version >= 2.9
 # rule STARsolo_multiMap_EM:
 #     input:
-#         RAWMATDIR = {OUTDIR}/{sample}_STARsolo/Gene/raw
+#         RAWMATDIR = '{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/raw',
+#         BAI = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam.bai'
 #     output:
-#
+#         MULTIMATDIR = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/multiEM/')
 #     params:
-#
+#         STAR_EXEC = config['STAR_EXEC'],
+#         STAR_REF = config['STAR_REF'],
+#         OUTDIR = config['OUTDIR']
 #     shell:
-#     """
-#     $STAR_EXEC \
-#     --runMode soloCellFiltering \
-#     {input.RAWMATDIR} \
-#     /path/to/output/prefix   \
-#     --soloCellFilter EmptyDrops_CR \
-#     --soloMultiMappers EM
-#     """
+#         """
+#         {params.STAR_EXEC} \
+#         --runMode soloCellFiltering \
+#         {input.RAWMATDIR} \
+#         {output.MULTIMATDIR} \
+#         --soloCellFilter EmptyDrops_CR \
+#         --soloMultiMappers EM
+#         """
+#
+# /programs/STAR/STAR \
+# --runMode soloCellFiltering \
+# # --genomeDir /workdir/dwm269/genomes/mm10_all/mm10_STAR \
+# ./Solo.out/Gene/raw \
+#  ./Solo.out/Gene/multiEMtest \
+# --soloCellFilter EmptyDrops_CR \
+# --soloMultiMappers EM
 
-#TODO rule bamToSplitBigWig
+rule bamToSplitBigWig:
+    input:
+        BAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam',
+        BAI = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam.bai'
+    output:
+        POS_BW = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_plus.bw',
+    params:
+        BAM2SPLITBW=config['BAM2SPLITBW'],
+        STAR_REF = config['STAR_REF'],
+        OUTPUT_DIR = '{OUTDIR}/{sample}_STARsolo'
+    threads:
+        config['CORES']
+    shell:
+        """
+        {params.BAM2SPLITBW} {input.BAM} {threads} {params.OUTPUT_DIR} {STAR_REF}/chrNameLength.txt
+        """
