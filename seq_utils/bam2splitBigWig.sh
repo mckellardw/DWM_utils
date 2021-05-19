@@ -41,21 +41,24 @@ echo "Inverting minus strand..."
 cat ${OUTDIR}/${PREFIX}\_minus.noinv.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,-1*$4}' > ${OUTDIR}/${PREFIX}\_minus.bedGraph ## Invert read counts on the minus strand.
 
 # Sort and convert to bigWig
-sort -k1,1 -k2,2n ${OUTDIR}/${PREFIX}\_plus.bedGraph > ${OUTDIR}/${PREFIX}\_sorted_plus.bedGraph
+echo "Sorting and converting to bigWig..."
+LC_COLLATE=C sort -k1,1 -k2,2n ${OUTDIR}/${PREFIX}\_plus.bedGraph > ${OUTDIR}/${PREFIX}\_sorted_plus.bedGraph
 bedGraphToBigWig ${OUTDIR}/${PREFIX}\_sorted_plus.bedGraph ${CHINFO} ${OUTDIR}/${PREFIX}_plus.bw
 
-sort -k1,1 -k2,2n ${OUTDIR}/${PREFIX}\_minus.bedGraph > ${OUTDIR}/${PREFIX}\_sorted_minus.bedGraph
+LC_COLLATE=C sort -k1,1 -k2,2n ${OUTDIR}/${PREFIX}\_minus.bedGraph > ${OUTDIR}/${PREFIX}\_sorted_minus.bedGraph
 bedGraphToBigWig ${OUTDIR}/${PREFIX}\_sorted_minus.bedGraph ${CHINFO} ${OUTDIR}/${PREFIX}_minus.bw
 
 # Generate log scale bedGraphs
 cat ${OUTDIR}/${PREFIX}\_minus.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,-1*log(-1*$4)/log(10)}' > ${OUTDIR}/${PREFIX}\_log10_minus.bedGraph ## Invert read counts on the minus strand and take log
 cat ${OUTDIR}/${PREFIX}\_plus.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,log($4)/log(10)}' > ${OUTDIR}/${PREFIX}\_log10_plus.bedGraph
 
+
 # Generate log scale bigWigs
-sort -k1,1 -k2,2n ${OUTDIR}/${PREFIX}\_log10_plus.bedGraph > ${OUTDIR}/${PREFIX}\_log10_sorted_plus.bedGraph
+echo "Generating log10 scale bigWigs..."
+LC_COLLATE=C sort -k1,1 -k2,2n  ${OUTDIR}/${PREFIX}\_log10_plus.bedGraph > ${OUTDIR}/${PREFIX}\_log10_sorted_plus.bedGraph
 bedGraphToBigWig ${OUTDIR}/${PREFIX}\_log10_sorted_plus.bedGraph ${CHINFO} ${OUTDIR}/${PREFIX}_log10_plus.bw
 
-sort -k1,1 -k2,2n ${OUTDIR}/${PREFIX}\_log10_minus.bedGraph > ${OUTDIR}/${PREFIX}\_log10_sorted_minus.bedGraph
+LC_COLLATE=C sort -k1,1 -k2,2n ${OUTDIR}/${PREFIX}\_log10_minus.bedGraph > ${OUTDIR}/${PREFIX}\_log10_sorted_minus.bedGraph
 bedGraphToBigWig ${OUTDIR}/${PREFIX}\_log10_sorted_minus.bedGraph ${CHINFO} ${OUTDIR}/${PREFIX}_log10_minus.bw
 
 # Remove tmp files
