@@ -25,26 +25,14 @@ OUTDIR = config['OUTDIR']
 # Variables and references
 ########################################################################################################
 SAMPLES = list(pd.read_csv(config['SAMPLE_SHEET'])['sampleID'])
-FASTQDIR = list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_dir'])
-#import glob #TODO - account for multi fastq input
+# R1_FQS = list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])
+R1_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])))
 
-# Find R1 fastqs
-# R1_FASTQS = ['{FASTQDIR}/{sample}{FQ_EXTENSION1}R1{FQ_EXTENSION2}'.format(FASTQDIR=FASTQDIR, sample=sample, FQ_EXTENSION1=config['FQ_EXTENSION1'], FQ_EXTENSION2=config['FQ_EXTENSION2']) for FASTQDIR, sample in zip(FASTQDIR, SAMPLES)]
-# R1_FASTQS_GLOB = []
-# for fastq in R1_FASTQS:
-#     R1_FASTQS_GLOB += glob.glob(fastq)
-
-# Find R2 fastqs
-# R2_FASTQS = ['{FASTQDIR}/{sample}{FQ_EXTENSION1}R2{FQ_EXTENSION2}'.format(FASTQDIR=FASTQDIR, sample=sample, FQ_EXTENSION1=config['FQ_EXTENSION1'], FQ_EXTENSION2=config['FQ_EXTENSION2']) for FASTQDIR, sample in zip(FASTQDIR, SAMPLES)]
-# R2_FASTQS_GLOB = []
-# for fastq in R2_FASTQS:
-#     R2_FASTQS_GLOB += glob.glob(fastq)
-
-# print(R1_FASTQS)
+# R2_FQS = list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R2'])
+R2_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R2'])))
+# SAMPLE_SHEET = pd.read_csv(config['SAMPLE_SHEET']
 
 STAR_REF = config['STAR_REF']
-FQ_EXTENSION1 = config['FQ_EXTENSION1']
-FQ_EXTENSION2 = config['FQ_EXTENSION2']
 
 ########################################################################################################
 # Executables
@@ -56,8 +44,12 @@ rule all:
     input:
         # expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/filtered/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES)
         # expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES)
-        
-        expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES)
+        expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
+        expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), # count mats
+        expand('{OUTDIR}/{sample}_STARsolo/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
+        expand('{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES) # blastn results for unmapped R1 reads
+
+
 
 #############################################
 ## Pre-alignment set up
@@ -80,13 +72,21 @@ rule gunzipWhitelist:
 #   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
 rule STARsolo_align:
     input:
-        R1_FQ = pd.DataFrame(['{dir}/{id}{FQ_EXTENSION1}R1{FQ_EXTENSION2}'.format(dir=FASTQDIR, id=SAMPLES, FQ_EXTENSION1=config['FQ_EXTENSION1'], FQ_EXTENSION2=config['FQ_EXTENSION2']) for FASTQDIR, SAMPLES in zip(FASTQDIR, SAMPLES)]).applymap(glob.glob).values.tolist(),
-        R2_FQ = pd.DataFrame(['{dir}/{id}{FQ_EXTENSION1}R2{FQ_EXTENSION2}'.format(dir=FASTQDIR, id=SAMPLES, FQ_EXTENSION1=config['FQ_EXTENSION1'], FQ_EXTENSION2=config['FQ_EXTENSION2']) for FASTQDIR, SAMPLES in zip(FASTQDIR, SAMPLES)]).applymap(glob.glob).values.tolist(),
+        R1_FQ = lambda wildcards: R1_FQS[wildcards.sample],
+        R2_FQ = lambda wildcards: R2_FQS[wildcards.sample],
         CB_WHITELIST = config['CB_WHITELIST']
-    output:
+    output: #TODO- add more output files?
         SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam',
-        RAWMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/raw/matrix.mtx',
-        FILTEREDMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/filtered/matrix.mtx'
+        UNMAPPED1 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1',
+        UNMAPPED2 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2',
+        GENE = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/Gene'),
+        GENEFULL = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/GeneFull'),
+        SJ = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/SJ'),
+        VEL = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto'),
+        GENEMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/raw/matrix.mtx.gz',
+        GENEFULLMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz',
+        SJMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/SJ/raw/matrix.mtx.gz',
+        VELMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz'
     params:
         OUTDIR = config['OUTDIR'],
         STAR_EXEC = config['STAR_EXEC'],
@@ -95,10 +95,8 @@ rule STARsolo_align:
         MEMLIMIT = config['MEMLIMIT']
     threads:
         config['CORES']
-    shell:
+    shell: # TODO- convert to bash script?
         """
-        echo {input.R1_FQ}
-
         mkdir -p {params.OUTDIR}/{wildcards.sample}_STARsolo
 
         {params.STAR_EXEC} \
@@ -111,12 +109,30 @@ rule STARsolo_align:
         --genomeLoad LoadAndKeep \
         --limitBAMsortRAM={params.MEMLIMIT} \
         --readFilesIn {input.R2_FQ} {input.R1_FQ} \
+        --outReadsUnmapped Fastx \
+        --outFilterMismatchNoverLmax 0.05 \
+        --outFilterMatchNmin 18 \
+        --outFilterMatchNminOverLread 0 \
+        --outFilterScoreMinOverLread 0 \
         --soloType CB_UMI_Simple \
         --soloCBwhitelist {input.CB_WHITELIST} \
         --soloCellFilter EmptyDrops_CR \
         --soloFeatures Gene GeneFull SJ Velocyto \
         --soloMultiMappers EM
+
+        gzip -qf {output.GENE}/raw/*
+        gzip -qf {output.GENE}/filtered/*
+
+        gzip -qf {output.GENEFULL}/raw/*
+        gzip -qf {output.GENEFULL}/filtered/*
+
+        gzip -qf {output.SJ}/raw/*
+
+        gzip -qf {output.VEL}/raw/*
+        gzip -qf {output.VEL}/filtered/*
         """
+
+# --outFilterMismatchNoverLmax 0.05 --outFilterMatchNmin 18 --outFilterMatchNminOverLread 0 --outFilterScoreMinOverLread 0 --outMultimapperOrder Random
 
 rule indexBAM:
     input:
@@ -129,6 +145,68 @@ rule indexBAM:
         """
         samtools index -@ {threads} {input.SORTEDBAM}
         """
+
+#############################################
+## Unmapped read analyses
+#############################################
+
+# Run fastqc on unmapped reads
+rule unmapped_fastqc:
+    input:
+        UNMAPPED1 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1',
+        UNMAPPED2 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2'
+    output:
+        UNMAPPED1_FQ = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1.fastq',
+        UNMAPPED2_FQ = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2.fastq',
+        FQC_DIR = directory('{OUTDIR}/{sample}_STARsolo/Unmapped_fastqc_out')
+    params:
+        FASTQC_EXEC = config['FASTQC_EXEC']
+    threads:
+        config['CORES']
+    shell:
+        """
+        mv {input.UNMAPPED1} {output.UNMAPPED1_FQ}
+        mv {input.UNMAPPED2} {output.UNMAPPED2_FQ}
+
+        mkdir -p {output.FQC_DIR}
+
+        {params.FASTQC_EXEC} -o {output.FQC_DIR} -t {threads} {output.UNMAPPED1_FQ} {output.UNMAPPED2_FQ}
+        """
+
+# Only BLAST R1, which contains the insert (converts .fq to .fa, then removes the .fa file)
+## TODO: add a demux step beforehand to reduce blast runtime
+rule blast_unmapped:
+    input:
+        UNMAPPED1_FQ = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1.fastq'
+    output:
+        BLAST_R1 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1_blastResults.txt'
+    threads:
+        config['CORES']
+    params:
+        blastDB = config['BLASTDB'],
+        FASTX_COLLAPSER = config['FASTX_COLLAPSER'],
+        TMP_FA = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1.fa'
+    shell:
+        """
+        sed -n '1~4s/^@/>/p;2~4p' {input.UNMAPPED1_FQ} > {params.TMP_FA}
+
+        echo "Number of unmapped reads: "
+        grep -c ">" {params.TMP_FA}
+
+        vsearch --sortbysize {params.TMP_FA} --topn 1000 --output tmp.fa
+
+        blastn -db {params.blastDB}/nt \
+        -query tmp.fa \
+        -out {output.BLAST_R1} \
+        -outfmt '6 qseqid sseqid stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore' \
+        -max_target_seqs 5 \
+        -num_threads {threads}
+
+		"""
+
+        # rm {params.TMP_FA}
+
+# cat {input.UNMAPPED1_FQ} | awk '{{if(NR%4==1) {{printf(">%s\n",substr($0,2));}} else if(NR%4==2) print;}}' > {params.TMP_FA}
 
 #############################################
 ## Counting transcripts
@@ -163,6 +241,35 @@ rule indexBAM:
 #  ./Solo.out/Gene/multiEMtest \
 # --soloCellFilter EmptyDrops_CR \
 # --soloMultiMappers EM
+
+# rule gzipCountMats:
+#     input:
+#         GENE = '{OUTDIR}/{sample}_STARsolo/Solo.out/Gene',
+#         GENEFULL = '{OUTDIR}/{sample}_STARsolo/Solo.out/GeneFull',
+#         SJ = '{OUTDIR}/{sample}_STARsolo/Solo.out/SJ',
+#         VEL = '{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto'
+#     output: #TODO- fill out outputs...
+#         GENEMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/raw/matrix.mtx.gz',
+#         GENEFULLMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz',
+#         SJMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/SJ/raw/matrix.mtx.gz',
+#         VELMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz'
+#     shell:
+#         """
+#         gzip -qf {input.GENE}/raw/*
+#         gzip -qf {input.GENE}/filtered/*
+#
+#         gzip -qf {input.GENEFULL}/raw/*
+#         gzip -qf {input.GENEFULL}/filtered/*
+#
+#         gzip -qf {input.SJ}/raw/*
+#
+#         gzip -qf {input.VEL}/raw/*
+#         gzip -qf {input.VEL}/filtered/*
+#         """
+
+#############################################
+## Additional files for visualization
+#############################################
 
 rule bamToSplitBigWig:
     input:
