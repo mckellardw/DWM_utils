@@ -1,4 +1,3 @@
-sampleID,fastq_dir
-C2Cnuc_ctrl1,/workdir/dwm269/totalRNA/data/fastq/cr_mkfastq-MiniSeq-C2Cnuc_yPAP1-C2Cnuc_ctrl1/outs/fastq_path/yPAP/C2Cnuc_ctrl1
-C2Cnuc_yPAP1,/workdir/dwm269/totalRNA/data/fastq/cr_mkfastq-MiniSeq-C2Cnuc_yPAP1-C2Cnuc_ctrl1/outs/fastq_path/yPAP/C2Cnuc_yPAP1
-
+sampleID,fastq_R1,fastq_R2
+C2Cnuc_ctrl1,/workdir/dwm269/totalRNA/data/fastq/cr_mkfastq-MiniSeq-C2Cnuc_yPAP1-C2Cnuc_ctrl1/outs/fastq_path/yPAP/C2Cnuc_ctrl1/C2Cnuc_ctrl1_S2_L001_R1_001.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/cr_mkfastq-MiniSeq-C2Cnuc_yPAP1-C2Cnuc_ctrl1/outs/fastq_path/yPAP/C2Cnuc_ctrl1/C2Cnuc_ctrl1_S2_L001_R2_001.fastq.gz
+C2Cnuc_yPAP1,/workdir/dwm269/totalRNA/data/fastq/cr_mkfastq-MiniSeq-C2Cnuc_yPAP1-C2Cnuc_ctrl1/outs/fastq_path/yPAP/C2Cnuc_yPAP1/C2Cnuc_yPAP1_S1_L001_R1_001.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/cr_mkfastq-MiniSeq-C2Cnuc_yPAP1-C2Cnuc_ctrl1/outs/fastq_path/yPAP/C2Cnuc_yPAP1/C2Cnuc_yPAP1_S1_L001_R2_001.fastq.gz

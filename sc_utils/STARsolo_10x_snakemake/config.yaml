@@ -4,16 +4,11 @@
 # Run settings
 ########################################################################################################
 
-# sample name, pointing to cellranger count output directory (same as the ""--id" input for cellranger count)
+# Sample sheet requires a sampleID, and locations of fastqs for R1 and R2
 SAMPLE_SHEET: sample_sheet.csv
 
-# fastq files should be named like this: sampleID + FQ_EXTENSION1 + 'R1' + FQ_EXTENSION2
-#   *Make sure that the 'R1' and 'R2' are capitalized
-FQ_EXTENSION1: '_S*_L00*_' # default for cellranger fastq's is '_S1_L001_'
-FQ_EXTENSION2: '_001.fastq.gz' # default for most fastq's is '.fastq.gz', some might use '.fq.gz'
-
 # STARsolo parameters
-CORES: 20 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CORES: 25 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 50000000000 # limit in bytes
 UMIlen: 12 #v2=__, v3=12
 
@@ -22,16 +17,19 @@ UMIlen: 12 #v2=__, v3=12
 ########################################################################################################
 # DATADIR: /workdir/dwm269/totalRNA/data/cr_count/mm10 # directory where cellranger_count outputs are stored - be sure to use an absolute path (starting with root)
 TMPDIR: tmp # directory for temporary files
-OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/mm10
+OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/mm10_SSTsettings
 
 ########################################################################################################
 # Executables - file paths
 ########################################################################################################
 STAR_EXEC: /programs/STAR/STAR #biohpc current version of STAR
-
+FASTQC_EXEC: fastqc
 BAM2SPLITBW: /home/dwm269/DWM_utils/seq_utils/bam2splitBigWig.sh #Custom function in DWM_utils that splits a bam file by strand and converts it into bigwig format
+FASTX_COLLAPSER: fastx_collapser
+BLASTDB: /shared_data/genome_db/BLAST_NCBI # path to where the nt BLAST database is stored
+
 ########################################################################################################
 # Resources - file paths
 ########################################################################################################
-STAR_REF: /workdir/dwm269/genomes/mm10_all/mm10_STAR # path to STAR-formatted reference genome
+STAR_REF: /workdir/dwm269/genomes/mm10_all/mm10_STAR_refGene_transcript # path to STAR-formatted reference genome
 CB_WHITELIST: resources/barcodes_10x/3M-february-2018.txt # path to cell barcodes (CB) whitelist, gunzipped (without the .gz extension) - https://kb.10xgenomics.com/hc/en-us/articles/115004506263-What-is-a-barcode-whitelist-
