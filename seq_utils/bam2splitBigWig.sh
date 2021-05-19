@@ -52,7 +52,6 @@ bedGraphToBigWig ${OUTDIR}/${PREFIX}\_sorted_minus.bedGraph ${CHINFO} ${OUTDIR}/
 cat ${OUTDIR}/${PREFIX}\_minus.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,-1*log(-1*$4)/log(10)}' > ${OUTDIR}/${PREFIX}\_log10_minus.bedGraph ## Invert read counts on the minus strand and take log
 cat ${OUTDIR}/${PREFIX}\_plus.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,log($4)/log(10)}' > ${OUTDIR}/${PREFIX}\_log10_plus.bedGraph
 
-
 # Generate log scale bigWigs
 echo "Generating log10 scale bigWigs..."
 LC_COLLATE=C sort -k1,1 -k2,2n  ${OUTDIR}/${PREFIX}\_log10_plus.bedGraph > ${OUTDIR}/${PREFIX}\_log10_sorted_plus.bedGraph
