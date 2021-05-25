@@ -681,7 +681,7 @@ ggVolcano_v2 <- function(markers=NULL, expression=NULL,
                       genes=NULL,
                       gene.text.size=6,  repel=T, nudge_x=-0.1,
                       dot.scale=1,
-                      line.width=1,segment.color="gray",
+                      line.width=0.5, segment.color="gray",
                       pt.size=1, pt.alpha=1){
   # TODO: add split.by - generalize?
   
@@ -788,11 +788,14 @@ ggVolcano_v2 <- function(markers=NULL, expression=NULL,
       panel.grid.major = element_blank(), 
       panel.grid.minor = element_blank(), 
       panel.background = element_blank(), 
-      axis.line = element_line(colour = "black", size = line.width),
+      axis.line = element_blank(),#element_line(colour = "black", size = line.width),
+      axis.ticks=element_line(colour = "black", size = line.width),
       panel.border = element_rect(color='black', size=line.width, fill=NA),
       plot.title = element_text(face="bold", hjust=0.5)
     ) + 
-    scale_fill_manual(values=fill.cols,aesthetics = c("col","fill"))
+    scale_fill_manual(values=fill.cols,aesthetics = c("col","fill"))+
+    scale_x_continuous(expand=c(0.01,0.01))+
+    scale_y_continuous(expand=c(0.01,0.01))
   
   
   return(out.gg)
