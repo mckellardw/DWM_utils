@@ -27,6 +27,51 @@ npcs <- function(
   return(n.pcs)
 }
 
+
+# Borrowed/adapted from the Marioni Lab, DropletUtils package (https://rdrr.io/github/MarioniLab/DropletUtils/src/R/write10xCounts.R)
+#   (Had R version issues getting it to work as a dependency)
+#' @importFrom utils write.table
+#' @importFrom Matrix writeMM
+#' @importFrom R.utils gzip
+write_sparse <- function(
+  path, # name of new directory
+  x, # matrix to write as sparse
+  barcodes, # cell IDs, colnames
+  features # gene IDs, rownames
+  
+  # gene.symbol,#not used
+  # gene.type
+  ){
+  require(utils,quietly = T)
+  require(Matrix,quietly = T)
+  require(R.utils,quietly = T)
+  
+  if(!dir.exists(path)){
+    dir.create(path, showWarnings=FALSE)
+  }
+  
+  # gene.info <- data.frame(gene.id, gene.symbol, stringsAsFactors=FALSE)
+  
+  # gene.info$gene.type <- rep(gene.type, length.out=nrow(gene.info))
+  mhandle <- file.path(path, "matrix.mtx")
+  bhandle <- gzfile(file.path(path, "barcodes.tsv.gz"), open="wb")
+  fhandle <- gzfile(file.path(path, "features.tsv.gz"), open="wb")
+  on.exit({
+    close(bhandle)
+    close(fhandle)
+  })
+  
+  writeMM(x, file=mhandle)
+  write(barcodes, file=bhandle)
+  write.table(features, file=fhandle, row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
+  
+  # Annoyingly, writeMM doesn't take connection objects.
+  gzip(mhandle)
+  
+  return(NULL)
+}
+
+
 # TODO- haven't used this in a while, make sure it works...
 # calculate entropy across groups in a seurat object
 #     output: returns data.frame ("group.by" rows by 1 col)
@@ -80,3 +125,38 @@ sc_entropy <- function(
 
   return(entropy.out)
 }
+
+
+# Calculate silhouette 
+seu_silhouette <- function(
+  SEU,
+  group.by,
+  reduction,
+  #TODO- add graph input as option
+  meta.name.out=NULL,
+  dims=1:10
+){
+  require(cluster)
+  
+  if(is.null(meta.name.out)){
+    meta.name.out=paste0('sil.',reduction,'.',group.by)
+  }
+  if(is.null(group.by)){
+    message("group.by is missing!")
+    return(SEU)
+  }
+  if(is.null(reduction)){
+    message("reduction is missing!")
+    return(SEU)
+  }
+  
+  # Calculate silhouette coefficient
+  sil.out <- silhouette(
+    x = as.numeric(x = as.factor(x = unlist(SEU[[group.by]]))), 
+    dist = dist(x = Embeddings(object = SEU, reduction=reduction)[,dims])
+  )
+  SEU[[meta.name.out]] <- sil.out[,3]
+  
+  return(SEU)
+}
+
