@@ -5,10 +5,13 @@
 ########################################################################################################
 
 # Sample sheet requires a sampleID, and locations of fastqs for R1 and R2
+#     For multi-lane inputs, use the following format (from STARsolo github page):
+#       --readFilesIn Read2_Lane1.fastq.gz,Read2_Lane2.fastq.gz,Read2_Lane3.fastq.gz  Read1_Lane1.fastq.gz,Read1_Lane2.fastq.gz,Read1_Lane3.fastq.gz
+
 SAMPLE_SHEET: sample_sheet.csv
 
 # STARsolo parameters
-CORES: 15 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CORES: 12 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 50000000000 # limit in bytes
 UMIlen: 12 #v2=__, v3=12
 
@@ -17,7 +20,7 @@ UMIlen: 12 #v2=__, v3=12
 ########################################################################################################
 # DATADIR: /workdir/dwm269/totalRNA/data/cr_count/mm10 # directory where cellranger_count outputs are stored - be sure to use an absolute path (starting with root)
 TMPDIR: tmp # directory for temporary files
-OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/mm10_GENCODEM25
+OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/mm10_GENCODEM25_exon
 
 ########################################################################################################
 # Executables - file paths
@@ -31,5 +34,5 @@ BLASTDB: /shared_data/genome_db/BLAST_NCBI # path to where the nt BLAST database
 ########################################################################################################
 # Resources - file paths
 ########################################################################################################
-STAR_REF: /workdir/dwm269/genomes/mm10_all/mm10_STAR_GENCODEM25_transcript # path to STAR-formatted reference genome
+STAR_REF: /workdir/dwm269/genomes/mm10_all/mm10_STAR_GENCODEM25_exon # path to STAR-formatted reference genome
 CB_WHITELIST: resources/barcodes_10x/3M-february-2018.txt # path to cell barcodes (CB) whitelist, gunzipped (without the .gz extension) - https://kb.10xgenomics.com/hc/en-us/articles/115004506263-What-is-a-barcode-whitelist-
