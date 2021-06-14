@@ -27,6 +27,7 @@ OUTDIR = config['OUTDIR']
 SAMPLES = list(pd.read_csv(config['SAMPLE_SHEET'])['sampleID'])
 # R1_FQS = list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])
 R1_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])))
+print(R1_FQS)
 
 # R2_FQS = list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R2'])
 R2_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R2'])))
@@ -48,7 +49,6 @@ rule all:
         expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), # count mats
         expand('{OUTDIR}/{sample}_STARsolo/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
         expand('{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES) # blastn results for unmapped R1 reads
-
 
 
 #############################################
@@ -85,13 +85,16 @@ rule gunzipWhitelist:
 #############################################
 ## Alignment
 #############################################
-# Make output directory, align fastqs, and generate first-pas raw/filtered feature/cell-barcode matrices
+# Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
 #   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
+
+#TODO - add iterative alignment steps, to improve detection of repeat features (tRNAs, rRNAs, etc)
+# rule starSOLO_tRNA_align:
+
 rule STARsolo_align:
     input:
         # R1_FQ = lambda wildcards: R1_FQS[wildcards.sample],
-        R1_FQ = TMPDIR + '/{sample}_trim_1.fastq.gz',
-        R2_FQ = lambda wildcards: R2_FQS[wildcards.sample],
+        # R2_FQ = lambda wildcards: R2_FQS[wildcards.sample],
         CB_WHITELIST = config['CB_WHITELIST']
     output: #TODO- add more output files?
         SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam',
@@ -106,6 +109,8 @@ rule STARsolo_align:
         SJMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/SJ/raw/matrix.mtx.gz',
         VELMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz'
     params:
+        R1_FQ = lambda wildcards: R1_FQS[wildcards.sample],
+        R2_FQ = lambda wildcards: R2_FQS[wildcards.sample],
         OUTDIR = config['OUTDIR'],
         STAR_EXEC = config['STAR_EXEC'],
         STAR_REF = config['STAR_REF'],
@@ -126,7 +131,7 @@ rule STARsolo_align:
         --genomeDir {params.STAR_REF} \
         --genomeLoad LoadAndKeep \
         --limitBAMsortRAM={params.MEMLIMIT} \
-        --readFilesIn {input.R2_FQ} {input.R1_FQ} \
+        --readFilesIn {params.R2_FQ} {params.R1_FQ} \
         --clipAdapterType CellRanger4 \
         --outReadsUnmapped Fastx \
         --outFilterMismatchNoverLmax 0.05 \
