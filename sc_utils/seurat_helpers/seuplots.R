@@ -145,12 +145,12 @@ ggVolcano_v2 <- function(markers=NULL, expression=NULL,
 
 # Generate feature plots given a list of Visium/Seurat objects
 visListPlot <- function(
-  seu.list, #list of Seurat objects
+  seu.list,
   features=NULL,
   alt.titles=NULL, # alternative titles for genes/features being passed
   assay='Spatial',
   reduction="space",
-  row.titles=c("D2", "D5", "D7"),#TODO-generalize more?
+  legend.position="bottom",
   pt.size=1,
   font.size=8
 ){
@@ -196,8 +196,7 @@ visListPlot <- function(
           pt.size = pt.size,
           reduction=reduction
         ) +
-        scale_color_viridis(limits=unlist(gene.lims[i]), na.value = gray(0.42))+ #,trans="log10"  limits=c(10^-2,6),
-        # scale_color_gradientn(colors=RColorBrewer::brewer.pal(11,"Spectral")[11:1],limits=c(10^-2,1),na.value = gray(0.42)) +
+        scale_color_viridis(limits=unlist(gene.lims[i]), na.value = gray(0.42))+ 
         theme(
           plot.margin = unit(rep(0,4), "inches"),
           axis.ticks = element_blank(),
@@ -205,11 +204,10 @@ visListPlot <- function(
           axis.title = element_blank(),
           axis.line=element_blank(),
           plot.title = element_blank(),
-          legend.position="bottom",
+          legend.position=legend.position,
           legend.title = element_text(size=font.size,face="bold", hjust=0.5),
           legend.text = element_text(size=font.size,face="bold")
         )
-      # labs(color="Log-Normalized\nExpression")
     )
     tmp[[1]] <- tmp[[1]] +
       theme(
@@ -219,17 +217,17 @@ visListPlot <- function(
     plot.list[[i]] <- tmp
   }
   
-  
+  injury=c("D2", "D5", "D7")
   for(i in 1:length(plot.list[[1]]) ){
     plot.list[[1]][[i]] <- plot.list[[1]][[i]] +
-      labs(y=row.titles[i]) +
+      labs(y=injury[i]) +
       theme(axis.title.y = element_text(size=font.size, face="bold", color="black"))
   }
   
   plot.list <- lapply(
     plot.list,
     FUN = function(X)
-      wrap_plots(X, ncol=1, guides="collect")&theme(legend.position="bottom",legend.margin = margin(0,0,0,0,"inches"))
+      wrap_plots(X, ncol=1, guides="collect")&theme(legend.position=legend.position, legend.margin = margin(0,0,0,0,"inches"))
   )
   
   cat("Done plotting Visium data!\n")
@@ -238,3 +236,4 @@ visListPlot <- function(
     wrap_plots(plot.list,nrow=1)
   )
 }
+
