@@ -38,20 +38,20 @@ write_sparse <- function(
   x, # matrix to write as sparse
   barcodes, # cell IDs, colnames
   features # gene IDs, rownames
-  
+
   # gene.symbol,#not used
   # gene.type
   ){
   require(utils,quietly = T)
   require(Matrix,quietly = T)
   require(R.utils,quietly = T)
-  
+
   if(!dir.exists(path)){
     dir.create(path, showWarnings=FALSE)
   }
-  
+
   # gene.info <- data.frame(gene.id, gene.symbol, stringsAsFactors=FALSE)
-  
+
   # gene.info$gene.type <- rep(gene.type, length.out=nrow(gene.info))
   mhandle <- file.path(path, "matrix.mtx")
   bhandle <- gzfile(file.path(path, "barcodes.tsv.gz"), open="wb")
@@ -60,14 +60,14 @@ write_sparse <- function(
     close(bhandle)
     close(fhandle)
   })
-  
+
   writeMM(x, file=mhandle)
   write(barcodes, file=bhandle)
   write.table(features, file=fhandle, row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
-  
+
   # Annoyingly, writeMM doesn't take connection objects.
   gzip(mhandle)
-  
+
   return(NULL)
 }
 
@@ -127,7 +127,7 @@ sc_entropy <- function(
 }
 
 
-# Calculate silhouette 
+# Calculate silhouette
 seu_silhouette <- function(
   SEU,
   group.by,
@@ -137,7 +137,7 @@ seu_silhouette <- function(
   dims=1:10
 ){
   require(cluster)
-  
+
   if(is.null(meta.name.out)){
     meta.name.out=paste0('sil.',reduction,'.',group.by)
   }
@@ -149,14 +149,46 @@ seu_silhouette <- function(
     message("reduction is missing!")
     return(SEU)
   }
-  
+
   # Calculate silhouette coefficient
   sil.out <- silhouette(
-    x = as.numeric(x = as.factor(x = unlist(SEU[[group.by]]))), 
+    x = as.numeric(x = as.factor(x = unlist(SEU[[group.by]]))),
     dist = dist(x = Embeddings(object = SEU, reduction=reduction)[,dims])
   )
   SEU[[meta.name.out]] <- sil.out[,3]
-  
+
   return(SEU)
 }
 
+
+# Basic function to convert human to mouse gene names
+#   From @leonfodoulian (https://github.com/satijalab/seurat/issues/462)
+#   https://www.r-bloggers.com/converting-mouse-to-human-gene-names-with-biomart-package/
+#
+#   x = list of genes to be converted
+#   Usage: mouse.genes <- lapply(X = human.genes, ConvertHumanGeneListToMM)
+#
+ConvertHumanGeneListToMM <- function(x){
+  require(biomaRt)
+
+  # Load human ensembl attributes
+  human = biomaRt::useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+  # Load mouse ensembl attributes
+  mouse = biomaRt::useMart("ensembl", dataset = "mmusculus_gene_ensembl")
+
+  # Link both datasets and retrieve mouse genes from the human genes
+  genes.list = biomaRt::getLDS(attributes = c("hgnc_symbol"),
+                               filters = "hgnc_symbol",
+                               values = x ,
+                               mart = human,
+                               attributesL = c("mgi_symbol"),
+                               martL = mouse,
+                               uniqueRows = TRUE)
+
+  # Get unique names of genes (in case gene names are duplicated)
+  mouse.gene.list <- unique(genes.list[, 2])
+
+  # # Print the first 6 genes found to the screen
+  # print(head(mouse.gene.list))
+  return(mouse.gene.list)
+}
