@@ -4,7 +4,93 @@
 # version: 1.0
 ###############################
 
+#############################################################################
+## Utils
+#############################################################################
 
+# Split violin plots
+.GeomSplitViolin <- ggproto(
+  "GeomSplitViolin",
+  GeomViolin,
+  draw_group = function(self, data, ..., draw_quantiles = NULL) {
+    
+    data <-
+      transform(
+        data,
+        xminv = x - violinwidth * (x - xmin),
+        xmaxv = x + violinwidth * (xmax - x)
+      )
+    
+    grp <- data[1, "group"]
+    
+    newdata <-
+      plyr::arrange(transform(data, x = if (grp %% 2 == 1)
+        xminv
+        else
+          xmaxv), if (grp %% 2 == 1)
+            y
+        else-y)
+    
+    newdata <- rbind(newdata[1,], newdata, newdata[nrow(newdata),], newdata[1,])
+    
+    newdata[c(1, nrow(newdata) - 1, nrow(newdata)), "x"] <- round(newdata[1, "x"])
+    
+    if (length(draw_quantiles) > 0 &
+        !scales::zero_range(range(data$y))) {
+      stopifnot(all(draw_quantiles >= 0), all(draw_quantiles <=
+                                                1))
+      quantiles <-
+        ggplot2:::create_quantile_segment_frame(data, draw_quantiles)
+      aesthetics <-
+        data[rep(1, nrow(quantiles)), setdiff(names(data), c("x", "y")), drop = FALSE]
+      aesthetics$alpha <-
+        rep(1, nrow(quantiles))
+      both <- cbind(quantiles, aesthetics)
+      quantile_grob <-
+        GeomPath$draw_panel(both, ...)
+      ggplot2:::ggname("geom_split_violin",
+                       grid::grobTree(GeomPolygon$draw_panel(newdata, ...), quantile_grob))
+    }
+    else {
+      ggplot2:::ggname("geom_split_violin",
+                       GeomPolygon$draw_panel(newdata, ...))
+    }
+  }
+)
+
+.geom_split_violin <-
+  function(mapping = NULL,
+           data = NULL,
+           stat = "ydensity",
+           position = "identity",
+           ...,
+           draw_quantiles = NULL,
+           trim = TRUE,
+           scale = "area",
+           na.rm = FALSE,
+           show.legend = NA,
+           inherit.aes = TRUE) {
+    layer(
+      data = data,
+      mapping = mapping,
+      stat = stat,
+      geom = .GeomSplitViolin,
+      position = position,
+      show.legend = show.legend,
+      inherit.aes = inherit.aes,
+      params = list(
+        trim = trim,
+        scale = scale,
+        draw_quantiles = draw_quantiles,
+        na.rm = na.rm,
+        ...
+      )
+    )
+  }
+
+#############################################################################
+## Differential Gene Expression Plots
+#############################################################################
 # Build volcano plot after running FindMarkers()
 #   *Note- requires Seurat v4 or greater (b/c colnames in the output file changed for some reason...)
 ggVolcano_v2 <- function(markers=NULL, expression=NULL,
@@ -141,7 +227,8 @@ ggVolcano_v2 <- function(markers=NULL, expression=NULL,
 
 
 #############################################################################
-
+## Spatial/Visium plot functions
+#############################################################################
 
 # Generate feature plots given a list of Visium/Seurat objects
 visListPlot <- function(
@@ -217,6 +304,7 @@ visListPlot <- function(
     plot.list[[i]] <- tmp
   }
   
+  #TODO - generalize this
   injury=c("D2", "D5", "D7")
   for(i in 1:length(plot.list[[1]]) ){
     plot.list[[1]][[i]] <- plot.list[[1]][[i]] +
@@ -236,4 +324,103 @@ visListPlot <- function(
     wrap_plots(plot.list,nrow=1)
   )
 }
+
+
+
+# Generate split violin plots for Visium data to look at co-occurence of cell types & gene expression
+#   Co-occurence is based on bayesprism theta values
+visCoocVlnPlot<-function(
+  SEU,
+  assay.ge='Spatial',# gene expression assay
+  assay.ct, #cell type assay
+  slot.ge="data",
+  features.lr, # ligand-receptor(in that order)  pair
+  features.ct=NULL, # 2 celltypes to compare 
+  bp.thresh=0.1, # Lower threshold for bayesprism theta values to determine presence of a cell type 
+  scale.data=T,
+  scale.min=-2.5,
+  scale.max=2.5,
+  width=0.9,
+  #TODO
+  legend.position="bottom",
+  pt.size=0,
+  font.size=8,
+  verbose=T
+){
+  require(ggplot2)
+  require(dplyr)
+  
+  #Check inputs
+  if(is.null(features.lr)){
+    message("Need genes to plot (features.lr)...")
+    return(NULL)
+  }
+  if(is.null(features.ct)|length(features.ct)<2){
+    message("Need 2 cell types to compare (features.ct)...")
+    return(NULL)
+  }
+  
+  # build df
+  df <- data.frame(
+    cell=Cells(SEU),
+    GetAssayData(SEU, assay=assay.ge,slot=slot.ge)[features.lr[1:2],]%>%t(),
+    GetAssayData(SEU, assay=assay.ct)[features.ct[1:2],]%>%t()
+  )
+  colnames(df)<-c("cell",features.lr[1:2],features.ct[1:2])
+  
+  df$cooc <- rep("L-/R-",nrow(df))
+  
+  df$cooc[df[features.ct[1]]>=bp.thresh & df[features.ct[2]]>=bp.thresh] <- "L+/R+" #both present
+  df$cooc[df[features.ct[1]]>=bp.thresh & df[features.ct[2]]<bp.thresh] <- "L+/R-" #ligand cell type only
+  df$cooc[df[features.ct[1]]<bp.thresh & df[features.ct[2]]>=bp.thresh] <- "L-/R+" # receptor cell type only
+  
+  if(verbose){
+    print(table(df$cooc))
+  }
+  
+  #TODO- scale gene expression data
+  # if(scale.data){
+  #   df[features.lr[1]] <- scale(x = df[features.lr[1]])
+  #   df[features.lr[2]] <- scale(x = df[features.lr[2]])
+  #   
+  #   df[features.lr[1]] <- MinMax(data = df[features.lr[1]], min = scale.min, max = scale.max)
+  #   df[features.lr[2]] <- MinMax(data = df[features.lr[2]], min = scale.min, max = scale.max)
+  # } 
+  
+  # melt df for ggplot
+  df <- reshape2::melt(
+    df,
+    measure.vars=features.ct,
+    variable.name="cell_type",
+    value.name = "theta"
+  ) %>% reshape2::melt(
+    measure.vars=features.lr[1:2],
+    variable.name="gene",
+    value.name = "log_norm_expr"
+  )
+  
+  # plot!
+  out.plot <-ggplot(
+    df,
+    aes(
+      x=cooc,
+      y=log_norm_expr,
+      fill=gene
+      # group=cooc
+    )
+  )+
+    .geom_split_violin(
+      width=width,
+      show.legend = T
+    )+
+    labs(title = paste0(features.ct[1]," -> ", features.ct[2]))+
+    vln.theme+
+    theme(
+      legend.position = "right",
+      plot.title = element_text(color="black", face="bold")
+    ) 
+  
+    return(out.plot)
+}
+
 
