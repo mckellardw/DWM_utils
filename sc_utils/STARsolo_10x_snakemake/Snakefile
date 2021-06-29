@@ -65,36 +65,15 @@ rule gunzipWhitelist:
         gunzip {input}
         """
 
-########################################################################################################
-# Trim polyA and polyT sequences from .fastq's - settings from Isakova et al, bioRxiv, 2020
-########################################################################################################
-# rule fastq_trim:
-# 	input:
-#         R1_FQ = lambda wildcards: R1_FQS[wildcards.sample]
-# 	output:
-#         temp(TMPDIR + '/{sample}_trim_1.fastq.gz')
-# 	threads:
-#         1
-# 	shell:
-# 		"{CUTADAPT} -m 18 \
-# 		-a AAAAAAAAAAAAAAAAAAAAAAAAA \
-# 		-a TTTTTTTTTTTTTTTTTTTTTTTTT \
-# 		-o {output} \
-# 		{input}"
-
 #############################################
 ## Alignment
 #############################################
 # Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
 #   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
 
-#TODO - add iterative alignment steps, to improve detection of repeat features (tRNAs, rRNAs, etc)
-# rule starSOLO_tRNA_align:
-
+#TODO- update alignment parameters for standard chemistries?
 rule STARsolo_align:
     input:
-        # R1_FQ = lambda wildcards: R1_FQS[wildcards.sample],
-        # R2_FQ = lambda wildcards: R2_FQS[wildcards.sample],
         CB_WHITELIST = config['CB_WHITELIST']
     output: #TODO- add more output files?
         SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam',
@@ -156,8 +135,6 @@ rule STARsolo_align:
         gzip -qf {output.VEL}/raw/*
         gzip -qf {output.VEL}/filtered/*
         """
-
-# --outFilterMismatchNoverLmax 0.05 --outFilterMatchNmin 18 --outFilterMatchNminOverLread 0 --outFilterScoreMinOverLread 0 --outMultimapperOrder Random
 
 rule indexBAM:
     input:
@@ -230,67 +207,8 @@ rule blast_unmapped:
         rm {params.TMP_FA}
 		"""
 
-
 # cat {input.UNMAPPED1_FQ} | awk '{{if(NR%4==1) {{printf(">%s\n",substr($0,2));}} else if(NR%4==2) print;}}' > {params.TMP_FA}
 
-#############################################
-## Counting transcripts
-#############################################
-
-# Re-count multi transcripts, but account for multi-mapping reads. Uses EM to distribute reads across loci
-#   requires STAR version >= 2.9
-# rule STARsolo_multiMap_EM:
-#     input:
-#         RAWMATDIR = '{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/raw',
-#         BAI = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam.bai'
-#     output:
-#         MULTIMATDIR = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/multiEM/')
-#     params:
-#         STAR_EXEC = config['STAR_EXEC'],
-#         STAR_REF = config['STAR_REF'],
-#         OUTDIR = config['OUTDIR']
-#     shell:
-#         """
-#         {params.STAR_EXEC} \
-#         --runMode soloCellFiltering \
-#         {input.RAWMATDIR} \
-#         {output.MULTIMATDIR} \
-#         --soloCellFilter EmptyDrops_CR \
-#         --soloMultiMappers EM
-#         """
-#
-# /programs/STAR/STAR \
-# --runMode soloCellFiltering \
-# # --genomeDir /workdir/dwm269/genomes/mm10_all/mm10_STAR \
-# ./Solo.out/Gene/raw \
-#  ./Solo.out/Gene/multiEMtest \
-# --soloCellFilter EmptyDrops_CR \
-# --soloMultiMappers EM
-
-# rule gzipCountMats:
-#     input:
-#         GENE = '{OUTDIR}/{sample}_STARsolo/Solo.out/Gene',
-#         GENEFULL = '{OUTDIR}/{sample}_STARsolo/Solo.out/GeneFull',
-#         SJ = '{OUTDIR}/{sample}_STARsolo/Solo.out/SJ',
-#         VEL = '{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto'
-#     output: #TODO- fill out outputs...
-#         GENEMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/raw/matrix.mtx.gz',
-#         GENEFULLMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz',
-#         SJMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/SJ/raw/matrix.mtx.gz',
-#         VELMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz'
-#     shell:
-#         """
-#         gzip -qf {input.GENE}/raw/*
-#         gzip -qf {input.GENE}/filtered/*
-#
-#         gzip -qf {input.GENEFULL}/raw/*
-#         gzip -qf {input.GENEFULL}/filtered/*
-#
-#         gzip -qf {input.SJ}/raw/*
-#
-#         gzip -qf {input.VEL}/raw/*
-#         gzip -qf {input.VEL}/filtered/*
-#         """
 
 #############################################
 ## Additional files for visualization
