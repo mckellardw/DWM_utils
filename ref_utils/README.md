@@ -5,3 +5,8 @@
 - cellranger custom references
 - spaceranger custom references
 - STAR custom reference(s)
+
+## Useful links:
+- UCSC downloads:
+- GENCODE downloads: 
+- ENCODE downloads:
