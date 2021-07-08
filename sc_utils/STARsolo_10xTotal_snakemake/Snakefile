@@ -22,16 +22,11 @@ TMPDIR = config['TMPDIR']
 OUTDIR = config['OUTDIR']
 
 ########################################################################################################
-# Variables and references
+# Variables, samples, and references
 ########################################################################################################
 SAMPLES = list(pd.read_csv(config['SAMPLE_SHEET'])['sampleID'])
-# R1_FQS = list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])
 R1_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])))
-print(R1_FQS)
-
-# R2_FQS = list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R2'])
 R2_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R2'])))
-# SAMPLE_SHEET = pd.read_csv(config['SAMPLE_SHEET']
 
 STAR_REF = config['STAR_REF']
 
@@ -50,6 +45,10 @@ rule all:
         expand('{OUTDIR}/{sample}_STARsolo/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
         expand('{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES) # blastn results for unmapped R1 reads
 
+#############################################
+## Quality check with fastqc
+#############################################
+#TODO
 
 #############################################
 ## Pre-alignment set up
@@ -100,11 +99,10 @@ rule gunzipWhitelist:
 #   Alignment parameters taken from smart-seq-total: https://github.com/aisakova/smart-seq-total
 #   Inspiration for iterative alignment strategy: https://github.com/Sethupathy-Lab/miRquant
 
-#TODO - add iterative alignment steps, to improve detection of repeat features (tRNAs, rRNAs, etc)
+## Notes on tRNA alignment parameters:
+# - Multimap settings are important (~5X as many reads retained) b/c of similar sequences
 rule starSOLO_tRNA_align:
     input:
-        # R1_FQ = lambda wildcards: R1_FQS[wildcards.sample],
-        # R2_FQ = lambda wildcards: R2_FQS[wildcards.sample],
         CB_WHITELIST = config['CB_WHITELIST']
     output: #TODO- add more output files?
         SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam',
@@ -112,12 +110,8 @@ rule starSOLO_tRNA_align:
         UNMAPPED2 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2',
         GENE = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/Gene'),
         GENEFULL = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/GeneFull'),
-        SJ = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/SJ'),
-        VEL = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto'),
         GENEMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/raw/matrix.mtx.gz',
-        GENEFULLMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz',
-        SJMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/SJ/raw/matrix.mtx.gz',
-        VELMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz'
+        GENEFULLMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz'
     params:
         R1_FQ = lambda wildcards: R1_FQS[wildcards.sample],
         R2_FQ = lambda wildcards: R2_FQS[wildcards.sample],
@@ -128,7 +122,7 @@ rule starSOLO_tRNA_align:
         MEMLIMIT = config['MEMLIMIT']
     threads:
         config['CORES']
-    shell: # TODO- convert to bash script?
+    shell: 
         """
         mkdir -p {params.OUTDIR}/{wildcards.sample}_STARsolo
 
@@ -136,42 +130,39 @@ rule starSOLO_tRNA_align:
         --runThreadN {threads} \
         --outFileNamePrefix {params.OUTDIR}/{wildcards.sample}_STARsolo/ \
         --outSAMtype BAM SortedByCoordinate \
+        --outSAMattributes All \
         --readFilesCommand zcat \
-        --soloUMIlen {params.UMIlen} \
         --genomeDir {params.STAR_REF} \
         --genomeLoad LoadAndKeep \
         --limitBAMsortRAM={params.MEMLIMIT} \
         --readFilesIn {params.R2_FQ} {params.R1_FQ} \
         --clipAdapterType CellRanger4 \
         --outReadsUnmapped Fastx \
-        --outFilterMismatchNoverLmax 0.05 \
-        --outFilterMatchNmin 18 \
-        --outFilterMatchNminOverLread 0 \
-        --outFilterScoreMinOverLread 0 \
-        --outFilterMultimapNmax 50 \
         --soloType CB_UMI_Simple \
         --soloCBwhitelist {input.CB_WHITELIST} \
+        --soloFeatures Gene GeneFull \
+        --outFilterMismatchNoverLmax 0.05 \
+        --outFilterMatchNmin 16 \
+        --outFilterScoreMinOverLread 0 \
+        --outFilterMatchNminOverLread 0 \
         --soloCellFilter EmptyDrops_CR \
-        --soloFeatures Gene GeneFull SJ Velocyto \
+        --outFilterMultimapNmax 50 \
         --soloMultiMappers EM
+
+
 
         gzip -qf {output.GENE}/raw/*
         gzip -qf {output.GENE}/filtered/*
 
         gzip -qf {output.GENEFULL}/raw/*
         gzip -qf {output.GENEFULL}/filtered/*
-
-        gzip -qf {output.SJ}/raw/*
-
-        gzip -qf {output.VEL}/raw/*
-        gzip -qf {output.VEL}/filtered/*
         """
 
 # rule STARsolo_miRNA_align:
-        #TODO integrate miRNA into tRNA alignment?
+        #TODO
 
 # rule STARsolo_rRNA_align:
-        #TODO generate reference
+        #TODO
 
 ## TODO:
 # - change input fastqs
@@ -219,11 +210,9 @@ rule STARsolo_align:
         --readFilesIn {params.R2_FQ} {params.R1_FQ} \
         --clipAdapterType CellRanger4 \
         --outReadsUnmapped Fastx \
-        --outFilterMismatchNoverLmax 0.05 \
-        --outFilterMatchNmin 18 \
-        --outFilterMatchNminOverLread 0 \
-        --outFilterScoreMinOverLread 0 \
-        --outFilterMultimapNmax 50 \
+        --outFilterMatchNminOverLread 0.25 \
+        --outFilterScoreMinOverLread 0.25 \
+        --outFilterMultimapNmax 100 \
         --soloType CB_UMI_Simple \
         --soloCBwhitelist {input.CB_WHITELIST} \
         --soloCellFilter EmptyDrops_CR \
@@ -241,6 +230,8 @@ rule STARsolo_align:
         gzip -qf {output.VEL}/raw/*
         gzip -qf {output.VEL}/filtered/*
         """
+        # --outFilterMatchNmin 16 \
+        # --outFilterMismatchNoverLmax 0.05 \
 
 #TODO- add in all STARsolo outputs to this rule, or repeat this rule for each output to improve runtime flexibility
 rule indexBAM:
