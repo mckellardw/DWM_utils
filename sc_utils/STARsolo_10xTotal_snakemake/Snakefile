@@ -101,6 +101,9 @@ rule gunzipWhitelist:
 
 ## Notes on tRNA alignment parameters:
 # - Multimap settings are important (~5X as many reads retained) b/c of similar sequences
+
+#TODO:
+
 rule starSOLO_tRNA_align:
     input:
         CB_WHITELIST = config['CB_WHITELIST']
@@ -115,14 +118,14 @@ rule starSOLO_tRNA_align:
     params:
         R1_FQ = lambda wildcards: R1_FQS[wildcards.sample],
         R2_FQ = lambda wildcards: R2_FQS[wildcards.sample],
-        OUTDIR = config['OUTDIR'],
+        OUTDIR = config['OUTDIR']+"/tRNA",
         STAR_EXEC = config['STAR_EXEC'],
-        STAR_REF = config['STAR_REF'],
+        STAR_REF_tRNA = config['STAR_REF_tRNA'],
         UMIlen = config['UMIlen'],
         MEMLIMIT = config['MEMLIMIT']
     threads:
         config['CORES']
-    shell: 
+    shell:
         """
         mkdir -p {params.OUTDIR}/{wildcards.sample}_STARsolo
 
@@ -149,8 +152,6 @@ rule starSOLO_tRNA_align:
         --outFilterMultimapNmax 50 \
         --soloMultiMappers EM
 
-
-
         gzip -qf {output.GENE}/raw/*
         gzip -qf {output.GENE}/filtered/*
 
@@ -158,8 +159,67 @@ rule starSOLO_tRNA_align:
         gzip -qf {output.GENEFULL}/filtered/*
         """
 
-# rule STARsolo_miRNA_align:
-        #TODO
+rule STARsolo_miRNA_align:
+    ## Notes on tRNA alignment parameters:
+    # - Multimap settings are important (~5X as many reads retained) b/c of similar sequences
+    rule starSOLO_tRNA_align:
+        input:
+            CB_WHITELIST = config['CB_WHITELIST'],
+            R1_FQ = '{OUTDIR}/{sample}_STARsolo/tRNA/Unmapped.out.mate1',
+            R2_FQ = '{OUTDIR}/{sample}_STARsolo/tRNA/Unmapped.out.mate2'
+        output: #TODO- add more output files?
+            SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam',
+            GENE = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/Gene'),
+            GENEFULL = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/GeneFull'),
+            GENEMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/raw/matrix.mtx.gz',
+            GENEFULLMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz'
+        params:
+            R1_FQ = lambda wildcards: R1_FQS[wildcards.sample],
+            R2_FQ = lambda wildcards: R2_FQS[wildcards.sample],
+            OUTDIR = config['OUTDIR']+"/miRNA",
+            STAR_EXEC = config['STAR_EXEC'],
+            STAR_REF = config['STAR_REF_miRNA'],
+            UMIlen = config['UMIlen'],
+            MEMLIMIT = config['MEMLIMIT']
+        threads:
+            config['CORES']
+        shell:
+            """
+            mkdir -p {params.OUTDIR}/{wildcards.sample}_STARsolo
+
+            {params.STAR_EXEC} \
+            --runThreadN {threads} \
+            --outFileNamePrefix {params.OUTDIR}/{wildcards.sample}_STARsolo/ \
+            --outSAMtype BAM SortedByCoordinate \
+            --outSAMattributes All \
+            --readFilesCommand zcat \
+            --genomeDir {params.STAR_REF} \
+            --genomeLoad LoadAndKeep \
+            --limitBAMsortRAM={params.MEMLIMIT} \
+            --readFilesIn {input.R2_FQ} {input.R1_FQ} \
+            --clipAdapterType CellRanger4 \
+            --outReadsUnmapped Fastx \
+            --soloType CB_UMI_Simple \
+            --soloCBwhitelist {input.CB_WHITELIST} \
+            --soloFeatures Gene GeneFull \
+            --outFilterMismatchNoverLmax 0.05 \
+            --outFilterMatchNmin 16 \
+            --outFilterScoreMinOverLread 0 \
+            --outFilterMatchNminOverLread 0 \
+            --soloCellFilter EmptyDrops_CR \
+            --outFilterMultimapNmax 50 \
+            --soloMultiMappers EM
+
+            mv {OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1 {output.UNMAPPED1}
+            mv {OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2 {output.UNMAPPED2}
+
+            gzip -qf {output.GENE}/raw/*
+            gzip -qf {output.GENE}/filtered/*
+
+            gzip -qf {output.GENEFULL}/raw/*
+            gzip -qf {output.GENEFULL}/filtered/*
+            """
+
 
 # rule STARsolo_rRNA_align:
         #TODO
@@ -169,8 +229,8 @@ rule starSOLO_tRNA_align:
 # - adjust alignment parameters
 rule STARsolo_align:
     input:
-        # R1_FQ = lambda wildcards: R1_FQS[wildcards.sample],
-        # R2_FQ = lambda wildcards: R2_FQS[wildcards.sample],
+        UNMAPPED1 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1.tRNA.fq',
+        UNMAPPED2 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2.tRNA.fq',
         CB_WHITELIST = config['CB_WHITELIST']
     output: #TODO- add more output files?
         SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam',
@@ -185,8 +245,8 @@ rule STARsolo_align:
         SJMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/SJ/raw/matrix.mtx.gz',
         VELMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz'
     params:
-        R1_FQ = lambda wildcards: R1_FQS[wildcards.sample],
-        R2_FQ = lambda wildcards: R2_FQS[wildcards.sample],
+        # R1_FQ = lambda wildcards: R1_FQS[wildcards.sample],
+        # R2_FQ = lambda wildcards: R2_FQS[wildcards.sample],
         OUTDIR = config['OUTDIR'],
         STAR_EXEC = config['STAR_EXEC'],
         STAR_REF = config['STAR_REF'],
