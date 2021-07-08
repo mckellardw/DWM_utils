@@ -25,8 +25,11 @@ from Bio import SeqIO
 
 print("Using the file '" + sys.argv[1] + "' as a tRNA database...")
 
+# grab input fasta
 if os.path.exists(sys.argv[1]):
     f = open(sys.argv[1], "r")
+else:
+    print(".fasta file doesn't exist! Try again...")
 
 fasta = list(SeqIO.parse(f, "fasta"))
 
@@ -35,18 +38,27 @@ print("     File contains " + str(num_tRNAs) + " records...")
 
 # Build GFF file
 ## source: https://biopython.org/wiki/GFF_Parsing
-
+## source: http://biopython.org/DIST/docs/tutorial/Tutorial.html#sec36
 from BCBio import GFF
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 import re
 
-print("     Building GFF file...")
+out_file = sys.argv[2]
 
-for i in list(range(0,2)):
+print("     Building GFF file '" + out_file + "'...")
 
-    print(re.findall(r":[-+]?\d*\-", fasta[i].description))
+# initialize .gtf file
+tmp_file = open(out_file, "w+")
+tmp_file.write("##description: tRNA-only reference\n##provider: GtRNADB\n##format: gtf\n")
+tmp_file.close()
+
+# for i in list(range(0,5)):
+for i in list(range(0,num_tRNAs)):
+
+    # print(i)
+    # print(re.findall(r'\((.*?)\)', fasta[i].description)[-1])
 
     id = fasta[i].id
     rec = SeqRecord(fasta[i].seq, fasta[i].id)
@@ -58,20 +70,31 @@ for i in list(range(0,2)):
         "ID": fasta[i].id,
     }
 
-    chrom = re.findall(r"chr?\S*:", fasta[i].description)[0][0:-1]
-    strand = re.findall(r'\((.*?)\)', fasta[i].description)[-1]+'1'
+    # real genomic start/end positions, chrom, and strand
+    # start = re.findall(r":[-+]?\d*\-", fasta[i].description)[0][1:-1]
+    # end = re.findall(r":[-+]?\d*\-+", fasta[i].description)[0][1:-1]
+    # chrom = re.findall(r"chr?\S*:", fasta[i].description)[0][0:-1]
+    # strand = re.findall(r'\((.*?)\)', fasta[i].description)[-1]
 
-    start = re.findall(r":[-+]?\d*\-", fasta[i].description)[0][1:-1]
-    stop = re.findall(r":[-+]?\d*\-+", fasta[i].description)[0][1:-1]
+    # artificial values to match the tRNA-only reference
+    start = 1
+    end = len(fasta[i].seq)
+    chrom = fasta[i].id
+    strand = "+"
 
-    print(strand)
+    top_feature = SeqFeature(
+        FeatureLocation(int(start), int(end)),
+        type="tRNA",
+        strand=int(strand+'1'),
+        qualifiers=qualifiers
+    )
+    rec.features = [top_feature]
 
-    # top_feature = SeqFeature(
-    #     FeatureLocation(int(start), int(stop)), type="tRNA", strand=strand, qualifiers=qualifiers
-    # )
-    # rec.features = [top_feature]
+    # buld string to write using rec
+    to_write = chrom+"\t"+"GtRNADB"+"\t"+"exon"+"\t"+str(start)+"\t"+str(end)+"\t"+qualifiers['score'][0]+"\t"+str(strand)+"\t"+"0"+"\t"+ "gene_name "+ str(rec.id)+"; transcript_name "+ str(rec.id)+"; gene_biotype 'tRNA'\n"
+    # print(to_write)
+    tmp_file = open(out_file, "a")  # append mode
+    tmp_file.write(to_write)
+    tmp_file.close()
 
-out_file = sys.argv[2]
-
-with open(out_file, "w") as out_handle:
-    GFF.write([rec], out_handle)
+print("Done building "+out_file+"!")
