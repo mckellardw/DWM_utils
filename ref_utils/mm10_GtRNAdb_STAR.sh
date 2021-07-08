@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-NCORES=15
+NCORES=30
 STAR_EXEC=/programs/STAR/STAR #biohpc current version of STAR
 
 DATADIR=/workdir/dwm269/genomes/mm10_all/GtRNAdb
@@ -19,11 +19,24 @@ cd ${DATADIR}
 
 FASTA=${DATADIR}"/mm10-tRNAs.fa"
 
+# Build custom annotations file from the .fasta
+TRNA_ANNOTATIONS=${DATADIR}"/mm10-tRNAs.gff"
+/home/dwm269/miniconda3/envs/STARsolo/bin/python /home/dwm269/DWM_utils/ref_utils/scripts/build_GtRNAdb_gtf.py ${FASTA} ${TRNA_ANNOTATIONS}
+
+ReadLengthMinus1=54
+
 cd ${OUTDIR}
 
 ${STAR_EXEC} \
 --runThreadN ${NCORES} \
 --runMode genomeGenerate \
 --genomeDir ${OUTDIR} \
+--sjdbGTFtagExonParentTranscript Parent \
 --genomeSAindexNbases 6 \
---genomeFastaFiles ${FASTA}
+--genomeFastaFiles ${FASTA} \
+--sjdbGTFfile ${TRNA_ANNOTATIONS} \
+--sjdbOverhang ${ReadLengthMinus1}
+
+
+
+#
