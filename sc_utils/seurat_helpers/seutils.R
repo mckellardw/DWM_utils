@@ -192,3 +192,29 @@ ConvertHumanGeneListToMM <- function(x){
   # print(head(mouse.gene.list))
   return(mouse.gene.list)
 }
+
+
+# Add a new ident seurat metadata filed) based on a list of cell types
+#
+#     object:     seurat object
+#     old.idents: name of the idents metadata you will be assigning cell types to
+#     new.idents: vector of cell types, in order of cluster number
+#     newName:    string of the new idents name
+#
+AddCellTypeIdents <- function(seu=NULL, old.name, new.name=NULL, new.idents, verbose=FALSE){
+  old.idents = as.vector(names(table(seu[[old.name]])))
+
+  if(is.null(new.name)){
+    cat("**Need a new.name for the new idents**\n")
+  }else{
+    seu[[new.name]] <- as.vector(seu[[old.name]])
+    for(i in 1:length(old.idents)){
+      if(verbose){cat("Adding ", new.idents[i],"...", sep = "")}
+      seu[[new.name]][ seu[[new.name]]==old.idents[i] ] <- new.idents[i]
+      if(verbose){cat("Done!\n", sep = "")}
+    }
+  }
+
+   return(seu)
+
+}
