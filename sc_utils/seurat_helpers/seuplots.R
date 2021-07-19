@@ -13,16 +13,16 @@
   "GeomSplitViolin",
   GeomViolin,
   draw_group = function(self, data, ..., draw_quantiles = NULL) {
-    
+
     data <-
       transform(
         data,
         xminv = x - violinwidth * (x - xmin),
         xmaxv = x + violinwidth * (xmax - x)
       )
-    
+
     grp <- data[1, "group"]
-    
+
     newdata <-
       plyr::arrange(transform(data, x = if (grp %% 2 == 1)
         xminv
@@ -30,11 +30,11 @@
           xmaxv), if (grp %% 2 == 1)
             y
         else-y)
-    
+
     newdata <- rbind(newdata[1,], newdata, newdata[nrow(newdata),], newdata[1,])
-    
+
     newdata[c(1, nrow(newdata) - 1, nrow(newdata)), "x"] <- round(newdata[1, "x"])
-    
+
     if (length(draw_quantiles) > 0 &
         !scales::zero_range(range(data$y))) {
       stopifnot(all(draw_quantiles >= 0), all(draw_quantiles <=
@@ -235,8 +235,10 @@ visListPlot <- function(
   seu.list,
   features=NULL,
   alt.titles=NULL, # alternative titles for genes/features being passed
+  sample.titles=NULL, # Sample IDs (y-axis labels)
   assay='Spatial',
   reduction="space",
+  slot="data",
   legend.position="bottom",
   pt.size=1,
   font.size=8
@@ -244,13 +246,13 @@ visListPlot <- function(
   require(Seurat)
   require(ggplot2)
   require(viridis)
-  
+
   cat("Plotting Visium data!\n")
-  
+
   if(is.null(alt.titles)){
     alt.titles=features
   }
-  
+
   seu.list <- lapply(
     seu.list,
     FUN = function(SEU){
@@ -258,8 +260,8 @@ visListPlot <- function(
       return(SEU)
     }
   )
-  
-  # Get expression limits for each gene, across all datasets 
+
+  # Get expression limits for each gene, across all datasets
   gene.lims <- lapply(
     features,
     FUN = function(FEAT){
@@ -270,7 +272,7 @@ visListPlot <- function(
       return(c(0,out.max))
     }
   )
-  
+
   plot.list <- list()
   for(i in 1:length(features)){
     tmp <- lapply(
@@ -278,12 +280,12 @@ visListPlot <- function(
       FUN = function(SEU)
         FeaturePlot(
           SEU,
-          slot ="data",
+          slot = slot,
           features = features[i],
           pt.size = pt.size,
           reduction=reduction
         ) +
-        scale_color_viridis(limits=unlist(gene.lims[i]), na.value = gray(0.42))+ 
+        scale_color_viridis(limits=unlist(gene.lims[i]), na.value = gray(0.42))+
         theme(
           plot.margin = unit(rep(0,4), "inches"),
           axis.ticks = element_blank(),
@@ -303,23 +305,26 @@ visListPlot <- function(
       labs(title=alt.titles[i])
     plot.list[[i]] <- tmp
   }
-  
-  #TODO - generalize this
-  injury=c("D2", "D5", "D7")
+
+
   for(i in 1:length(plot.list[[1]]) ){
     plot.list[[1]][[i]] <- plot.list[[1]][[i]] +
-      labs(y=injury[i]) +
       theme(axis.title.y = element_text(size=font.size, face="bold", color="black"))
+
+      if(!is.null(sample.titles)){ #add sample titles
+        plot.list[[1]][[i]] <- plot.list[[1]][[i]] +
+          labs(y=sample.titles[i])
+      }
   }
-  
+
   plot.list <- lapply(
     plot.list,
     FUN = function(X)
       wrap_plots(X, ncol=1, guides="collect")&theme(legend.position=legend.position, legend.margin = margin(0,0,0,0,"inches"))
   )
-  
+
   cat("Done plotting Visium data!\n")
-  
+
   return(
     wrap_plots(plot.list,nrow=1)
   )
@@ -335,8 +340,8 @@ visCoocVlnPlot<-function(
   assay.ct, #cell type assay
   slot.ge="data",
   features.lr, # ligand-receptor(in that order)  pair
-  features.ct=NULL, # 2 celltypes to compare 
-  bp.thresh=0.1, # Lower threshold for bayesprism theta values to determine presence of a cell type 
+  features.ct=NULL, # 2 celltypes to compare
+  bp.thresh=0.1, # Lower threshold for bayesprism theta values to determine presence of a cell type
   scale.data=T,
   scale.min=-2.5,
   scale.max=2.5,
@@ -349,7 +354,7 @@ visCoocVlnPlot<-function(
 ){
   require(ggplot2)
   require(dplyr)
-  
+
   #Check inputs
   if(is.null(features.lr)){
     message("Need genes to plot (features.lr)...")
@@ -359,7 +364,7 @@ visCoocVlnPlot<-function(
     message("Need 2 cell types to compare (features.ct)...")
     return(NULL)
   }
-  
+
   # build df
   df <- data.frame(
     cell=Cells(SEU),
@@ -367,26 +372,26 @@ visCoocVlnPlot<-function(
     GetAssayData(SEU, assay=assay.ct)[features.ct[1:2],]%>%t()
   )
   colnames(df)<-c("cell",features.lr[1:2],features.ct[1:2])
-  
+
   df$cooc <- rep("L-/R-",nrow(df))
-  
+
   df$cooc[df[features.ct[1]]>=bp.thresh & df[features.ct[2]]>=bp.thresh] <- "L+/R+" #both present
   df$cooc[df[features.ct[1]]>=bp.thresh & df[features.ct[2]]<bp.thresh] <- "L+/R-" #ligand cell type only
   df$cooc[df[features.ct[1]]<bp.thresh & df[features.ct[2]]>=bp.thresh] <- "L-/R+" # receptor cell type only
-  
+
   if(verbose){
     print(table(df$cooc))
   }
-  
+
   #TODO- scale gene expression data
   # if(scale.data){
   #   df[features.lr[1]] <- scale(x = df[features.lr[1]])
   #   df[features.lr[2]] <- scale(x = df[features.lr[2]])
-  #   
+  #
   #   df[features.lr[1]] <- MinMax(data = df[features.lr[1]], min = scale.min, max = scale.max)
   #   df[features.lr[2]] <- MinMax(data = df[features.lr[2]], min = scale.min, max = scale.max)
-  # } 
-  
+  # }
+
   # melt df for ggplot
   df <- reshape2::melt(
     df,
@@ -398,7 +403,7 @@ visCoocVlnPlot<-function(
     variable.name="gene",
     value.name = "log_norm_expr"
   )
-  
+
   # plot!
   out.plot <-ggplot(
     df,
@@ -418,9 +423,7 @@ visCoocVlnPlot<-function(
     theme(
       legend.position = "right",
       plot.title = element_text(color="black", face="bold")
-    ) 
-  
+    )
+
     return(out.plot)
 }
-
-

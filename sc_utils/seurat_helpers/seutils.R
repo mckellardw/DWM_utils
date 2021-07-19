@@ -27,6 +27,25 @@ npcs <- function(
   return(n.pcs)
 }
 
+# Check gene names for a pattern, using grep
+grepGenes <- function(
+  SEU,
+  pattern=NULL, # pattern to look for
+  filter.pattern=NULL # pattern to remove TODO
+){
+  if(is.null(pattern)){
+    message("Need a pattern to look for!")
+    return(NULL)
+  }
+  if(is.list(SEU)){
+    message("Don't pass a list!")
+    return(NULL)
+  }
+
+  return(
+    rownames(SEU)[grep(pattern=pattern,x=rownames(SEU))]
+  )
+}
 
 # Borrowed/adapted from the Marioni Lab, DropletUtils package (https://rdrr.io/github/MarioniLab/DropletUtils/src/R/write10xCounts.R)
 #   (Had R version issues getting it to work as a dependency)
