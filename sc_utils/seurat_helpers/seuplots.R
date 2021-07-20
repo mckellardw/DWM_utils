@@ -231,6 +231,7 @@ ggVolcano_v2 <- function(markers=NULL, expression=NULL,
 #############################################################################
 
 # Generate feature plots given a list of Visium/Seurat objects
+#TODO- add 'features' filtering step for genes not found in SEU
 visListPlot <- function(
   seu.list,
   features=NULL,
@@ -241,13 +242,14 @@ visListPlot <- function(
   slot="data",
   legend.position="bottom",
   pt.size=1,
-  font.size=8
+  font.size=8,
+  verbse=FALSE
 ){
   require(Seurat)
   require(ggplot2)
   require(viridis)
 
-  cat("Plotting Visium data!\n")
+  if(verbose){cat("Plotting Visium data!\n")}
 
   if(is.null(alt.titles)){
     alt.titles=features
@@ -267,7 +269,15 @@ visListPlot <- function(
     FUN = function(FEAT){
       out.max <- lapply(
         seu.list,
-        FUN = function(SEU) max(GetAssayData(SEU,assay=assay)[FEAT,])
+        FUN = function(SEU){
+          if(FEAT %in% rownames(SEU)){
+            return(max(GetAssayData(SEU,assay=assay)[FEAT,]))
+          }else if(FEAT %in% colnames(SEU@meta.data)){
+            return(max(SEU@meta.data[,FEAT]))
+          }else{
+            message(FEAT, " not found!")
+          }
+        }
       ) %>% unlist() %>% max()
       return(c(0,out.max))
     }
@@ -323,7 +333,7 @@ visListPlot <- function(
       wrap_plots(X, ncol=1, guides="collect")&theme(legend.position=legend.position, legend.margin = margin(0,0,0,0,"inches"))
   )
 
-  cat("Done plotting Visium data!\n")
+  if(verbose){cat("Done plotting Visium data!\n")}
 
   return(
     wrap_plots(plot.list,nrow=1)
