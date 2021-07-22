@@ -90,7 +90,6 @@ write_sparse <- function(
   return(NULL)
 }
 
-
 # TODO- haven't used this in a while, make sure it works...
 # calculate entropy across groups in a seurat object
 #     output: returns data.frame ("group.by" rows by 1 col)
@@ -145,7 +144,6 @@ sc_entropy <- function(
   return(entropy.out)
 }
 
-
 # Calculate silhouette
 seu_silhouette <- function(
   SEU,
@@ -179,7 +177,6 @@ seu_silhouette <- function(
   return(SEU)
 }
 
-
 # Basic function to convert human to mouse gene names
 #   From @leonfodoulian (https://github.com/satijalab/seurat/issues/462)
 #   https://www.r-bloggers.com/converting-mouse-to-human-gene-names-with-biomart-package/
@@ -212,7 +209,6 @@ ConvertHumanGeneListToMM <- function(x){
   return(mouse.gene.list)
 }
 
-
 # Add a new ident seurat metadata filed) based on a list of cell types
 #
 #     object:     seurat object
@@ -236,4 +232,93 @@ AddCellTypeIdents <- function(seu=NULL, old.name, new.name=NULL, new.idents, ver
 
    return(seu)
 
+}
+
+# Run PHATE on reduction, with a Seurat objects
+seuPHATE <- function(
+  SEU=NULL,
+  reduction="pca",
+  ndims=50,
+  reduction.name=NULL,
+  reduction.key=NULL,
+  # phate() defaults
+  ndim = 2,
+  knn = 5,
+  decay = 40,
+  n.landmark = 2000,
+  gamma = 1,
+  t = "auto",
+  mds.solver = "sgd",
+  knn.dist.method = "euclidean",
+  knn.max = NULL,
+  init = NULL,
+  mds.method = "metric",
+  mds.dist.method = "euclidean",
+  t.max = 100,
+  npca = 100,
+  plot.optimal.t = FALSE,
+  verbose = 1,
+  n.jobs = 1,
+  seed = NULL,
+  potential.method = NULL,
+  k = NULL,
+  alpha = NULL,
+  use.alpha = NULL
+){
+  require(Seurat)
+  require(phateR)
+
+  dims <- SEU@reductions[[reduction]]@stdev %>% order(decreasing = T)
+  dims <- dims[1:ndims]
+
+  # run PHATE
+  tmp.phate <- phate(
+    SEU@reductions[[reduction]]@cell.embeddings[,dims], #cells x reduc dims
+    ndim = ndim,
+    knn = knn,
+    decay = decay,
+    n.landmark = n.landmark,
+    gamma = gamma,
+    t = t,
+    mds.solver = mds.solver,
+    knn.dist.method = knn.dist.method,
+    knn.max = knn.max,
+    init = init,
+    mds.method = mds.method,
+    mds.dist.method = mds.dist.method,
+    t.max = t.max,
+    npca = npca,
+    plot.optimal.t = plot.optimal.t,
+    verbose = verbose,
+    n.jobs = n.jobs,
+    seed = seed,
+    potential.method = potential.method,
+    k = k,
+    alpha = alpha,
+    use.alpha = use.alpha
+  )
+
+  # Set reduction name & key for SEU
+  if(is.null(reduction.name)){
+    reduction.name <- paste0("phate_",reduction)
+  }
+  if(is.null(reduction.key)){
+    reduction.key <- paste0("phate_",reduction,"_")
+  }
+
+  colnames(tmp.phate$embedding) <- paste0(reduction.key, 1:2)
+  tmp.phate$params$data <- NULL
+
+  SEU[[reduction.name]] <- CreateDimReducObject(
+    embeddings = tmp.phate$embedding,
+    key = reduction.key,
+    assay = 'RNA',
+    misc = tmp.phate$params
+  )
+
+  # Add std dev to reduction
+  SEU@reductions[[reduction]]@stdev <-
+    apply(SEU@reductions[[reduction.name]]@cell.embeddings, 2, sd) #find std dev for phate vals
+
+  return(SEU)
 }

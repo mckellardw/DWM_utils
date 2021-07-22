@@ -231,7 +231,6 @@ ggVolcano_v2 <- function(markers=NULL, expression=NULL,
 #############################################################################
 
 # Generate feature plots given a list of Visium/Seurat objects
-#TODO- add 'features' filtering step for genes not found in SEU
 visListPlot <- function(
   seu.list,
   features=NULL,
@@ -243,7 +242,7 @@ visListPlot <- function(
   legend.position="bottom",
   pt.size=1,
   font.size=8,
-  verbse=FALSE
+  verbose=FALSE
 ){
   require(Seurat)
   require(ggplot2)
