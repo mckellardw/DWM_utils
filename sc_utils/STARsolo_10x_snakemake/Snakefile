@@ -176,7 +176,7 @@ rule unmapped_fastqc:
         """
 
 # Only BLAST R1, which contains the insert (converts .fq to .fa, then removes the .fa file)
-## TODO: add a demux step beforehand to reduce blast runtime
+## TODO: change demux step to fastx-collapser
 rule blast_unmapped:
     input:
         UNMAPPED1_FQ = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1.fastq'
