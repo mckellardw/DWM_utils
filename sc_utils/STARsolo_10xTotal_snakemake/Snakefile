@@ -3,7 +3,7 @@
 #   Snakemake workflow to use STARsolo to align and quantify 10x Chromium datasets
 #   v1.0
 #   Written by David McKellar
-#   Last edited: 7/1/21, DWM
+#   Last edited: 7/23/21, DWM
 ########################################################################################################
 
 import pdb

@@ -20,7 +20,7 @@ UMIlen: 12 #v2=__, v3=12
 ########################################################################################################
 # DATADIR: /workdir/dwm269/totalRNA/data/cr_count/mm10 # directory where cellranger_count outputs are stored - be sure to use an absolute path (starting with root)
 TMPDIR: tmp # directory for temporary files
-OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/mm10_GENCODEM25_exon
+OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM27
 
 ########################################################################################################
 # Executables - file paths
@@ -34,5 +34,5 @@ BLASTDB: /shared_data/genome_db/BLAST_NCBI # path to where the nt BLAST database
 ########################################################################################################
 # Resources - file paths
 ########################################################################################################
-STAR_REF: /workdir/dwm269/genomes/mm10_all/mm10_STAR_GENCODEM25_exon # path to STAR-formatted reference genome
+STAR_REF: /workdir/dwm269/genomes/mm39_all/GRCm39_STAR_GENCODEM27 # path to STAR-formatted reference genome
 CB_WHITELIST: resources/barcodes_10x/3M-february-2018.txt # path to cell barcodes (CB) whitelist, gunzipped (without the .gz extension) - https://kb.10xgenomics.com/hc/en-us/articles/115004506263-What-is-a-barcode-whitelist-
