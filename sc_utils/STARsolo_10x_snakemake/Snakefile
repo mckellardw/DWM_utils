@@ -112,6 +112,7 @@ rule STARsolo_align:
         --limitBAMsortRAM={params.MEMLIMIT} \
         --readFilesIn {params.R2_FQ} {params.R1_FQ} \
         --clipAdapterType CellRanger4 \
+        --readFilesSAMattrKeep All \
         --outReadsUnmapped Fastx \
         --outFilterMismatchNoverLmax 0.05 \
         --outFilterMatchNmin 18 \
