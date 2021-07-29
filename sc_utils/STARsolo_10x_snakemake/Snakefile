@@ -105,6 +105,7 @@ rule STARsolo_align:
         --runThreadN {threads} \
         --outFileNamePrefix {params.OUTDIR}/{wildcards.sample}_STARsolo/ \
         --outSAMtype BAM SortedByCoordinate \
+        --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
         --readFilesCommand zcat \
         --soloUMIlen {params.UMIlen} \
         --genomeDir {params.STAR_REF} \
@@ -112,7 +113,6 @@ rule STARsolo_align:
         --limitBAMsortRAM={params.MEMLIMIT} \
         --readFilesIn {params.R2_FQ} {params.R1_FQ} \
         --clipAdapterType CellRanger4 \
-        --readFilesSAMattrKeep All \
         --outReadsUnmapped Fastx \
         --outFilterMismatchNoverLmax 0.05 \
         --outFilterMatchNmin 18 \
