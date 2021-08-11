@@ -45,6 +45,7 @@ rule all:
     input:
         # expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/filtered/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES)
         # expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES)
+        expand('{OUTDIR}/{sample}_STARsolo/fastqc_out/{sample}_R2_trimmed.fq.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA-trimmed r2 fastq & fastQC results
         expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
         expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), # count mats
         expand('{OUTDIR}/{sample}_STARsolo/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
@@ -148,6 +149,51 @@ rule indexBAM:
         """
         samtools index -@ {threads} {input.SORTEDBAM}
         """
+
+#############################################
+## FastQC on R2
+#############################################
+rule trimToFastQC:
+    output:
+        fastqcDir = directory('{OUTDIR}/{sample}_STARsolo/fastqc_out'),
+        trimmedFQ = '{OUTDIR}/{sample}_STARsolo/fastqc_out/{sample}_R2_trimmed.fq.gz'
+        # fastqcReport = ''
+    params:
+        R2_FQ = lambda wildcards: R2_FQS[wildcards.sample],
+        SAMPLE = '{sample}',
+        THREE_PRIME = "A"*55, # annoying snakemake/cutadapt bracket usage disagreement...
+        FIVE_PRIME = "CCCATGTACTCTGCGTTGATACCACTGCTT"
+    threads:
+        config['CORES']
+        # min([config['CORES'],8]) # 8 core max based on recommendations from trim_galore authors
+    shell:
+        """
+        mkdir -p {output.fastqcDir}
+        cd {output.fastqcDir}
+
+        cutadapt \
+        --minimum-length 10 \
+        -a {params.THREE_PRIME} \
+ 		-g {params.FIVE_PRIME} \
+ 		-o {output.trimmedFQ} \
+        --cores {threads} \
+        {params.R2_FQ}
+
+        fastqc \
+        --outdir {output.fastqcDir} \
+        --threads {threads} \
+        {output.trimmedFQ}
+        """
+        #*Note- tried `--polyA` flag in trim_galore with no luck, unfortunately...
+        # trim_galore \
+        # --length 10 \
+        # --cores {threads} \
+        # --basename {params.SAMPLE}_R2 \
+        # --nextera \
+        # --polyA \
+        # --phred33 \
+        # {params.R2_FQ}
+
 
 #############################################
 ## Unmapped read analyses
