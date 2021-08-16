@@ -11,8 +11,8 @@
 # SAMPLE_SHEET: sample_sheets/Vis_yPAP1-sample_sheet.csv
 # SAMPLE_SHEET: sample_sheets/C2Cnuc_yPAP-sample_sheet.csv
 # SAMPLE_SHEET: sample_sheets/All_yPAP_chromium-sample_sheet.csv
-# SAMPLE_SHEET: sample_sheets/All_primary_yPAP_chromium-sample_sheet.csv
-SAMPLE_SHEET: sample_sheet.csv
+SAMPLE_SHEET: sample_sheets/All_primary_yPAP_chromium-sample_sheet.csv
+# SAMPLE_SHEET: sample_sheet.csv
 
 # STARsolo parameters
 CORES: 15 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
