@@ -44,7 +44,8 @@ rule all:
     input:
         # expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/filtered/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         # expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        expand('{OUTDIR}/{sample}_STARsolo/fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA-trimmed r2 fastq & fastQC results
+        expand('{OUTDIR}/{sample}_STARsolo/preTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # raw R2 fastQC results
+        expand('{OUTDIR}/{sample}_STARsolo/postTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
         expand('{OUTDIR}/{sample}_STARsolo/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap
         expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
         expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), # count mats
@@ -89,6 +90,27 @@ rule merge_fastqs:
             shell("zcat {params.R1_FQ} > {params.TMP_DIR}/{wildcards.sample}_R1.fq")
             shell("zcat {params.R2_FQ} > {params.TMP_DIR}/{wildcards.sample}_R2.fq")
             shell("gzip {params.TMP_DIR}/*.fq")
+
+rule preTrim_FastQC_R2:
+    input:
+        MERGED_R2_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2.fq.gz'
+    output:
+        fastqcDir = directory('{OUTDIR}/{sample}_STARsolo/preTrim_fastqc_R2_out'),
+        # fastqcReport = ''
+    threads:
+        config['CORES']
+        # min([config['CORES'],8]) # 8 core max based on recommendations from trim_galore authors
+    shell:
+        """
+        mkdir -p {output.fastqcDir}
+        cd {output.fastqcDir}
+
+        fastqc \
+        --outdir {output.fastqcDir} \
+        --threads {threads} \
+        {input.MERGED_R2_FQ}
+        """
+
 
 rule trimPolyA_R2:
     input:
@@ -163,11 +185,11 @@ rule trimPolyG_R2:
         # --phred33 \
         # {params.R2_FQ}
 
-rule FastQC_R2:
+rule postTrim_FastQC_R2:
     input:
         FINAL_R2_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2_final.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{sample}_STARsolo/fastqc_R2_out'),
+        fastqcDir = directory('{OUTDIR}/{sample}_STARsolo/postTrim_fastqc_R2_out'),
         # fastqcReport = ''
     threads:
         config['CORES']
