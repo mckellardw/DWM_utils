@@ -13,7 +13,15 @@ CHINFO=$4 #path to genome chrom.sizes
 
 PREFIX=`echo ${INBAM} | rev | cut -d / -f 1 |cut -d . -f 2- |rev`
 
-echo ${PREFIX}
+echo ".bam file location:    "${INBAM}
+echo "Max cores:             "${CORE}
+echo "Output location:       "${OUTDIR}
+echo "Chromosome size info:  "${CHINFO}
+echo
+echo
+
+mkdir -p ${OUTDIR}
+touch ${OUTDIR}/bam2splitBigWig.kill.warnings
 
 # convert bam to bed &  split for strandedness
 echo "Converting to bed and splitting..."
