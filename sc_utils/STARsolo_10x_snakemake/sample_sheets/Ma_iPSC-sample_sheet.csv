@@ -1,0 +1,12 @@
+sampleID,fastq_R1,fastq_R2,SRR
+D0,/workdir/dwm269/ma_ipsc/data/fastqs/D0/D0_S1_L001_R1_001.fastq.gz,/workdir/dwm269/ma_ipsc/data/fastqs/D0/D0_S1_L001_R2_001.fastq.gz,
+D1,/workdir/dwm269/ma_ipsc/data/fastqs/D1/D1_S1_L001_R1_001.fastq.gz,/workdir/dwm269/ma_ipsc/data/fastqs/D1/D1_S1_L001_R2_001.fastq.gz,
+D4,/workdir/dwm269/ma_ipsc/data/fastqs/D4/D4_S1_L001_R1_001.fastq.gz,/workdir/dwm269/ma_ipsc/data/fastqs/D4/D4_S1_L001_R2_001.fastq.gz,
+D6,/workdir/dwm269/ma_ipsc/data/fastqs/D6/D6_S1_L001_R1_001.fastq.gz,/workdir/dwm269/ma_ipsc/data/fastqs/D6/D6_S1_L001_R2_001.fastq.gz,
+D8,/workdir/dwm269/ma_ipsc/data/fastqs/D8/D8_S1_L001_R1_001.fastq.gz,/workdir/dwm269/ma_ipsc/data/fastqs/D8/D8_S1_L001_R2_001.fastq.gz,
+D12,/workdir/dwm269/ma_ipsc/data/fastqs/D12/D12_S1_L001_R1_001.fastq.gz,/workdir/dwm269/ma_ipsc/data/fastqs/D12/D12_S1_L001_R2_001.fastq.gz,
+D21,/workdir/dwm269/ma_ipsc/data/fastqs/D21/D21_S1_L001_R1_001.fastq.gz,/workdir/dwm269/ma_ipsc/data/fastqs/D21/D21_S1_L001_R2_001.fastq.gz,
+D4_SmallPattern,/workdir/dwm269/ma_ipsc/data/fastqs/D4_SmallPattern/D4_SmallPattern_S1_L001_R1_001.fastq.gz,/workdir/dwm269/ma_ipsc/data/fastqs/D4_SmallPattern/D4_SmallPattern_S1_L001_R2_001.fastq.gz,
+D4_LargePattern,/workdir/dwm269/ma_ipsc/data/fastqs/D4_LargePattern/D4_LargePattern_S1_L001_R1_001.fastq.gz,/workdir/dwm269/ma_ipsc/data/fastqs/D4_LargePattern/D4_LargePattern_S1_L001_R2_001.fastq.gz,
+D21_SmallPattern,/workdir/dwm269/ma_ipsc/data/fastqs/D21_SmallPattern/D21_SmallPattern_S1_L001_R1_001.fastq.gz,/workdir/dwm269/ma_ipsc/data/fastqs/D21_SmallPattern/D21_SmallPattern_S1_L001_R2_001.fastq.gz,
+D21_LargePattern,/workdir/dwm269/ma_ipsc/data/fastqs/D21_LargePattern/D21_LargePattern_S1_L001_R1_001.fastq.gz,/workdir/dwm269/ma_ipsc/data/fastqs/D21_LargePattern/D21_LargePattern_S1_L001_R2_001.fastq.gz,

@@ -4,14 +4,14 @@
 # bash bam2splitBigWig /path/to/file.bam num_cores /path/to/outdir /path/to/genome.chrom.sizes
 
 # bam2splitBigWig (v1.0) - input a .bam file, output two bigWig files (one for each strand, positive/negative)
-#                        - Also outputs bigwigs in log scale (IGV can't handle )
+#                        - Also outputs bigwigs in log scale (IGV can't handle log w/ neg strand)
 
-INBAM=$1 #path to .bam file (sorted & indexed already!)
+INBAM=$1 # path to .bam file (sorted & indexed already!)
 CORE=$2 # number of cores for parallelization
-OUTDIR=$3 #DWM; cellranger count directory path & output directory
-CHINFO=$4 #path to genome chrom.sizes
+OUTDIR=$3 # output directory
+CHINFO=$4 # path to genome chrom.sizes
 
-PREFIX=`echo ${INBAM} | rev | cut -d / -f 1 |cut -d . -f 2- |rev`
+PREFIX=`echo ${INBAM} | rev | cut -d / -f 1 | cut -d . -f 2- | rev`
 
 echo ".bam file location:    "${INBAM}
 echo "Max cores:             "${CORE}
@@ -24,7 +24,7 @@ mkdir -p ${OUTDIR}
 touch ${OUTDIR}/bam2splitBigWig.kill.warnings
 
 # convert bam to bed &  split for strandedness
-echo "Converting to bed and splitting..."
+echo "Converting to bed and splitting strands..."
 # bedtools bamtobed -i ${INBAM} | gzip > ${OUTDIR}/${PREFIX}.bed.gz
 
 bedtools bamtobed -i ${INBAM}  2> ${OUTDIR}/bam2splitBigWig.kill.warnings | \
@@ -38,8 +38,7 @@ bedtools bamtobed -i ${INBAM}  2> ${OUTDIR}/bam2splitBigWig.kill.warnings | \
 # Not stranded
 # bedtools genomecov -bg -i ${OUTDIR}/${PREFIX}.bed.gz -g ${CHINFO} > ${OUTDIR}/${PREFIX}.bedGraph
 
-
-echo "Converting to bedGraph and splitting strands..."
+echo "Converting to bedGraph..."
 # Stranded
 bedtools genomecov -bg -i ${OUTDIR}/${PREFIX}.bed.gz -g ${CHINFO} -strand + > ${OUTDIR}/${PREFIX}\_plus.bedGraph
 bedtools genomecov -bg -i ${OUTDIR}/${PREFIX}.bed.gz -g ${CHINFO} -strand - > ${OUTDIR}/${PREFIX}\_minus.noinv.bedGraph

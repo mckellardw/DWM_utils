@@ -242,6 +242,9 @@ visListPlot <- function(
   legend.position="bottom",
   pt.size=1,
   font.size=8,
+  combine=TRUE,
+  nrow=NULL,
+  ncol=NULL,
   verbose=FALSE
 ){
   require(Seurat)
@@ -334,9 +337,18 @@ visListPlot <- function(
 
   if(verbose){cat("Done plotting Visium data!\n")}
 
-  return(
-    wrap_plots(plot.list,nrow=1)
-  )
+  if(combine){
+    return(
+      wrap_plots(
+        plot.list,
+        nrow=nrow,
+        ncol=ncol
+      )
+    )
+  }else{
+    return(plot.list)
+  }
+
 }
 
 
