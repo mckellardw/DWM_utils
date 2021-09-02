@@ -8,7 +8,8 @@
 #     For multi-lane inputs, use the following format (from STARsolo github page):
 #       --readFilesIn Read2_Lane1.fastq.gz,Read2_Lane2.fastq.gz,Read2_Lane3.fastq.gz  Read1_Lane1.fastq.gz,Read1_Lane2.fastq.gz,Read1_Lane3.fastq.gz
 
-SAMPLE_SHEET: sample_sheet.csv
+# SAMPLE_SHEET: sample_sheet.csv
+SAMPLE_SHEET: sample_sheets/All_ChRO-sample_sheet.csv
 
 # STARsolo parameters
 CORES: 10 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
@@ -18,8 +19,8 @@ MEMLIMIT: 50000000000 # limit in bytes
 # Important directory file paths
 ########################################################################################################
 TMPDIR: /workdir/dwm269/tmp # directory for temporary files
-OUTDIR: /workdir/dwm269/totalRNA/data/smRNAseq_STAR
-DATADIR: /workdir/dwm269/scMuscle2/data/fastqs
+OUTDIR: /workdir/dwm269/totalRNA/data/ChROseq_STAR
+DATADIR: /workdir/dwm269/chroseq_ncrna/data/chroseq_injury
 
 ########################################################################################################
 # Executables - file paths
