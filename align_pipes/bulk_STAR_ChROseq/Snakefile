@@ -44,12 +44,12 @@ STAR_EXEC = config['STAR_EXEC']
 rule all:
     input:
         expand('{OUTDIR}/{sample}/preTrim_fastqc_R1_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # raw R2 fastQC results
-        # expand('{OUTDIR}/{sample}/postTrim_fastqc_R1_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
+        expand('{OUTDIR}/{sample}/postTrim_fastqc_R1_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
         expand('{OUTDIR}/{sample}/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap
         expand('{OUTDIR}/{sample}/Aligned.sortedByCoord.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
         expand('{OUTDIR}/{sample}/ReadsPerGene.out.tab', OUTDIR=config['OUTDIR'], sample=SAMPLES), # count mats
         expand('{OUTDIR}/{sample}/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
-        expand('{OUTDIR}/{sample}/Unmapped.out.mate1_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES) # blastn results for unmapped R1 reads
+        expand('{OUTDIR}/{sample}/Unmapped.out.mate2_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES) # blastn results for unmapped R1 reads
 
 
 #############################################
@@ -214,11 +214,11 @@ rule trimgalore:
 #         """
 
 ##TODO
-rule postTrim_FastQC_R2:
+rule postTrim_FastQC_R1:
     input:
-        FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
+        FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R2_out'),
+        fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R1_out'),
         # fastqcReport = ''
     threads:
         config['CORES']
@@ -230,7 +230,7 @@ rule postTrim_FastQC_R2:
         fastqc \
         --outdir {output.fastqcDir} \
         --threads {threads} \
-        {input.FINAL_R2_FQ}
+        {input.FINAL_R1_FQ}
         """
 
 #############################################
@@ -365,9 +365,9 @@ rule unmapped_fastqc:
 ## TODO: change demux step to fastx-collapser
 rule blast_unmapped:
     input:
-        UNMAPPED1_FQ = '{OUTDIR}/{sample}/Unmapped.out.mate1.fastq'
+        UNMAPPED2_FQ = '{OUTDIR}/{sample}/Unmapped.out.mate2.fastq'
     output:
-        BLAST_R1 = '{OUTDIR}/{sample}/Unmapped.out.mate1_blastResults.txt',
+        # BLAST_R1 = '{OUTDIR}/{sample}/Unmapped.out.mate1_blastResults.txt',
         BLAST_R2 = '{OUTDIR}/{sample}/Unmapped.out.mate2_blastResults.txt'
     threads:
         config['CORES']
@@ -377,7 +377,7 @@ rule blast_unmapped:
         TMP_FA = '{OUTDIR}/{sample}/Unmapped.out.mate1'
     shell:
         """
-        sed -n '1~4s/^@/>/p;2~4p' {input.UNMAPPED1_FQ} > {params.TMP_FA}
+        sed -n '1~4s/^@/>/p;2~4p' {input.UNMAPPED2_FQ} > {params.TMP_FA}
 
         echo "Number of unmapped reads: "
         grep -c ">" {params.TMP_FA}
