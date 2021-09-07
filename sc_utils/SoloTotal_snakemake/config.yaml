@@ -8,10 +8,11 @@
 #     For multi-lane inputs, use the following format (from STARsolo github page):
 #       --readFilesIn Read2_Lane1.fastq.gz,Read2_Lane2.fastq.gz,Read2_Lane3.fastq.gz  Read1_Lane1.fastq.gz,Read1_Lane2.fastq.gz,Read1_Lane3.fastq.gz
 
-SAMPLE_SHEET: sample_sheets/Vis_yPAP1-sample_sheet.csv
+# SAMPLE_SHEET: sample_sheets/C2Cnuc_yPAP-sample_sheet.csv
+SAMPLE_SHEET: sample_sheet.csv
 
 # STARsolo parameters
-CORES: 15 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CORES: 25 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 50000000000 # limit in bytes
 UMIlen: 12 #v2=__, v3=12
 
@@ -20,7 +21,7 @@ UMIlen: 12 #v2=__, v3=12
 ########################################################################################################
 # DATADIR: /workdir/dwm269/totalRNA/data/cr_count/mm10 # directory where cellranger_count outputs are stored - be sure to use an absolute path (starting with root)
 TMPDIR: tmp # directory for temporary files
-OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM27
+OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM27_TOTAL
 
 ########################################################################################################
 # Executables - file paths
@@ -34,5 +35,13 @@ BLASTDB: /shared_data/genome_db/BLAST_NCBI # path to where the nt BLAST database
 ########################################################################################################
 # Resources - file paths
 ########################################################################################################
-STAR_REF: /workdir/dwm269/genomes/mm39_all/GRCm39_STAR_GENCODEM27 # path to STAR-formatted reference genome
+STAR_REF: /workdir/dwm269/genomes/mm39_all/GRCm39_STAR_GENCODE_M27 # path to STAR-formatted reference genome
+GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M27/gencode.vM27.chr_patch_hapl_scaff.annotation.gtf
+STAR_smRNA_REF: /workdir/dwm269/genomes/mm39_all/mm39_smRNA_STAR # small RNA reference
+
+### Human ###
+# STAR_REF: /workdir/dwm269/genomes/GRCh38_all/GRCh38p13_STAR # path to STAR-formatted reference genome
+# GENES_GTF: /workdir/dwm269/genomes/GRCh38_all/GENCODE_GRCh38p13/gencode.v38.chr_patch_hapl_scaff.annotation.gtf
+# STAR_smRNA_REF: TODO # small RNA reference
+
 CB_WHITELIST: resources/barcodes_10x/3M-february-2018.txt # path to cell barcodes (CB) whitelist, gunzipped (without the .gz extension) - https://kb.10xgenomics.com/hc/en-us/articles/115004506263-What-is-a-barcode-whitelist-
