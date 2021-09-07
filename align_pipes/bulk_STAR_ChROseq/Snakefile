@@ -239,7 +239,7 @@ rule postTrim_FastQC_R1:
 # Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
 #   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
 
-#TODO- update alignment parameters for standard chemistries?
+#TODO- gzip unmapped fastq's
 rule STARsolo_align:
     input:
         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz', # _final
@@ -281,17 +281,6 @@ rule STARsolo_align:
         --outFilterMatchNminOverLread 0 \
         --outFilterMultimapNmax 50
         """
-        # gzip -qf {output.GENE}/raw/*
-        # gzip -qf {output.GENE}/filtered/*
-        #
-        # gzip -qf {output.GENEFULL}/raw/*
-        # gzip -qf {output.GENEFULL}/filtered/*
-        #
-        # gzip -qf {output.SJ}/raw/*
-        #
-        # gzip -qf {output.VEL}/raw/*
-        # gzip -qf {output.VEL}/filtered/*
-
 
 #TODO this is extraneous
 rule indexBAM:
