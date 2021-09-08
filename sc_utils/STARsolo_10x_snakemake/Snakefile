@@ -17,7 +17,7 @@ configfile:'config.yaml'
 ########################################################################################################
 # Directories and locations
 ########################################################################################################
-# DATADIR = config['DATADIR']
+DATADIR = config['DATADIR']
 TMPDIR = config['TMPDIR']
 OUTDIR = config['OUTDIR']
 
@@ -25,12 +25,17 @@ OUTDIR = config['OUTDIR']
 # Variables and references
 ########################################################################################################
 SAMPLES = list(pd.read_csv(config['SAMPLE_SHEET'])['sampleID'])
+print("Running STARsolo pipeline for ", SAMPLES)
+
 # R1_FQS = list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])
 R1_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])))
 
 # R2_FQS = list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R2'])
 R2_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R2'])))
 # SAMPLE_SHEET = pd.read_csv(config['SAMPLE_SHEET']
+
+#TODO: finish SRR download automation
+# SRR = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['SRR'])))
 
 STAR_REF = config['STAR_REF']
 
@@ -66,6 +71,35 @@ rule gunzipWhitelist:
         """
         gunzip {input}
         """
+
+#############################################
+## Optional parallel-fastq-dump (if SRR number is passed, instead of .fastq location)
+#############################################
+# TODO- add multi-SRR number passing (delimit the sample_sheet with ;?)
+# rule get_fastqs:
+#     output:
+#         R1_FQ = DATADIR + '/{sample}/',
+#         R2_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2.fq.gz'
+#     params:
+#         OUT_DIR = DATADIR + '/{sample}',
+#         TMP_DIR = TMPDIR,
+#         SRR = lambda wildcards: SRR[wildcards.sample],
+#         SAMPLE = '{sample}'
+#     run:
+#         if len(SRR)==0:
+#             print("Downloading .fastq's for ", params.SRR)
+#             shell("prefetch --max-size 999999999999 {params.SRR}")
+#             shell("parallel-fastq-dump --sra-id {params.SRR} --threads {threads} --outdir {params.OUT_DIR} --tmpdir {params.TMP_DIR} --split-files --gzip")
+#
+#             # update R1_FQS and R2_FQS
+#             R1_FQS[wildcards.sample] = params.OUT_DIR + "/" + wildcards.sample + "/" + params.SRR + "_1.fq.gz"
+#             R2_FQS[wildcards.sample] = params.OUT_DIR + "/" + wildcards.sample + "/" + params.SRR + "_2.fq.gz"
+#
+#             #add R1.fq location and R2.fq location to sample_sheet
+#             #TODO
+#         else:
+#             print("No SRR number for ", params.SAMPLE, "- proceeding without download.\n")
+
 
 #############################################
 ## Trimming and FastQC
@@ -111,7 +145,7 @@ rule preTrim_FastQC_R2:
         {input.MERGED_R2_FQ}
         """
 
-
+#TODO: log not working...
 rule trimPolyA_R2:
     input:
         MERGED_R1_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R1.fq.gz',
@@ -140,11 +174,12 @@ rule trimPolyA_R2:
  		-o {output.A_TRIMMED_R1_FQ} \
         -p {output.A_TRIMMED_R2_FQ} \
         --cores {threads} \
-        {input.MERGED_R1_FQ} {input.MERGED_R2_FQ}
+        {input.MERGED_R1_FQ} {input.MERGED_R2_FQ} 1> {log}
         """
         # 2> {output.POLYA_REPORT}
 
 #Additional trimming step, just for 2-color Illumina chemistries (NextSeq, etc.)
+#TODO: log not working...
 rule trimPolyG_R2:
     input:
         A_TRIMMED_R1_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R1_Atrimmed.fq.gz',
@@ -171,7 +206,7 @@ rule trimPolyG_R2:
  		-o {output.FINAL_R1_FQ} \
         -p {output.FINAL_R2_FQ} \
         --cores {threads} \
-        {input.A_TRIMMED_R1_FQ} {input.A_TRIMMED_R2_FQ}
+        {input.A_TRIMMED_R1_FQ} {input.A_TRIMMED_R2_FQ} 1> {log}
         """
         # 2> {output.POLYG_REPORT}
 
@@ -279,8 +314,6 @@ rule STARsolo_align:
         gzip -qf {output.VEL}/filtered/*
         """
 
-
-#TODO this is extraneous
 rule indexBAM:
     input:
         SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam'
