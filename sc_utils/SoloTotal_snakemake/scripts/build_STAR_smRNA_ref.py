@@ -1,14 +1,14 @@
 #####################################
-## build_GtRNAdb.py
+## build_STAR_smRNA_ref.py
 ## Written by: David McKellar
-## Description: This script takes in a .fasta from mirbase and generates a .gff and STAR reference for a particular species
+## Description: This script takes in a .fasta from mirbase and generates a .gtf and STAR reference for a particular species
 #####################################
 
 # usage:
 #      python build_smRNA_STAR_ref.py mirbase_mature_fasta gtrnadb_fasta species output_directory
 #
 # example:
-#      /home/dwm269/miniconda3/envs/STARsolo/bin/python build_mirbase_STAR_ref.py /workdir/dwm269/genomes/mirbase/mature.fa /workdir/dwm269/genomes/mm39_all/gtrnadb/mm39-tRNAs.fa "Mus musculus" /workdir/dwm269/genomes/mm39_all/mm39_smRNA_STAR 12
+#      /home/dwm269/miniconda3/envs/STARsolo/bin/python build_STAR_smRNA_ref.py /workdir/dwm269/genomes/mirbase/mature.fa /workdir/dwm269/genomes/mm39_all/gtrnadb/mm39-mature-tRNAs.fa "Mus musculus" /workdir/dwm269/genomes/mm39_all/mm39_smRNA_STAR 20
 
 import sys
 import os.path
@@ -21,7 +21,7 @@ species_dict = {
     "Mus musculus" : "mmu"
 }
 
-## .gff structure
+## .gtf structure
 ## source: https://useast.ensembl.org/info/website/upload/gff.html
 fasta_mir_path = sys.argv[1]
 fasta_tr_path = sys.argv[2]
@@ -30,11 +30,11 @@ outdir = sys.argv[4]
 num_threads = sys.argv[5]
 
 fasta_out_path = outdir+"/"+"smRNA_"+ species.replace(" ","_")+".fa"
-gff_out_path = outdir+"/"+"smRNA_"+ species.replace(" ","_")+".gff"
+gtf_out_path = outdir+"/"+"smRNA_"+ species.replace(" ","_")+".gtf"
 
 print("Building small RNA reference for "+ species + ":")
 print("    fasta output location:  "+ fasta_out_path)
-print("    gff output location:    " + gff_out_path)
+print("    gtf output location:    " + gtf_out_path)
 print("    number threads:         " + str(num_threads))
 
 if not os.path.isdir(outdir):
@@ -111,14 +111,14 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 
-print("Building GFF file (" + gff_out_path + ")...")
+print("Building GTF file (" + gtf_out_path + ")...")
 
 fasta_out_f = open(fasta_out_path, "r")
 fasta_out = list(SeqIO.parse(fasta_out_f, "fasta"))
 
-# initialize .gff file
-tmp_file = open(gff_out_path, "w+")
-tmp_file.write("##description: small RNA reference\n##provider: miRBase and GtRNAdb\n##format: gff\n")
+# initialize .gtf file
+tmp_file = open(gtf_out_path, "w+")
+tmp_file.write("##description: small RNA reference\n##provider: miRBase and GtRNAdb\n##format: gtf\n")
 # tmp_file.close()
 
 for i in list(range(0,len(fasta_out))):
@@ -128,7 +128,7 @@ for i in list(range(0,len(fasta_out))):
 
     qualifiers = {
         "source": "miRBase and GtRNADB",
-        "score": "42", #re.findall(r"[-+]?\d*\.\d*\d+", fasta_out[i].description),
+        "score": ".", #re.findall(r"[-+]?\d*\.\d*\d+", fasta_out[i].description),
         "other": [fasta_out[i].description],
         "ID": fasta_out[i].id,
     }
@@ -151,16 +151,15 @@ for i in list(range(0,len(fasta_out))):
     to_write = \
     chrom + "\t" + \
     "miRBase/GtRNADB" + "\t" + \
-    "exon" + "\t" + \
+    "transcript" + "\t" + \
     str(start) + "\t"+\
     str(end)+ "\t" +\
     qualifiers['score'][0] +"\t" +\
     str(strand) +"\t" +\
-    "0"+"\t"+ \
-    "gene_name "+ str(rec.id)+"; transcript_name " + str(rec.id) + "; gene_biotype 'miRNA'\n"
+    "."+"\t"+ \
+    "gene_name \""+ str(rec.id)+"\"; transcript_name \"" + str(rec.id) +"\"; gene_id \""+ fasta_out[i].id +"\";\n"
+    #+ "; gene_biotype 'miRNA'\n" # everything else #TODO- add biotype
 
-    # print(to_write)
-    # tmp_file = open(gff_out_path, "a")  # append mode
     tmp_file.write(to_write)
 
 tmp_file.close()
@@ -174,8 +173,8 @@ cmd = "STAR --runMode genomeGenerate " + \
 " --genomeDir " + outdir + \
 " --runThreadN " + num_threads + \
 " --genomeSAindexNbases 7" + \
-" --sjdbGTFfile " + gff_out_path + \
-" --sjdbGTFfeatureExon exon"
+" --sjdbGTFfile " + gtf_out_path + \
+" --sjdbGTFfeatureExon transcript"
 
 os.system(cmd)
 
