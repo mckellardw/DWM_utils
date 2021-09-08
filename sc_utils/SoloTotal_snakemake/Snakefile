@@ -49,12 +49,12 @@ STAR_EXEC = config['STAR_EXEC']
 rule all:
     input:
         # expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/filtered/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        # expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        expand('{OUTDIR}/{sample}_STARsolo/smRNA/Aligned.sortedByCoord.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         expand('{OUTDIR}/{sample}_STARsolo/preTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # raw R2 fastQC results
         expand('{OUTDIR}/{sample}_STARsolo/postTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
         expand('{OUTDIR}/{sample}_STARsolo/smRNA/Solo.out/Gene/raw/matrix.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), # count mats - small RNA reference
         expand('{OUTDIR}/{sample}_STARsolo/whole_ref/Solo.out/Gene/raw/matrix.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), # count mats - whole reference genome
-        expand('{OUTDIR}/{sample}_STARsolo/smRNA/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap
+        # expand('{OUTDIR}/{sample}_STARsolo/smRNA/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap
         expand('{OUTDIR}/{sample}_STARsolo/whole_ref/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap
         expand('{OUTDIR}/{sample}_STARsolo/whole_ref/Aligned.sortedByCoord.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
         # expand('{OUTDIR}/{sample}_STARsolo/whole_ref/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
@@ -254,17 +254,11 @@ rule postTrim_FastQC_R2:
 #############################################
 ## Alignment
 #############################################
-# Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
-#   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
-
 
 # Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
 #   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
-#   Alignment parameters taken from smart-seq-total: https://github.com/aisakova/smart-seq-total
+#   Alignment parameters partially taken from smart-seq-total: https://github.com/aisakova/smart-seq-total
 #   Inspiration for iterative alignment strategy: https://github.com/Sethupathy-Lab/miRquant
-
-## Notes on tRNA alignment parameters:
-# - Multimap settings are important (~5X as many reads retained) b/c of similar sequences
 
 #TODO:
 ## Notes on tRNA alignment parameters:
@@ -279,8 +273,9 @@ rule starSOLO_smRNA_align:
         SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/smRNA/Aligned.sortedByCoord.out.bam',
         GENE = directory('{OUTDIR}/{sample}_STARsolo/smRNA/Solo.out/Gene'),
         GENEMAT = '{OUTDIR}/{sample}_STARsolo/smRNA/Solo.out/Gene/raw/matrix.mtx.gz',
-        UNMAPPED1_FQ = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1_smRNA.fq',
-        UNMAPPED2_FQ = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2_smRNA.fq'
+        GENEFULL = directory('{OUTDIR}/{sample}_STARsolo/smRNA/Solo.out/GeneFull'),
+        UNMAPPED1_FQ = temp('{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1_smRNA.fq'),
+        UNMAPPED2_FQ = temp('{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2_smRNA.fq')
     params:
         R1_FQ = lambda wildcards: R1_FQS[wildcards.sample],
         R2_FQ = lambda wildcards: R2_FQS[wildcards.sample],
@@ -294,14 +289,11 @@ rule starSOLO_smRNA_align:
         """
         mkdir -p {output.smRNA_DIR}
 
-        echo "THIS IS THE NEW OUTDIR"
-        echo {output.smRNA_DIR}
-
         {params.STAR_EXEC} \
         --runThreadN {threads} \
         --outFileNamePrefix {output.smRNA_DIR}/ \
         --outSAMtype BAM SortedByCoordinate \
-        --outSAMattributes All \
+        --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
         --readFilesCommand zcat \
         --genomeDir {params.STAR_REF} \
         --genomeLoad LoadAndKeep \
@@ -316,7 +308,7 @@ rule starSOLO_smRNA_align:
         --soloType CB_UMI_Simple \
         --soloUMIlen {params.UMIlen} \
         --soloCBwhitelist {input.CB_WHITELIST} \
-        --soloFeatures Gene \
+        --soloFeatures Gene GeneFull \
         --soloCellFilter EmptyDrops_CR \
         --outFilterMultimapNmax 50 \
         --soloMultiMappers EM
@@ -326,11 +318,13 @@ rule starSOLO_smRNA_align:
 
         gzip -qf {output.GENE}/raw/*
         gzip -qf {output.GENE}/filtered/*
+
+        gzip -qf {output.GENEFULL}/raw/*
+        gzip -qf {output.GENEFULL}/filtered/*
         """
 
-
 ## TODO:
-# - adjust alignment parameters
+# - adjust alignment parameters?
 rule STARsolo_wholeref_align:
     input:
         CB_WHITELIST = config['CB_WHITELIST'],
@@ -409,6 +403,19 @@ rule indexBAM_wholeref:
         samtools index -@ {threads} {input.SORTEDBAM}
         """
 
+rule indexBAM_smRNA:
+    input:
+        SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/smRNA/Aligned.sortedByCoord.out.bam'
+    output:
+        BAI = '{OUTDIR}/{sample}_STARsolo/smRNA/Aligned.sortedByCoord.out.bam.bai'
+    threads:
+        config['CORES']
+    shell:
+        """
+        samtools index -@ {threads} {input.SORTEDBAM}
+        """
+
+
 #############################################
 ## qualimap on aligned reads
 #############################################
@@ -419,7 +426,7 @@ rule qualimapQC_smRNA:
         qualimapDir = directory('{OUTDIR}/{sample}_STARsolo/smRNA/qualimap_out'),
         fastqcReport = '{OUTDIR}/{sample}_STARsolo/smRNA/qualimap_out/qualimapReport.html'
     params:
-        GENES_GTF = config['GENES_GTF']
+        GENES_GTF = config['smRNA_FEATURES_GFF'] #smRNA features ##TODO- change to gtfg for qualimap...
     threads:
         config['CORES']
     shell:
@@ -536,11 +543,11 @@ rule bamToSplitBigWig:
         BAI = '{OUTDIR}/{sample}_STARsolo/whole_ref/Aligned.sortedByCoord.out.bam.bai'
     output:
         POS_BW = '{OUTDIR}/{sample}_STARsolo/whole_ref/Aligned.sortedByCoord.out_plus.bw',
-        NEG_BW = '{OUTDIR}/{sample}_STARsolo/whole_ref/Aligned.sortedByCoord.out_neg.bw'
+        NEG_BW = '{OUTDIR}/{sample}_STARsolo/whole_ref/Aligned.sortedByCoord.out_minus.bw'
     params:
         BAM2SPLITBW=config['BAM2SPLITBW'],
         STAR_REF = config['STAR_REF'],
-        OUTPUT_DIR = '{OUTDIR}/{sample}_STARsolo'
+        OUTPUT_DIR = '{OUTDIR}/{sample}_STARsolo/whole_ref'
     threads:
         config['CORES']
     shell:
