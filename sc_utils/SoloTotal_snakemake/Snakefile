@@ -57,8 +57,8 @@ rule all:
         # expand('{OUTDIR}/{sample}_STARsolo/smRNA/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap
         expand('{OUTDIR}/{sample}_STARsolo/whole_ref/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap
         expand('{OUTDIR}/{sample}_STARsolo/whole_ref/Aligned.sortedByCoord.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
-        # expand('{OUTDIR}/{sample}_STARsolo/whole_ref/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
-        # expand('{OUTDIR}/{sample}_STARsolo/whole_ref/Unmapped.out.mate2_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES) # blastn results for unmapped R1 reads
+        expand('{OUTDIR}/{sample}_STARsolo/whole_ref/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
+        expand('{OUTDIR}/{sample}_STARsolo/whole_ref/Unmapped.out.mate2_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES) # blastn results for unmapped R1 reads
 
 
 #############################################
@@ -263,6 +263,9 @@ rule postTrim_FastQC_R2:
 #TODO:
 ## Notes on tRNA alignment parameters:
 # - Multimap settings are important (~5X as many reads retained) b/c of similar sequences
+#       https://www.sciencedirect.com/science/article/pii/S2001037020303032
+# - Very restrictive value for outFilterMismatchNoverLmax (0.75) to only keep high confidence mapped reads
+# - --alignIntronMax=0 removes splicing options
 rule starSOLO_smRNA_align:
     input:
         CB_WHITELIST = config['CB_WHITELIST'],
@@ -273,7 +276,7 @@ rule starSOLO_smRNA_align:
         SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/smRNA/Aligned.sortedByCoord.out.bam',
         GENE = directory('{OUTDIR}/{sample}_STARsolo/smRNA/Solo.out/Gene'),
         GENEMAT = '{OUTDIR}/{sample}_STARsolo/smRNA/Solo.out/Gene/raw/matrix.mtx.gz',
-        GENEFULL = directory('{OUTDIR}/{sample}_STARsolo/smRNA/Solo.out/GeneFull'),
+        # GENEFULL = directory('{OUTDIR}/{sample}_STARsolo/smRNA/Solo.out/GeneFull'),
         UNMAPPED1_FQ = temp('{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1_smRNA.fq'),
         UNMAPPED2_FQ = temp('{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2_smRNA.fq')
     params:
@@ -300,9 +303,10 @@ rule starSOLO_smRNA_align:
         --limitBAMsortRAM={params.MEMLIMIT} \
         --readFilesIn {input.R2_FQ} {input.R1_FQ} \
         --clipAdapterType CellRanger4 \
+        --alignIntronMax 0 \
         --outReadsUnmapped Fastx \
-        --outFilterMismatchNoverLmax 0.05 \
-        --outFilterMatchNmin 10 \
+        --outFilterMismatchNoverLmax 0.75 \
+        --outFilterMatchNmin 16 \
         --outFilterScoreMinOverLread 0 \
         --outFilterMatchNminOverLread 0 \
         --soloType CB_UMI_Simple \
@@ -318,9 +322,6 @@ rule starSOLO_smRNA_align:
 
         gzip -qf {output.GENE}/raw/*
         gzip -qf {output.GENE}/filtered/*
-
-        gzip -qf {output.GENEFULL}/raw/*
-        gzip -qf {output.GENEFULL}/filtered/*
         """
 
 ## TODO:
@@ -426,7 +427,7 @@ rule qualimapQC_smRNA:
         qualimapDir = directory('{OUTDIR}/{sample}_STARsolo/smRNA/qualimap_out'),
         fastqcReport = '{OUTDIR}/{sample}_STARsolo/smRNA/qualimap_out/qualimapReport.html'
     params:
-        GENES_GTF = config['smRNA_FEATURES_GFF'] #smRNA features ##TODO- change to gtfg for qualimap...
+        GENES_GTF = config['smRNA_FEATURES_GTF'] #smRNA features
     threads:
         config['CORES']
     shell:
@@ -478,12 +479,12 @@ rule qualimapQC_wholeref:
 # Run fastqc on unmapped reads; switch names because of STAR weirdness
 rule unmapped_fastqc:
     input:
-        UNMAPPED1 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1',
-        UNMAPPED2 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2'
+        UNMAPPED1 = '{OUTDIR}/{sample}_STARsolo/whole_ref/Unmapped.out.mate1',
+        UNMAPPED2 = '{OUTDIR}/{sample}_STARsolo/whole_ref/Unmapped.out.mate2'
     output:
-        UNMAPPED1_FQ = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1.fastq',
-        UNMAPPED2_FQ = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2.fastq',
-        FQC_DIR = directory('{OUTDIR}/{sample}_STARsolo/Unmapped_fastqc_out')
+        UNMAPPED1_FQ = '{OUTDIR}/{sample}_STARsolo/whole_ref/Unmapped.out.mate1.fastq',
+        UNMAPPED2_FQ = '{OUTDIR}/{sample}_STARsolo/whole_ref/Unmapped.out.mate2.fastq',
+        FQC_DIR = directory('{OUTDIR}/{sample}_STARsolo/whole_ref/Unmapped_fastqc_out')
     params:
         FASTQC_EXEC = config['FASTQC_EXEC']
     threads:
@@ -502,15 +503,15 @@ rule unmapped_fastqc:
 ## TODO: change demux step to fastx-collapser
 rule blast_unmapped:
     input:
-        UNMAPPED2_FQ = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2.fastq'
+        UNMAPPED2_FQ = '{OUTDIR}/{sample}_STARsolo/whole_ref/Unmapped.out.mate2.fastq'
     output:
-        BLAST_R2 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2_blastResults.txt'
+        BLAST_R2 = '{OUTDIR}/{sample}_STARsolo/whole_ref/Unmapped.out.mate2_blastResults.txt'
     threads:
         config['CORES']
     params:
         blastDB = config['BLASTDB'],
         FASTX_COLLAPSER = config['FASTX_COLLAPSER'],
-        TMP_FA = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2.fa'
+        TMP_FA = '{OUTDIR}/{sample}_STARsolo/whole_ref/Unmapped.out.mate2.fa'
     shell:
         """
         sed -n '1~4s/^@/>/p;2~4p' {input.UNMAPPED2_FQ} > {params.TMP_FA}

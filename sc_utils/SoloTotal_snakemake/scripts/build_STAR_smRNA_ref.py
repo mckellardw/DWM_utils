@@ -97,6 +97,7 @@ for i in list(range(0,num_tRNAs)):
     if species.replace(" ","_") in fasta_tr[i].id:
         fasta_out_f.write(">" + fasta_tr[i].id + "\n")
         fasta_out_f.write(str(fasta_tr[i].seq) + "\n")
+        fasta_out_f.write(str(fasta_mir[i].seq).replace("U", "T") + "\n") #switch U -> T
 
 fasta_out_f.close()
 
@@ -138,6 +139,9 @@ for i in list(range(0,len(fasta_out))):
     end = len(fasta_out[i].seq)
     chrom = fasta_out[i].id
     strand = "+"
+
+    # Check "A" content for spurious capture
+    pct_A = fasta_out[i].seq.count("A") / len(fasta_out[i].seq)
 
     # top_feature = SeqFeature(
     #     FeatureLocation(int(start), int(end)),
