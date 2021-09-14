@@ -1,0 +1,4 @@
+sampleID,fastq_R1,fastq_R2,SRR
+Vis_yPAP_2C,/workdir/dwm269/totalRNA/data/fastq/bcl2fastq-MiniSeq-Vis_yPAP2/Vis_yPAP_2C/Vis_yPAP_2C_S3_L001_R1_001.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/bcl2fastq-MiniSeq-Vis_yPAP2/Vis_yPAP_2C/Vis_yPAP_2C_S3_L001_R2_001.fastq.gz,
+Vis_yPAP_2C_xGen,/workdir/dwm269/totalRNA/data/fastq/Vis_yPAP_2_xGen/Heart_T1L_D7PI_yPAP_xGen_S11_L001_R1_001.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/Vis_yPAP_2_xGen/Heart_T1L_D7PI_yPAP_xGen_S11_L001_R2_001.fastq.gz,
+T1L_D7PI,/workdir/dwm269/totalRNA/data/fastq/AAAHJC5M5_Mantri_10435599_spaceranger_mkfastq_output_21Jan21/outs/fastq_path/AAAHJC5M5/129334_AAAHJC5M5_A1-T1L-D7PI_S1_L001_R1_001.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/AAAHJC5M5_Mantri_10435599_spaceranger_mkfastq_output_21Jan21/outs/fastq_path/AAAHJC5M5/129334_AAAHJC5M5_A1-T1L-D7PI_S1_L001_R2_001.fastq.gz,

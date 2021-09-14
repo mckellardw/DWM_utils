@@ -251,7 +251,7 @@ visListPlot <- function(
   require(ggplot2)
   require(viridis)
 
-  if(verbose){cat("Plotting Visium data!\n")}
+  if(verbose){cat(paste0("Plotting Visium data, using the assay ",assay,"!\n"))}
 
   if(is.null(alt.titles)){
     alt.titles=features

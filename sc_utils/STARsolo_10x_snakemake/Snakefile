@@ -25,14 +25,10 @@ OUTDIR = config['OUTDIR']
 # Variables and references
 ########################################################################################################
 SAMPLES = list(pd.read_csv(config['SAMPLE_SHEET'])['sampleID'])
-print("Running STARsolo pipeline for ", SAMPLES)
 
-# R1_FQS = list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])
 R1_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])))
 
-# R2_FQS = list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R2'])
 R2_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R2'])))
-# SAMPLE_SHEET = pd.read_csv(config['SAMPLE_SHEET']
 
 #TODO: finish SRR download automation
 # SRR = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['SRR'])))
