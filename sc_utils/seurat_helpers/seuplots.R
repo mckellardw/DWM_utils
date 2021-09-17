@@ -273,7 +273,7 @@ visListPlot <- function(
         seu.list,
         FUN = function(SEU){
           if(FEAT %in% rownames(SEU)){
-            return(max(GetAssayData(SEU,assay=assay)[FEAT,]))
+            return(max(GetAssayData(SEU,assay=assay,slot=slot)[FEAT,]))
           }else if(FEAT %in% colnames(SEU@meta.data)){
             return(max(SEU@meta.data[,FEAT]))
           }else{

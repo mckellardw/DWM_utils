@@ -121,9 +121,8 @@ collapseMultimappers <- function(SEU, assay=NULL,new.assay.name=NULL, verbose=F)
 
   solo.feats <- rownames(SEU)[!rownames(SEU)%in%multi.feats]
 
-  print(length(solo.feats))
   out.mat <- rbind(
-    # GetAssayData(SEU,assay=assay, slot="counts")[solo.feats,],
+    GetAssayData(SEU,assay=assay, slot="counts")[solo.feats,],
     collapsed.mat
   )
   SEU[[new.assay.name]] <- CreateAssayObject(counts=out.mat)
@@ -291,8 +290,6 @@ ConvertHumanGeneListToMM <- function(x){
   # Get unique names of genes (in case gene names are duplicated)
   mouse.gene.list <- unique(genes.list[, 2])
 
-  # # Print the first 6 genes found to the screen
-  # print(head(mouse.gene.list))
   return(mouse.gene.list)
 }
 
