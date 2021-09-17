@@ -15,10 +15,14 @@ import os.path
 import re
 from Bio import SeqIO
 
-# Dictionary of species shorthands
-#TODO
+# Dictionary of species shorthands for miRbase
 species_dict = {
-    "Mus musculus" : "mmu"
+    "Mus musculus" : "mmu",
+    "Homo sapiens" : "hsa",
+    "Rattus norvegicus" : "rno",
+    "Drosophila melanogaster" : "dme",
+    "Caenorhabditis elegans" : "cel",
+    "Arabidopsis thaliana" : "ath"
 }
 
 ## .gtf structure
@@ -96,8 +100,7 @@ print("     Adding tRNAs...")
 for i in list(range(0,num_tRNAs)):
     if species.replace(" ","_") in fasta_tr[i].id:
         fasta_out_f.write(">" + fasta_tr[i].id + "\n")
-        fasta_out_f.write(str(fasta_tr[i].seq) + "\n")
-        fasta_out_f.write(str(fasta_mir[i].seq).replace("U", "T") + "\n") #switch U -> T
+        fasta_out_f.write(str(fasta_tr[i].seq).replace("U", "T") + "\n") #switch U -> T
 
 fasta_out_f.close()
 
