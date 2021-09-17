@@ -27,24 +27,111 @@ npcs <- function(
   return(n.pcs)
 }
 
+# Quickly return genes/feature names from a Seurat object
+Features <- function(SEU,assay=NULL){
+  if(is.null(assay)){
+    assay <- SEU@active.assay
+  }
+
+  return(rownames(GetAssayData(SEU,assay=assay)))
+}
+
 # Check gene names for a pattern, using grep
 grepGenes <- function(
   SEU,
   pattern=NULL, # pattern to look for
-  filter.pattern=NULL # pattern to remove TODO
+  assay=NULL,
+  filter.pattern=NULL, # pattern to remove TODO
+  verbose=F
 ){
   if(is.null(pattern)){
     message("Need a pattern to look for!")
     return(NULL)
   }
+  if(!is.null(filter.pattern)){
+    message("filter.pattern not yet implemented...")
+    # return(NULL)
+  }
   if(is.list(SEU)){
     message("Don't pass a list!")
     return(NULL)
   }
+  if(is.null(assay)){
+    assay <- SEU@active.assay
+  }
 
+  genes = SEU@assays[[assay]]@counts@Dimnames[[1]]
+
+  if(verbose){
+    cat(paste0("Found ", length(genes), " features in the assay '",assay,"'...\n"))
+    cat(paste0("Looking for '", pattern, "' in these features...\n"))
+  }
+
+  # Return matching gene names!
   return(
-    rownames(SEU)[grep(pattern=pattern,x=rownames(SEU))]
+    genes[grep(pattern=pattern,x=genes)]
   )
+}
+
+# Collapse cell/nuclei/spot counts for multimapped genes
+collapseMultimappers <- function(SEU, assay=NULL,new.assay.name=NULL, verbose=F){
+
+  if(is.null(new.assay.name)){
+    new.assay.name = paste0(assay,"_collpased")
+    cat("Using ",new.assay.name, " as new.assay.name...\n")
+  }
+  if(is.null(new.assay.name)){
+    cat("Need new.assay.name!\n")
+    return(SEU)
+  }
+
+  SEU@active.assay <- assay
+
+  multi.feats <- grepGenes(SEU, assay = assay, pattern="\\.") #Find genes with a period in them
+  multi.patterns <- stringr::str_split(multi.feats, pattern = "\\.",n = 2) %>% #extract actual gene names
+    lapply(FUN=function(X) X[1]) %>%
+    unlist() %>%
+    unique()
+
+  if(verbose){
+    cat(paste0("Found ", length(multi.patterns), " multimappers and ", length(multi.feats)," loci...\n"))
+  }
+
+  # Collapse counts for each gene
+  mat.multi <- GetAssayData(SEU, assay=assay, slot="counts") # count mat
+
+  collapsed.list <- lapply(
+    multi.patterns,
+    FUN=function(X){
+      tmp.genes = rownames(mat.multi)[grep(rownames(mat.multi),pattern=X)]
+      tmp.mat = mat.multi[tmp.genes,]
+
+      if(length(tmp.genes)==1){
+        return(tmp.mat)
+      }else{
+        return(colSums(tmp.mat))
+      }
+    }
+  )
+  collapsed.mat <- do.call(rbind, collapsed.list) %>% as.sparse()
+  rownames(collapsed.mat) <- multi.patterns
+
+  # Add new assay with collapsed counts + the rest of the genes
+  if(verbose){cat(paste0("Adding back ", nrow(collapsed.mat), " features...\n"))}
+
+  solo.feats <- rownames(SEU)[!rownames(SEU)%in%multi.feats]
+
+  print(length(solo.feats))
+  out.mat <- rbind(
+    # GetAssayData(SEU,assay=assay, slot="counts")[solo.feats,],
+    collapsed.mat
+  )
+  SEU[[new.assay.name]] <- CreateAssayObject(counts=out.mat)
+
+  SEU@active.assay <- new.assay.name
+
+  # Return seurat object!
+  return(SEU)
 }
 
 # Borrowed/adapted from the Marioni Lab, DropletUtils package (https://rdrr.io/github/MarioniLab/DropletUtils/src/R/write10xCounts.R)
