@@ -293,6 +293,77 @@ ConvertHumanGeneListToMM <- function(x){
   return(mouse.gene.list)
 }
 
+# Preprocessing wrapper function
+seuPreProcess <- function(
+  SEU=NULL,
+  assay='RNA',
+  n.pcs=50,
+  res=0.8,
+  verbose=F
+){
+  if(is.null(SEU)){
+    cat("Need a Seurat object to preprocess!")
+    return(NULL)
+  }
+
+  # NormalizeData(SEU) %>% FindVariableFeatures() %>% ScaleData() %>% RunPCA()
+  pca.name ="pca"  #paste0('pca_', assay)
+  pca.key = paste0(pca.name,'_')
+  umap.name = paste0('umap_', assay)
+
+  SEU = NormalizeData(
+    SEU
+  ) %>% FindVariableFeatures(
+    assay = assay,
+    selection.method = "vst",
+    nfeatures = 2000,
+    verbose = verbose
+  ) %>% ScaleData(
+    assay = assay
+  ) %>% RunPCA(
+    assay = assay,
+    reduction.name = pca.name,
+    reduction.key = pca.key,
+    verbose = verbose,
+    npcs = n.pcs
+  )
+
+  #find pcs to use
+  n.pcs.use = npcs(SEU=SEU, var.total = 0.95, reduction = pca.name)
+
+  # FindNeighbors %>% RunUMAP, FindClusters
+  SEU <- FindNeighbors(
+    SEU,
+    reduction = pca.name,
+    dims = 1:n.pcs.use,
+    force.recalc = TRUE,
+    verbose = verbose
+  ) %>% RunUMAP(
+    reduction = pca.name,
+    dims = 1:n.pcs.use,
+    verbose = verbose,
+    reduction.name=umap.name
+  )
+
+  SEU@reductions[[umap.name]]@misc$n.pcs.used <- n.pcs.use
+
+  SEU <- FindClusters(
+    object = SEU,
+    resolution = res,
+    verbose = verbose
+  )
+  SEU[[paste0('RNA_res.',res)]] <- as.numeric(SEU@active.ident)
+
+  gc()
+  return(
+    tryCatch(
+      SEU,
+      error=function(e) NULL
+    )
+  )
+}
+
+
 # Add a new ident seurat metadata filed) based on a list of cell types
 #
 #     object:     seurat object
@@ -300,21 +371,21 @@ ConvertHumanGeneListToMM <- function(x){
 #     new.idents: vector of cell types, in order of cluster number
 #     newName:    string of the new idents name
 #
-AddCellTypeIdents <- function(seu=NULL, old.name, new.name=NULL, new.idents, verbose=FALSE){
-  old.idents = as.vector(names(table(seu[[old.name]])))
+AddCellTypeIdents <- function(SEU=NULL, old.name, new.name=NULL, new.idents, verbose=FALSE){
+  old.idents = as.vector(names(table(SEU[[old.name]])))
 
   if(is.null(new.name)){
     cat("**Need a new.name for the new idents**\n")
   }else{
-    seu[[new.name]] <- as.vector(seu[[old.name]])
+    SEU[[new.name]] <- as.vector(SEU[[old.name]])
     for(i in 1:length(old.idents)){
       if(verbose){cat("Adding ", new.idents[i],"...", sep = "")}
-      seu[[new.name]][ seu[[new.name]]==old.idents[i] ] <- new.idents[i]
+      SEU[[new.name]][ SEU[[new.name]]==old.idents[i] ] <- new.idents[i]
       if(verbose){cat("Done!\n", sep = "")}
     }
   }
 
-   return(seu)
+   return(SEU)
 
 }
 
