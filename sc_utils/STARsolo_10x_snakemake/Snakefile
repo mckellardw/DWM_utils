@@ -49,6 +49,7 @@ rule all:
         expand('{OUTDIR}/{sample}_STARsolo/postTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
         expand('{OUTDIR}/{sample}_STARsolo/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap
         expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
+        expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_merged.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # non-strand-split bigWigs (for plotgardener)
         expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), # count mats
         expand('{OUTDIR}/{sample}_STARsolo/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
         expand('{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES) # blastn results for unmapped R1 reads
@@ -82,7 +83,7 @@ rule gunzipWhitelist:
 #         SRR = lambda wildcards: SRR[wildcards.sample],
 #         SAMPLE = '{sample}'
 #     run:
-#         if len(SRR)==0:
+#         if len(params.SRR)!=0:
 #             print("Downloading .fastq's for ", params.SRR)
 #             shell("prefetch --max-size 999999999999 {params.SRR}")
 #             shell("parallel-fastq-dump --sra-id {params.SRR} --threads {threads} --outdir {params.OUT_DIR} --tmpdir {params.TMP_DIR} --split-files --gzip")
@@ -424,6 +425,7 @@ rule bamToSplitBigWig:
         BAI = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam.bai'
     output:
         POS_BW = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_plus.bw',
+        MERGED_BW = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_merged.bw'
     params:
         BAM2SPLITBW=config['BAM2SPLITBW'],
         STAR_REF = config['STAR_REF'],
