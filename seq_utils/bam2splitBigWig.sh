@@ -11,6 +11,8 @@ CORE=$2 # number of cores for parallelization
 OUTDIR=$3 # output directory
 CHINFO=$4 # path to genome chrom.sizes
 
+#TODO: add flags/options for including merged outputs and log10 outputs
+
 PREFIX=`echo ${INBAM} | rev | cut -d / -f 1 | cut -d . -f 2- | rev`
 
 echo ".bam file location:    "${INBAM}
@@ -67,6 +69,16 @@ bedGraphToBigWig ${OUTDIR}/${PREFIX}\_log10_sorted_plus.bedGraph ${CHINFO} ${OUT
 LC_COLLATE=C sort -k1,1 -k2,2n ${OUTDIR}/${PREFIX}\_log10_minus.bedGraph > ${OUTDIR}/${PREFIX}\_log10_sorted_minus.bedGraph
 bedGraphToBigWig ${OUTDIR}/${PREFIX}\_log10_sorted_minus.bedGraph ${CHINFO} ${OUTDIR}/${PREFIX}_log10_minus.bw
 
+# Generate merged bigWIgs (both strands)
+bigWigMerge ${OUTDIR}/${PREFIX}\_minus.bw ${OUTDIR}/${PREFIX}\_plus.bw ${OUTDIR}/${PREFIX}\_merged.bedGraph
+LC_COLLATE=C sort -k1,1 -k2,2n ${OUTDIR}/${PREFIX}\_merged.bedGraph > ${OUTDIR}/${PREFIX}\_merged_sorted.bedGraph
+bedGraphToBigWig ${OUTDIR}/${PREFIX}\_merged_sorted.bedGraph ${CHINFO} ${OUTDIR}/${PREFIX}\_merged.bw
+
+# log10 scale
+bigWigMerge ${OUTDIR}/${PREFIX}\_log10_minus.bw ${OUTDIR}/${PREFIX}\_plus.bw ${OUTDIR}/${PREFIX}\_merged_log10.bedGraph
+LC_COLLATE=C sort -k1,1 -k2,2n ${OUTDIR}/${PREFIX}\_merged_log10.bedGraph > ${OUTDIR}/${PREFIX}\_merged_sorted_log10.bedGraph
+bedGraphToBigWig ${OUTDIR}/${PREFIX}\_merged_sorted_log10.bedGraph ${CHINFO} ${OUTDIR}/${PREFIX}\_merged_log10.bw
+
 # Remove tmp files
 echo "Removing tmp files..."
 rm ${OUTDIR}/${PREFIX}\_minus.noinv.bedGraph
@@ -78,5 +90,9 @@ rm ${OUTDIR}/${PREFIX}\_log10_minus.bedGraph
 rm ${OUTDIR}/${PREFIX}\_log10_plus.bedGraph
 rm ${OUTDIR}/${PREFIX}\_log10_sorted_minus.bedGraph
 rm ${OUTDIR}/${PREFIX}\_log10_sorted_plus.bedGraph
+rm ${OUTDIR}/${PREFIX}\_merged.bedGraph
+rm ${OUTDIR}/${PREFIX}\_merged_sorted.bedGraph
+rm ${OUTDIR}/${PREFIX}\_merged_log10.bedGraph
+rm ${OUTDIR}/${PREFIX}\_merged_sorted_log10.bedGraph
 
 echo "Done."
