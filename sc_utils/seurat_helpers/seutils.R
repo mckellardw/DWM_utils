@@ -307,7 +307,7 @@ seuPreProcess <- function(
   }
 
   # NormalizeData(SEU) %>% FindVariableFeatures() %>% ScaleData() %>% RunPCA()
-  pca.name ="pca"  #paste0('pca_', assay)
+  pca.name = paste0('pca_', assay)
   pca.key = paste0(pca.name,'_')
   umap.name = paste0('umap_', assay)
 
@@ -394,8 +394,8 @@ seuPHATE <- function(
   SEU=NULL,
   reduction="pca",
   ndims=50,
-  reduction.name=NULL,
-  reduction.key=NULL,
+  reduction.name=NULL, # output reduction name
+  reduction.key=NULL, # output reduction key
   # phate() defaults
   ndim = 2,
   knn = 5,
@@ -472,7 +472,7 @@ seuPHATE <- function(
   )
 
   # Add std dev to reduction
-  SEU@reductions[[reduction]]@stdev <-
+  SEU@reductions[[reduction.name]]@stdev <-
     apply(SEU@reductions[[reduction.name]]@cell.embeddings, 2, sd) #find std dev for phate vals
 
   return(SEU)
