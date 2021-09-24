@@ -42,18 +42,15 @@ grepGenes <- function(
   pattern=NULL, # pattern to look for
   assay=NULL,
   filter.pattern=NULL, # pattern to remove TODO
-  verbose=F
+  sort.by = c("expression","abc"),
+  verbose=T
 ){
   if(is.null(pattern)){
-    message("Need a pattern to look for!")
+    if(verbose){message("Need a pattern to look for!")}
     return(NULL)
   }
-  if(!is.null(filter.pattern)){
-    message("filter.pattern not yet implemented...")
-    # return(NULL)
-  }
   if(is.list(SEU)){
-    message("Don't pass a list!")
+    if(verbose){message("Don't pass a list!")}
     return(NULL)
   }
   if(is.null(assay)){
@@ -63,18 +60,48 @@ grepGenes <- function(
   genes = SEU@assays[[assay]]@counts@Dimnames[[1]]
 
   if(verbose){
-    cat(paste0("Found ", length(genes), " features in the assay '",assay,"'...\n"))
-    cat(paste0("Looking for '", pattern, "' in these features...\n"))
+    message(paste0("Found ", length(genes), " features in the assay '",assay,"'...\n"))
+    message(paste0("Looking for '", pattern, "' in these features...\n"))
+  }
+
+  out.genes <- genes[grep(pattern=pattern,x=genes)] #get genes
+  if(!is.null(filter.pattern)){ # filter out filter.pattern
+    if(verbose){message(paste0("Removing ", filter.pattern," from output...\n"))}
+    out.genes <- out.genes[!grep(pattern=filter.pattern,x=out.genes)]
+  }
+
+  if(is.null(sort.by[1])){
+    if(verbose){message("Output genes not sorted...\n")}
+  }else if(sort.by[1]=="expression"){
+    if(verbose){message("Output genes sorted by expression...\n")}
+
+    out.genes <- GetAssayData(
+      SEU,
+      assay=assay,
+      slot="counts"
+    )[out.genes,] %>%
+        rowSums() %>% # sum counts across all cells
+        sort(decreasing=T) %>% # sort genes according to total expression
+        names() # get gene names back
+  }else if(sort.by[1]=="abc"){
+    if(verbose){message("Output genes sorted alphabetically...\n")}
+
+    out.genes <- sort(out.genes, decreasing=T)
   }
 
   # Return matching gene names!
   return(
-    genes[grep(pattern=pattern,x=genes)]
+    out.genes
   )
 }
 
 # Collapse cell/nuclei/spot counts for multimapped genes
-collapseMultimappers <- function(SEU, assay=NULL,new.assay.name=NULL, verbose=F){
+collapseMultimappers <- function(
+  SEU,
+  assay=NULL,
+  new.assay.name=NULL,
+  verbose=F
+){
 
   if(is.null(new.assay.name)){
     new.assay.name = paste0(assay,"_collpased")
@@ -376,7 +403,9 @@ seuPreProcess <- function(
 #     new.idents: vector of cell types, in order of cluster number
 #     newName:    string of the new idents name
 #
-AddCellTypeIdents <- function(SEU=NULL, old.name, new.name=NULL, new.idents, verbose=FALSE){
+AddCellTypeIdents <- function(
+  SEU=NULL, old.name, new.name=NULL, new.idents, verbose=FALSE
+){
   old.idents = as.vector(names(table(SEU[[old.name]])))
 
   if(is.null(new.name)){
