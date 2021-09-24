@@ -47,6 +47,8 @@ rule all:
         # expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         expand('{OUTDIR}/{sample}_STARsolo/preTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # raw R2 fastQC results
         expand('{OUTDIR}/{sample}_STARsolo/postTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
+        expand('{OUTDIR}/{sample}_STARsolo/cutadapt_polyA_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        expand('{OUTDIR}/{sample}_STARsolo/cutadapt_polyG_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         expand('{OUTDIR}/{sample}_STARsolo/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap
         expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
         expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_merged.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # non-strand-split bigWigs (for plotgardener)
@@ -149,8 +151,8 @@ rule trimPolyA_R2:
         MERGED_R2_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2.fq.gz'
     output:
         A_TRIMMED_R1_FQ = temp('{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R1_Atrimmed.fq.gz'),
-        A_TRIMMED_R2_FQ = temp('{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2_Atrimmed.fq.gz')
-        # POLYA_REPORT = '{OUTDIR}/{sample}_STARsolo/cutadapt_polyA_report.txt'
+        A_TRIMMED_R2_FQ = temp('{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2_Atrimmed.fq.gz'),
+        POLYA_REPORT = '{OUTDIR}/{sample}_STARsolo/cutadapt_polyA_report.txt'
     params:
         THREE_PRIME_R2_POLYA = "A"*100,
         FIVE_PRIME_R2 = "CCCATGTACTCTGCGTTGATACCACTGCTT" #10x TSO sequence
@@ -184,7 +186,7 @@ rule trimPolyG_R2:
     output:
         FINAL_R1_FQ = temp('{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R1_final.fq.gz'),
         FINAL_R2_FQ = temp('{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2_final.fq.gz'),
-        # POLYG_REPORT = '{OUTDIR}/{sample}_STARsolo/cutadapt_polyG_report.txt'
+        POLYG_REPORT = '{OUTDIR}/{sample}_STARsolo/cutadapt_polyG_report.txt'
     params:
         THREE_PRIME_R2_POLYG = "G"*100,
         FIVE_PRIME_R2 = "AAGCAGTGGTATCAACGCAGAGTACATGGG" # rev-comp of 10x TSO sequence
@@ -363,8 +365,8 @@ rule unmapped_fastqc:
         UNMAPPED1 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1',
         UNMAPPED2 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2'
     output:
-        UNMAPPED1_FQ = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1.fastq',
-        UNMAPPED2_FQ = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2.fastq',
+        UNMAPPED1_FQ = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1.fastq.gz',
+        UNMAPPED2_FQ = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2.fastq.gz',
         FQC_DIR = directory('{OUTDIR}/{sample}_STARsolo/Unmapped_fastqc_out')
     params:
         FASTQC_EXEC = config['FASTQC_EXEC']
@@ -374,6 +376,8 @@ rule unmapped_fastqc:
         """
         mv {input.UNMAPPED1} {output.UNMAPPED2_FQ}
         mv {input.UNMAPPED2} {output.UNMAPPED1_FQ}
+
+        pigz -p{threads} {output.UNMAPPED2_FQ} {output.UNMAPPED1_FQ}
 
         mkdir -p {output.FQC_DIR}
 
