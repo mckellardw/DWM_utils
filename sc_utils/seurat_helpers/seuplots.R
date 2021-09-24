@@ -281,7 +281,7 @@ visListPlot <- function(
           }
         }
       ) %>% unlist() %>% max()
-      return(c(0,out.max))
+      return(c(10^-100,out.max))
     }
   )
 
@@ -297,7 +297,10 @@ visListPlot <- function(
           pt.size = pt.size,
           reduction=reduction
         ) +
-        scale_color_viridis(limits=unlist(gene.lims[i]), na.value = gray(0.42))+
+        scale_color_viridis(
+          limits=unlist(gene.lims[i]),
+          na.value = gray(0.42)
+        )+
         theme(
           plot.margin = unit(rep(0,4), "inches"),
           axis.ticks = element_blank(),
@@ -323,7 +326,7 @@ visListPlot <- function(
     plot.list[[1]][[i]] <- plot.list[[1]][[i]] +
       theme(axis.title.y = element_text(size=font.size, face="bold", color="black"))
 
-      if(!is.null(sample.titles)){ #add sample titles
+      if(!is.null(sample.titles)){ # add sample titles
         plot.list[[1]][[i]] <- plot.list[[1]][[i]] +
           labs(y=sample.titles[i])
       }
@@ -348,7 +351,6 @@ visListPlot <- function(
   }else{
     return(plot.list)
   }
-
 }
 
 
