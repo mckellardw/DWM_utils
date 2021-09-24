@@ -302,9 +302,14 @@ seuPreProcess <- function(
   verbose=F
 ){
   if(is.null(SEU)){
-    cat("Need a Seurat object to preprocess!")
+    cat("Need a Seurat object to preprocess!\n")
     return(NULL)
   }
+  if(!assay %in% Assays(SEU)){
+    cat(paste0(assay, " not found in the seurat object! Not preprocessed.\n"))
+    return(SEU)
+  }
+
 
   # NormalizeData(SEU) %>% FindVariableFeatures() %>% ScaleData() %>% RunPCA()
   pca.name = paste0('pca_', assay)
