@@ -17,22 +17,21 @@ configfile:'config.yaml'
 ########################################################################################################
 # Directories and locations
 ########################################################################################################
-DATADIR = config['DATADIR']
 TMPDIR = config['TMPDIR']
 OUTDIR = config['OUTDIR']
+
+DATADIR = config['DATADIR']
+SRA_DOWNLOAD = config['SRA_DOWNLOAD']
 
 ########################################################################################################
 # Variables and references
 ########################################################################################################
 SAMPLES = list(pd.read_csv(config['SAMPLE_SHEET'])['sampleID'])
-print("Running STARsolo pipeline for ", SAMPLES)
 
-# R1_FQS = list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])
 R1_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])))
 
 # R2_FQS = list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R2'])
 # R2_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R2'])))
-# SAMPLE_SHEET = pd.read_csv(config['SAMPLE_SHEET']
 
 # SRR = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['SRR'])))
 
@@ -60,7 +59,16 @@ rule all:
 #############################################
 ## Pre-alignment set up
 #############################################
-
+# rule mk_sample_dir:
+#     output:
+#         sampleDir = directory('{OUTDIR}/{sample}'),
+#         # fastqcReport = ''
+#     threads:
+#         config['CORES']
+#     shell:
+#         """
+#         mkdir -p {output.sampleDir}
+#         """
 
 #############################################
 ## Optional parallel-fastq-dump (if SRR number is passed, instead of .fastq location)
@@ -68,27 +76,29 @@ rule all:
 # TODO- add multi-SRR number passing (delimit the sample_sheet with ;?)
 # rule get_fastqs:
 #     output:
-#         R1_FQ = DATADIR + '/{sample}/',
-#         R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
+#         R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz'
+#         # R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
 #     params:
-#         OUT_DIR = DATADIR + '/{sample}',
+#         OUT_DIR = DATADIR + '/{sample}/tmp',
 #         TMP_DIR = TMPDIR,
-#         SRR = lambda wildcards: SRR[wildcards.sample],
-#         SAMPLE = '{sample}'
+#         SRR = lambda wildcards: SRR[wildcards.sample]
+#         # SAMPLE = '{sample}'
 #     run:
-#         if len(SRR)==0:
-#             print("Downloading .fastq's for ", params.SRR)
+#         if SRA_DOWNLOAD:
+#             print("Downloading .fastq's for {params.SRR}")
 #             shell("prefetch --max-size 999999999999 {params.SRR}")
 #             shell("parallel-fastq-dump --sra-id {params.SRR} --threads {threads} --outdir {params.OUT_DIR} --tmpdir {params.TMP_DIR} --split-files --gzip")
 #
-#             # update R1_FQS and R2_FQS
-#             R1_FQS[wildcards.sample] = params.OUT_DIR + "/" + wildcards.sample + "/" + params.SRR + "_1.fq.gz"
-#             R2_FQS[wildcards.sample] = params.OUT_DIR + "/" + wildcards.sample + "/" + params.SRR + "_2.fq.gz"
+#             #rename fastq file(s) with sample IDs
 #
-#             #add R1.fq location and R2.fq location to sample_sheet
+#             # update R1_FQS and R2_FQS
+#             R1_FQS[wildcards.sample] = "{params.OUT_DIR}/{wildcards.sample}/{params.SRR}_1.fq.gz"
+#             # R2_FQS[wildcards.sample] = "{params.OUT_DIR}/{wildcards.sample}/{params.SRR}_2.fq.gz"
+#
+#             # Update R1.fq location and R2.fq location to sample_sheet
 #             #TODO
 #         else:
-#             print("No SRR number for ", params.SAMPLE, "- proceeding without download.\n")
+#             print("No SRR number for {wildcards.sample}; proceeding without download.\n")
 
 
 #############################################
@@ -392,7 +402,7 @@ rule blast_unmapped:
 
         blastn -db {params.blastDB}/nt \
         -query tmp.fa \
-        -out {output.BLAST_R2} \
+        -out {output.BLAST_R1} \
         -outfmt '6 qseqid sseqid stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore' \
         -max_target_seqs 5 \
         -num_threads {threads}
