@@ -41,7 +41,7 @@ grepGenes <- function(
   SEU,
   pattern=NULL, # pattern to look for
   assay=NULL,
-  filter.pattern=NULL, # pattern to remove TODO
+  filter.pattern=NULL, # pattern to remove
   sort.by = c("expression","abc"),
   verbose=T
 ){
@@ -60,20 +60,27 @@ grepGenes <- function(
   genes = SEU@assays[[assay]]@counts@Dimnames[[1]]
 
   if(verbose){
-    message(paste0("Found ", length(genes), " features in the assay '",assay,"'...\n"))
-    message(paste0("Looking for '", pattern, "' in these features...\n"))
+    message(paste0("Found ", length(genes), " features in the assay '",assay,"'..."))
+    message(paste0("Looking for '", pattern, "' in these features..."))
   }
 
   out.genes <- genes[grep(pattern=pattern,x=genes)] #get genes
+  if(length(out.genes)==0){
+    message("Nothing found!\n")
+    return(NULL)
+  }
+
   if(!is.null(filter.pattern)){ # filter out filter.pattern
-    if(verbose){message(paste0("Removing ", filter.pattern," from output...\n"))}
+    if(verbose){message(paste0("Removing ", filter.pattern," from output..."))}
     out.genes <- out.genes[!grep(pattern=filter.pattern,x=out.genes)]
   }
 
   if(is.null(sort.by[1])){
-    if(verbose){message("Output genes not sorted...\n")}
+    if(verbose){message("Output genes not sorted...")}
+  }else if(length(out.genes)==1){
+    # Do nothing
   }else if(sort.by[1]=="expression"){
-    if(verbose){message("Output genes sorted by expression...\n")}
+    if(verbose){message("Output genes sorted by expression...")}
 
     out.genes <- GetAssayData(
       SEU,
@@ -84,7 +91,7 @@ grepGenes <- function(
         sort(decreasing=T) %>% # sort genes according to total expression
         names() # get gene names back
   }else if(sort.by[1]=="abc"){
-    if(verbose){message("Output genes sorted alphabetically...\n")}
+    if(verbose){message("Output genes sorted alphabetically...")}
 
     out.genes <- sort(out.genes, decreasing=T)
   }
@@ -105,23 +112,28 @@ collapseMultimappers <- function(
 
   if(is.null(new.assay.name)){
     new.assay.name = paste0(assay,"_collpased")
-    cat("Using ",new.assay.name, " as new.assay.name...\n")
+    message("Using ",new.assay.name, " as new.assay.name...")
   }
   if(is.null(new.assay.name)){
-    cat("Need new.assay.name!\n")
+    message("Need new.assay.name!")
     return(SEU)
   }
 
   SEU@active.assay <- assay
 
-  multi.feats <- grepGenes(SEU, assay = assay, pattern="\\.") #Find genes with a period in them
+  multi.feats <- grepGenes(SEU, assay = assay, pattern="\\.", sort.by="abc") #Find genes with a period in them
+  if(length(multi.feats)==0){
+    message("No multimappers found!")
+    return(SEU)
+  }
+
   multi.patterns <- stringr::str_split(multi.feats, pattern = "\\.",n = 2) %>% #extract actual gene names
     lapply(FUN=function(X) X[1]) %>%
     unlist() %>%
     unique()
 
   if(verbose){
-    cat(paste0("Found ", length(multi.patterns), " multimappers and ", length(multi.feats)," loci...\n"))
+    message(paste0("Found ", length(multi.patterns), " multimappers and ", length(multi.feats)," loci..."))
   }
 
   # Collapse counts for each gene
@@ -142,6 +154,8 @@ collapseMultimappers <- function(
   )
   collapsed.mat <- do.call(rbind, collapsed.list) %>% as.sparse()
   rownames(collapsed.mat) <- multi.patterns
+
+  print(multi.patterns)
 
   # Add new assay with collapsed counts + the rest of the genes
   if(verbose){cat(paste0("Adding back ", nrow(collapsed.mat), " features...\n"))}
@@ -173,7 +187,7 @@ write_sparse <- function(
 
   # gene.symbol,#not used
   # gene.type
-  ){
+){
   require(utils,quietly = T)
   require(Matrix,quietly = T)
   require(R.utils,quietly = T)
@@ -337,7 +351,6 @@ seuPreProcess <- function(
     return(SEU)
   }
 
-
   # NormalizeData(SEU) %>% FindVariableFeatures() %>% ScaleData() %>% RunPCA()
   pca.name = paste0('pca_', assay)
   pca.key = paste0(pca.name,'_')
@@ -384,8 +397,7 @@ seuPreProcess <- function(
     resolution = res,
     verbose = verbose
   )
-  SEU[[paste0('RNA_res.',res)]] <- as.numeric(SEU@active.ident)
-
+  # SEU[[paste0('RNA_res.',res)]] <- as.numeric(SEU@active.ident)
   gc()
   return(
     tryCatch(
