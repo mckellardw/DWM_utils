@@ -4,31 +4,15 @@
 # version: 1.0
 ###############################
 
-# Calculate the number of PCs that contain some proportion (default is 95%) of the variance
-npcs <- function(
-  SEU,
-  var.total=0.95,
-  reduction="pca"
-){
-  if(is.null(SEU@reductions[[reduction]])){
-    cat("Reduction", reduction, "not found!")
-    return(NULL)
-  }
-
-  tmp.var <- (SEU@reductions[[reduction]]@stdev)^2
-  var.cut <- var.total*sum(tmp.var)
-  n.pcs=0
-  var.sum = 0
-  while(var.sum < var.cut){
-    n.pcs = n.pcs + 1
-    var.sum <- var.sum + tmp.var[n.pcs]
-  }
-
-  return(n.pcs)
-}
+########################################
+## Helpers for grabbing/searching feature names
+########################################
 
 # Quickly return genes/feature names from a Seurat object
-Features <- function(SEU,assay=NULL){
+Features <- function(
+  SEU,
+  assay=NULL
+){
   if(is.null(assay)){
     assay <- SEU@active.assay
   }
@@ -102,6 +86,34 @@ grepGenes <- function(
   )
 }
 
+
+########################################
+## General Seurat worflow helpers
+########################################
+# Calculate the number of PCs that contain some proportion (default is 95%) of the variance
+npcs <- function(
+  SEU,
+  var.total=0.95,
+  reduction="pca"
+){
+  if(is.null(SEU@reductions[[reduction]])){
+    cat("Reduction", reduction, "not found!")
+    return(NULL)
+  }
+
+  tmp.var <- (SEU@reductions[[reduction]]@stdev)^2
+  var.cut <- var.total*sum(tmp.var)
+  n.pcs=0
+  var.sum = 0
+  while(var.sum < var.cut){
+    n.pcs = n.pcs + 1
+    var.sum <- var.sum + tmp.var[n.pcs]
+  }
+
+  return(n.pcs)
+}
+
+
 # Collapse cell/nuclei/spot counts for multimapped genes
 collapseMultimappers <- function(
   SEU,
@@ -174,167 +186,10 @@ collapseMultimappers <- function(
   return(SEU)
 }
 
-# Borrowed/adapted from the Marioni Lab, DropletUtils package (https://rdrr.io/github/MarioniLab/DropletUtils/src/R/write10xCounts.R)
-#   (Had R version issues getting it to work as a dependency)
-#' @importFrom utils write.table
-#' @importFrom Matrix writeMM
-#' @importFrom R.utils gzip
-write_sparse <- function(
-  path, # name of new directory
-  x, # matrix to write as sparse
-  barcodes, # cell IDs, colnames
-  features # gene IDs, rownames
-
-  # gene.symbol,#not used
-  # gene.type
-){
-  require(utils,quietly = T)
-  require(Matrix,quietly = T)
-  require(R.utils,quietly = T)
-
-  if(!dir.exists(path)){
-    dir.create(path, showWarnings=FALSE)
-  }
-
-  # gene.info <- data.frame(gene.id, gene.symbol, stringsAsFactors=FALSE)
-
-  # gene.info$gene.type <- rep(gene.type, length.out=nrow(gene.info))
-  mhandle <- file.path(path, "matrix.mtx")
-  bhandle <- gzfile(file.path(path, "barcodes.tsv.gz"), open="wb")
-  fhandle <- gzfile(file.path(path, "features.tsv.gz"), open="wb")
-  on.exit({
-    close(bhandle)
-    close(fhandle)
-  })
-
-  writeMM(x, file=mhandle)
-  write(barcodes, file=bhandle)
-  write.table(features, file=fhandle, row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
-
-  # Annoyingly, writeMM doesn't take connection objects.
-  gzip(mhandle)
-
-  return(NULL)
-}
-
-# TODO- haven't used this in a while, make sure it works...
-# calculate entropy across groups in a seurat object
-#     output: returns data.frame ("group.by" rows by 1 col)
-sc_entropy <- function(
-  SEU,
-  group.by="sample",
-  entropy.on="factorIDs",
-  out.name=NULL,
-  weighted=T,
-  norm2one=T,
-  verbose=T
-){
-  group.levels <- unlist(unique(SEU[[group.by]]))
-
-  sub.meta <- SEU@meta.data[,c(group.by,entropy.on)]
-
-  entropy.out <- list()
-  for(lev in group.levels){
-    if(verbose){cat("calculating entropy for ", lev, "... ",sep = "")}
-    tmp <- sub.meta[sub.meta[[group.by]]==lev,] # subset metadata by sample
-
-    entro.levels <- unlist(unique(sub.meta[[entropy.on]]))
-
-    perc <- table(tmp[[entropy.on]])/nrow(tmp) # find proportions for each entropy level
-    if(weighted){
-      w <- (table(sub.meta[[entropy.on]])/nrow(sub.meta))[perc!=0] # weights for present levels
-    }else{
-      w <- rep(1,length(table(sub.meta[[entropy.on]])))[perc!=0]
-    }
-
-    perc <- perc[perc!=0] # remove zeroes
-
-    entropy.out[[lev]] <- sum(-1*perc*log2(perc)*w) #calculate entropy
-
-    if(verbose){cat("Done!\n",sep = "")}
-  }
-
-  # re-format entropy output
-  if(is.null(out.name)){
-    out.name <- paste0("entropy_",group.by,".by.",entropy.on)
-  }
-  entropy.out <- t(as.data.frame(entropy.out))
-  colnames(entropy.out) <- out.name
-
-  #replace NaN's with zeroes
-  # entropy.out[is.nan(entropy.out)] <- 0
-
-  if(norm2one){
-    entropy.out <- entropy.out/log2(length(unique(sub.meta[[entropy.on]])))
-  }
-
-  return(entropy.out)
-}
-
-# Calculate silhouette
-seu_silhouette <- function(
-  SEU,
-  group.by,
-  reduction,
-  #TODO- add graph input as option
-  meta.name.out=NULL,
-  dims=1:10
-){
-  require(cluster)
-
-  if(is.null(meta.name.out)){
-    meta.name.out=paste0('sil.',reduction,'.',group.by)
-  }
-  if(is.null(group.by)){
-    message("group.by is missing!")
-    return(SEU)
-  }
-  if(is.null(reduction)){
-    message("reduction is missing!")
-    return(SEU)
-  }
-
-  # Calculate silhouette coefficient
-  sil.out <- silhouette(
-    x = as.numeric(x = as.factor(x = unlist(SEU[[group.by]]))),
-    dist = dist(x = Embeddings(object = SEU, reduction=reduction)[,dims])
-  )
-  SEU[[meta.name.out]] <- sil.out[,3]
-
-  return(SEU)
-}
-
-# Basic function to convert human to mouse gene names
-#   From @leonfodoulian (https://github.com/satijalab/seurat/issues/462)
-#   https://www.r-bloggers.com/converting-mouse-to-human-gene-names-with-biomart-package/
-#
-#   x = list of genes to be converted
-#   Usage: mouse.genes <- lapply(X = human.genes, ConvertHumanGeneListToMM)
-#
-ConvertHumanGeneListToMM <- function(x){
-  require(biomaRt)
-
-  # Load human ensembl attributes
-  human = biomaRt::useMart("ensembl", dataset = "hsapiens_gene_ensembl")
-  # Load mouse ensembl attributes
-  mouse = biomaRt::useMart("ensembl", dataset = "mmusculus_gene_ensembl")
-
-  # Link both datasets and retrieve mouse genes from the human genes
-  genes.list = biomaRt::getLDS(attributes = c("hgnc_symbol"),
-                               filters = "hgnc_symbol",
-                               values = x ,
-                               mart = human,
-                               attributesL = c("mgi_symbol"),
-                               martL = mouse,
-                               uniqueRows = TRUE)
-
-  # Get unique names of genes (in case gene names are duplicated)
-  mouse.gene.list <- unique(genes.list[, 2])
-
-  return(mouse.gene.list)
-}
 
 # Preprocessing wrapper function
+#   (1) NormalizeData(SEU) %>% FindVariableFeatures() %>% ScaleData() %>% RunPCA()
+#   (2) FindNeighbors %>% RunUMAP, FindClusters
 seuPreProcess <- function(
   SEU=NULL,
   assay='RNA',
@@ -434,6 +289,227 @@ AddCellTypeIdents <- function(
    return(SEU)
 
 }
+
+
+# Borrowed/adapted from the Marioni Lab, DropletUtils package (https://rdrr.io/github/MarioniLab/DropletUtils/src/R/write10xCounts.R)
+#   (Had R version issues getting it to work as a dependency)
+#' @importFrom utils write.table
+#' @importFrom Matrix writeMM
+#' @importFrom R.utils gzip
+write_sparse <- function(
+  path, # name of new directory
+  x, # matrix to write as sparse
+  barcodes, # cell IDs, colnames
+  features # gene IDs, rownames
+
+  # gene.symbol,#not used
+  # gene.type
+){
+  require(utils,quietly = T)
+  require(Matrix,quietly = T)
+  require(R.utils,quietly = T)
+
+  if(!dir.exists(path)){
+    dir.create(path, showWarnings=FALSE)
+  }
+
+  # gene.info <- data.frame(gene.id, gene.symbol, stringsAsFactors=FALSE)
+
+  # gene.info$gene.type <- rep(gene.type, length.out=nrow(gene.info))
+  mhandle <- file.path(path, "matrix.mtx")
+  bhandle <- gzfile(file.path(path, "barcodes.tsv.gz"), open="wb")
+  fhandle <- gzfile(file.path(path, "features.tsv.gz"), open="wb")
+  on.exit({
+    close(bhandle)
+    close(fhandle)
+  })
+
+  writeMM(x, file=mhandle)
+  write(barcodes, file=bhandle)
+  write.table(features, file=fhandle, row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
+
+  # Annoyingly, writeMM doesn't take connection objects.
+  gzip(mhandle)
+
+  return(NULL)
+}
+
+# TODO- haven't used this in a while, make sure it works...
+# calculate entropy across groups in a seurat object
+#     output: returns data.frame ("group.by" rows by 1 col)
+seu_entropy <- function(
+  SEU,
+  group.by="sample",
+  entropy.on="factorIDs",
+  out.name=NULL,
+  weighted=T,
+  norm2one=T,
+  verbose=T
+){
+  group.levels <- unlist(unique(SEU[[group.by]]))
+
+  sub.meta <- SEU@meta.data[,c(group.by,entropy.on)]
+
+  entropy.out <- list()
+  for(lev in group.levels){
+    if(verbose){cat("calculating entropy for ", lev, "... ",sep = "")}
+    tmp <- sub.meta[sub.meta[[group.by]]==lev,] # subset metadata by sample
+
+    entro.levels <- unlist(unique(sub.meta[[entropy.on]]))
+
+    perc <- table(tmp[[entropy.on]])/nrow(tmp) # find proportions for each entropy level
+    if(weighted){
+      w <- (table(sub.meta[[entropy.on]])/nrow(sub.meta))[perc!=0] # weights for present levels
+    }else{
+      w <- rep(1,length(table(sub.meta[[entropy.on]])))[perc!=0]
+    }
+
+    perc <- perc[perc!=0] # remove zeroes
+
+    entropy.out[[lev]] <- sum(-1*perc*log2(perc)*w) #calculate entropy
+
+    if(verbose){cat("Done!\n",sep = "")}
+  }
+
+  # re-format entropy output
+  if(is.null(out.name)){
+    out.name <- paste0("entropy_",group.by,".by.",entropy.on)
+  }
+  entropy.out <- t(as.data.frame(entropy.out))
+  colnames(entropy.out) <- out.name
+
+  #replace NaN's with zeroes
+  # entropy.out[is.nan(entropy.out)] <- 0
+
+  if(norm2one){
+    entropy.out <- entropy.out/log2(length(unique(sub.meta[[entropy.on]])))
+  }
+
+  return(entropy.out)
+}
+
+# Calculate silhouette
+seu_silhouette <- function(
+  SEU,
+  group.by,
+  reduction,
+  #TODO- add graph input as option
+  meta.name.out=NULL,
+  dims=1:10
+){
+  require(cluster)
+
+  if(is.null(meta.name.out)){
+    meta.name.out=paste0('sil.',reduction,'.',group.by)
+  }
+  if(is.null(group.by)){
+    message("group.by is missing!")
+    return(SEU)
+  }
+  if(is.null(reduction)){
+    message("reduction is missing!")
+    return(SEU)
+  }
+
+  # Calculate silhouette coefficient
+  sil.out <- silhouette(
+    x = as.numeric(x = as.factor(x = unlist(SEU[[group.by]]))),
+    dist = dist(x = Embeddings(object = SEU, reduction=reduction)[,dims])
+  )
+  SEU[[meta.name.out]] <- sil.out[,3]
+
+  return(SEU)
+}
+
+########################################
+## biomaRt helper functions
+########################################
+
+# Basic function to convert human to mouse gene names
+#   From @leonfodoulian (https://github.com/satijalab/seurat/issues/462)
+#   https://www.r-bloggers.com/converting-mouse-to-human-gene-names-with-biomart-package/
+#
+#   x = list of genes to be converted
+#   Usage: mouse.genes <- lapply(X = human.genes, ConvertHumanGeneListToMM)
+#
+ConvertHumanGeneListToMM <- function(x){
+  require(biomaRt)
+
+  # Load human ensembl attributes
+  human = biomaRt::useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+  # Load mouse ensembl attributes
+  mouse = biomaRt::useMart("ensembl", dataset = "mmusculus_gene_ensembl")
+
+  # Link both datasets and retrieve mouse genes from the human genes
+  genes.list = biomaRt::getLDS(
+    attributes = c("hgnc_symbol"),
+    filters = "hgnc_symbol",
+    values = x ,
+    mart = human,
+    attributesL = c("mgi_symbol"),
+    martL = mouse,
+    uniqueRows = TRUE
+  )
+
+  # Get unique names of genes (in case gene names are duplicated)
+  mouse.gene.list <- unique(genes.list[, 2])
+
+  return(mouse.gene.list)
+}
+
+# Add gene biotype percentages to a seurat object, given a biomaRt object.
+seu_biotypes <- function(
+  SEU,
+  biomart=NULL, # biomaRt or data.frame containing gene biotypes
+  gene.colname,
+  biotype.colname,
+  add.as=c("metadata","assay"), # how percent features should be added
+  assay="RNA",
+  verbose=TRUE
+){
+
+  if(is.null(biomart)){
+    message("Need a list of gene biotypes! Nothing done.")
+    return(SEU)
+  }
+
+  if(add.as[1]=="assay"){
+    message("add.as='assay' is not yet implemented")
+    new.assay.name = paste0(assay,".biotypes")
+    return(SEU)
+  }
+
+  if(verbose){message(paste0("Adding gene biotype percentage values as ", add.as, " ..."))}
+
+  biotypes = unique(biomart[[biotype.colname]])
+  for(biotype in biotypes){
+    tmp.mart =  biomart[biomart[[biotype.colname]]==biotype,] #subset out current gene biotype
+    tmp.feat = unique( #get unique gene names which are present in the SEU object
+      tmp.mart[[gene.colname]][tmp.mart[[gene.colname]]%in%Features(SEU, assay=assay)]
+    )
+
+    if(length(tmp.feat)==0){
+      if(verbose){message(paste0("  No ", biotype, " genes found..."))}
+    }else{
+      if(add.as[1]=="metadata"){
+        SEU <- PercentageFeatureSet(
+          SEU,
+          col.name = paste0("pct.",biotype),
+          assay = assay,
+          features=tmp.feat
+        )
+      }
+      if(add.as[1]=="assay"){
+
+      }
+    }
+  }
+  return(SEU)
+}
+
+########################################
+## Other helpers...
+########################################
 
 # Run PHATE on reduction, with a Seurat objects
 seuPHATE <- function(
