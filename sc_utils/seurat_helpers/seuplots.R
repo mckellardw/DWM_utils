@@ -93,8 +93,10 @@
 #############################################################################
 # Build volcano plot after running FindMarkers()
 #   *Note- requires Seurat v4 or greater (b/c colnames in the output file changed for some reason...)
-ggVolcano_v2 <- function(markers=NULL, expression=NULL,
-                      seu=NULL,
+ggVolcano_v2 <- function(
+  markers=NULL,
+  expression=NULL,
+  seu=NULL,
                       logFC_filter = 1,
                       neg.log.pval.Thresh=50,
                       pct.thresh = 0.4,
@@ -106,7 +108,8 @@ ggVolcano_v2 <- function(markers=NULL, expression=NULL,
                       gene.text.size=6,  repel=T, nudge_x=-0.1,
                       dot.scale=1,
                       line.width=0.5, segment.color="gray",
-                      pt.size=1, pt.alpha=1){
+                      pt.size=1, pt.alpha=1
+                    ){
   # TODO: add split.by - generalize?
 
   require(ggrepel)
@@ -221,7 +224,6 @@ ggVolcano_v2 <- function(markers=NULL, expression=NULL,
     scale_x_continuous(expand=c(0.01,0.01))+
     scale_y_continuous(expand=c(0.01,0.01))
 
-
   return(out.gg)
 }
 
@@ -243,8 +245,10 @@ visListPlot <- function(
   pt.size=1,
   font.size=8,
   combine=TRUE,
+  abs.heights=TRUE, # Use absolute heights to size each subplot
   nrow=NULL,
   ncol=NULL,
+  option="viridis", #viridis option
   verbose=FALSE
 ){
   require(Seurat)
@@ -285,6 +289,21 @@ visListPlot <- function(
     }
   )
 
+# Get plot heights
+if(abs.heights){
+  heights <- lapply(
+    seu.list,
+    FUN=function(SEU) abs(diff(range(SEU@reductions[[reduction]]@cell.embeddings[,2])))
+  ) %>% unlist()
+  if(verbose){
+    message(paste0("Using these plot heights:"))
+    print(heights)
+  }
+}else{
+  heights <- rep(1,length(features))
+}
+
+# Plot
   plot.list <- list()
   for(i in 1:length(features)){
     tmp <- lapply(
@@ -299,6 +318,7 @@ visListPlot <- function(
         ) +
         scale_color_viridis(
           limits=unlist(gene.lims[i]),
+          option=option,
           na.value = gray(0.42)
         )+
         theme(
@@ -321,7 +341,6 @@ visListPlot <- function(
     plot.list[[i]] <- tmp
   }
 
-
   for(i in 1:length(plot.list[[1]]) ){
     plot.list[[1]][[i]] <- plot.list[[1]][[i]] +
       theme(axis.title.y = element_text(size=font.size, face="bold", color="black"))
@@ -334,8 +353,18 @@ visListPlot <- function(
 
   plot.list <- lapply(
     plot.list,
-    FUN = function(X)
-      wrap_plots(X, ncol=1, guides="collect")&theme(legend.position=legend.position, legend.margin = margin(0,0,0,0,"inches"))
+    FUN = function(X){
+
+      wrap_plots(
+        X,
+        ncol=1,
+        heights=heights,
+        guides="collect"
+      )&theme(
+        legend.position=legend.position,
+        legend.margin = margin(0,0,0,0,"inches")
+      )
+    }
   )
 
   if(verbose){cat("Done plotting Visium data!\n")}

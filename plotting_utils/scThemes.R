@@ -32,7 +32,7 @@ scThemes <-function(
       axis.title = element_text(face = 'bold',size = big.font, hjust = 0.5, vjust = 0.5),
       axis.text = element_text(size = small.font, color = "black",hjust=0.5),
       axis.ticks = element_line(color="black"),
-      legend.background = element_rect(color = "black", fill='white', size=0.5),
+      # legend.background = element_rect(color = "black", fill='white', size=0.5),
       legend.text = element_text(size = small.font, hjust = 0, vjust = 0.5),
       legend.title = element_text(face = 'bold',size = small.font, hjust = 0.5, vjust = 0.5),
       legend.position = c(0.2,0.6)
