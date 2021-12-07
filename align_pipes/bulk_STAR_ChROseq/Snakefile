@@ -160,6 +160,7 @@ rule preTrim_FastQC_R2:
 #         {input.MERGED_R1_FQ} {input.MERGED_R2_FQ}
 #         """
 
+#TODO- fix polyG trimming (GGGGGG still showing up in unaligned reads with the `--2colour` flag being used)
 rule trimgalore:
     input:
         MERGED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz',
