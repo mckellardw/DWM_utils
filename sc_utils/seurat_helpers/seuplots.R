@@ -244,6 +244,7 @@ visListPlot <- function(
   legend.position="bottom",
   pt.size=1,
   font.size=8,
+  axis.title.angle.y=90, #y-axis title angle (parameter for ggplot::element_text)
   combine=TRUE,
   abs.heights=TRUE, # Use absolute heights to size each subplot
   nrow=NULL,
@@ -335,7 +336,11 @@ if(abs.heights){
     )
     tmp[[1]] <- tmp[[1]] +
       theme(
-        plot.title = element_text(size=font.size,face="bold.italic",  vjust=1)
+        plot.title = element_text(
+          size=font.size,
+          face="bold.italic",
+          vjust=1
+        )
       ) +
       labs(title=alt.titles[i])
     plot.list[[i]] <- tmp
@@ -343,7 +348,16 @@ if(abs.heights){
 
   for(i in 1:length(plot.list[[1]]) ){
     plot.list[[1]][[i]] <- plot.list[[1]][[i]] +
-      theme(axis.title.y = element_text(size=font.size, face="bold", color="black"))
+      theme(
+        axis.title.y = element_text(
+          size=font.size,
+          face="bold",
+          color="black",
+          hjust=0.5,
+          vjust=0.5,
+          angle=axis.title.angle.y
+        )
+      )
 
       if(!is.null(sample.titles)){ # add sample titles
         plot.list[[1]][[i]] <- plot.list[[1]][[i]] +

@@ -30,9 +30,6 @@ R1_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])
 
 R2_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R2'])))
 
-#TODO: finish SRR download automation
-# SRR = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['SRR'])))
-
 STAR_REF = config['STAR_REF']
 
 ########################################################################################################
@@ -49,12 +46,12 @@ rule all:
         expand('{OUTDIR}/{sample}_STARsolo/postTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
         expand('{OUTDIR}/{sample}_STARsolo/cutadapt_polyA_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         expand('{OUTDIR}/{sample}_STARsolo/cutadapt_polyG_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        expand('{OUTDIR}/{sample}_STARsolo/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap
-        expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
-        expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_merged.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # non-strand-split bigWigs (for plotgardener)
+        expand('{OUTDIR}/{sample}_STARsolo/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap plotgardener)
         expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), # count mats
         expand('{OUTDIR}/{sample}_STARsolo/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
-        expand('{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES) # blastn results for unmapped R1 reads
+        expand('{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES), # blastn results for unmapped R1 reads
+        expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
+        expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_merged.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES) # non-strand-split bigWigs (for
 
 
 #############################################
@@ -70,35 +67,6 @@ rule gunzipWhitelist:
         """
         gunzip {input}
         """
-
-#############################################
-## Optional parallel-fastq-dump (if SRR number is passed, instead of .fastq location)
-#############################################
-# TODO- add multi-SRR number passing (delimit the sample_sheet with ;?)
-# rule get_fastqs:
-#     output:
-#         R1_FQ = DATADIR + '/{sample}/',
-#         R2_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2.fq.gz'
-#     params:
-#         OUT_DIR = DATADIR + '/{sample}',
-#         TMP_DIR = TMPDIR,
-#         SRR = lambda wildcards: SRR[wildcards.sample],
-#         SAMPLE = '{sample}'
-#     run:
-#         if len(params.SRR)!=0:
-#             print("Downloading .fastq's for ", params.SRR)
-#             shell("prefetch --max-size 999999999999 {params.SRR}")
-#             shell("parallel-fastq-dump --sra-id {params.SRR} --threads {threads} --outdir {params.OUT_DIR} --tmpdir {params.TMP_DIR} --split-files --gzip")
-#
-#             # update R1_FQS and R2_FQS
-#             R1_FQS[wildcards.sample] = params.OUT_DIR + "/" + wildcards.sample + "/" + params.SRR + "_1.fq.gz"
-#             R2_FQS[wildcards.sample] = params.OUT_DIR + "/" + wildcards.sample + "/" + params.SRR + "_2.fq.gz"
-#
-#             #add R1.fq location and R2.fq location to sample_sheet
-#             #TODO
-#         else:
-#             print("No SRR number for ", params.SAMPLE, "- proceeding without download.\n")
-
 
 #############################################
 ## Trimming and FastQC
@@ -409,10 +377,10 @@ rule unmapped_fastqc:
         config['CORES']
     shell:
         """
-        mv {input.UNMAPPED1} {output.UNMAPPED2_FQ}
-        mv {input.UNMAPPED2} {output.UNMAPPED1_FQ}
+        mv {input.UNMAPPED1} {input.UNMAPPED2}.fastq
+        mv {input.UNMAPPED2} {input.UNMAPPED1}.fastq
 
-        pigz -p{threads} {output.UNMAPPED2_FQ} {output.UNMAPPED1_FQ}
+        pigz -p{threads} {input.UNMAPPED1}.fastq {input.UNMAPPED2}.fastq
 
         mkdir -p {output.FQC_DIR}
 
