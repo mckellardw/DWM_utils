@@ -249,19 +249,34 @@ visListPlot <- function(
   abs.heights=TRUE, # Use absolute heights to size each subplot
   nrow=NULL,
   ncol=NULL,
-  option="viridis", #viridis option
+  colormap="viridis", # either a viridis option or a vector of colors
+  na.value=gray(0.42), # color for na.value (spot where gene is not detected)
   verbose=FALSE
 ){
   require(Seurat)
   require(ggplot2)
   require(viridis)
-
+  
   if(verbose){cat(paste0("Plotting Visium data, using the assay ",assay,"!\n"))}
-
+  
+  # Check colormap
+  if(length(colormap)==1){
+    if(!colormap %in% c("magma","inferno","plasma","viridis","cividis")){
+      message(paste0("Color palette '", colormap, "' not found!"))
+      return(NULL)
+    }
+  }
+  #TODO- check to make sure colors are passed correctly
+  # else if(!any(colormap %in% colors())){
+  #   
+  # }
+  
+  # Alternate feature names
   if(is.null(alt.titles)){
     alt.titles=features
   }
-
+  
+  # Set active assay
   seu.list <- lapply(
     seu.list,
     FUN = function(SEU){
@@ -269,7 +284,7 @@ visListPlot <- function(
       return(SEU)
     }
   )
-
+  
   # Get expression limits for each gene, across all datasets
   gene.lims <- lapply(
     features,
@@ -289,51 +304,68 @@ visListPlot <- function(
       return(c(10^-100,out.max))
     }
   )
-
-# Get plot heights
-if(abs.heights){
-  heights <- lapply(
-    seu.list,
-    FUN=function(SEU) abs(diff(range(SEU@reductions[[reduction]]@cell.embeddings[,2])))
-  ) %>% unlist()
-  if(verbose){
-    message(paste0("Using these plot heights:"))
-    print(heights)
+  
+  # Get plot heights
+  if(abs.heights){
+    heights <- lapply(
+      seu.list,
+      FUN=function(SEU) abs(diff(range(SEU@reductions[[reduction]]@cell.embeddings[,2])))
+    ) %>% unlist()
+    if(verbose){
+      message(paste0("Using these plot heights:"))
+      print(heights)
+    }
+  }else{
+    heights <- rep(1,length(features))
   }
-}else{
-  heights <- rep(1,length(features))
-}
-
-# Plot
+  
+  # Plot
   plot.list <- list()
   for(i in 1:length(features)){
     tmp <- lapply(
       seu.list,
-      FUN = function(SEU)
-        FeaturePlot(
+      FUN = function(SEU){
+        tmp.plot = FeaturePlot(
           SEU,
           slot = slot,
           features = features[i],
           pt.size = pt.size,
-          reduction=reduction
+          reduction = reduction
         ) +
-        scale_color_viridis(
-          limits=unlist(gene.lims[i]),
-          option=option,
-          na.value = gray(0.42)
-        )+
-        theme(
-          plot.margin = unit(rep(0,4), "inches"),
-          axis.ticks = element_blank(),
-          axis.text=element_blank(),
-          axis.title = element_blank(),
-          axis.line=element_blank(),
-          plot.title = element_blank(),
-          legend.position=legend.position,
-          legend.title = element_text(size=font.size,face="bold", hjust=0.5),
-          legend.text = element_text(size=font.size,face="bold")
-        )
+          theme(
+            plot.margin = unit(rep(0,4), "inches"),
+            axis.ticks = element_blank(),
+            axis.text=element_blank(),
+            axis.title = element_blank(),
+            axis.line=element_blank(),
+            plot.title = element_blank(),
+            legend.position=legend.position,
+            legend.title = element_text(size=font.size,face="bold", hjust=0.5),
+            legend.text = element_text(size=font.size,face="bold")
+          )
+        
+        # set colormap
+        if(length(colormap)==1){
+          if(verbose){message(paste0("Using viridis palette ", colormap))}
+          tmp.plot = tmp.plot + 
+            scale_color_viridis(
+              limits=unlist(gene.lims[i]),
+              option=colormap,
+              na.value = na.value
+            )
+        }else{
+          if(verbose){message(paste0("Using custom color gradient"))}
+          tmp.plot = tmp.plot + 
+            scale_color_gradientn(
+              limits=unlist(gene.lims[i]),
+              colors=colormap,
+              na.value = na.value
+            )
+        }
+        return(tmp.plot)
+      }
     )
+    
     tmp[[1]] <- tmp[[1]] +
       theme(
         plot.title = element_text(
@@ -343,9 +375,10 @@ if(abs.heights){
         )
       ) +
       labs(title=alt.titles[i])
+    
     plot.list[[i]] <- tmp
   }
-
+  
   for(i in 1:length(plot.list[[1]]) ){
     plot.list[[1]][[i]] <- plot.list[[1]][[i]] +
       theme(
@@ -358,17 +391,17 @@ if(abs.heights){
           angle=axis.title.angle.y
         )
       )
-
-      if(!is.null(sample.titles)){ # add sample titles
-        plot.list[[1]][[i]] <- plot.list[[1]][[i]] +
-          labs(y=sample.titles[i])
-      }
+    
+    if(!is.null(sample.titles)){ # add sample titles
+      plot.list[[1]][[i]] <- plot.list[[1]][[i]] +
+        labs(y=sample.titles[i])
+    }
   }
-
+  
   plot.list <- lapply(
     plot.list,
     FUN = function(X){
-
+      
       wrap_plots(
         X,
         ncol=1,
@@ -380,9 +413,9 @@ if(abs.heights){
       )
     }
   )
-
+  
   if(verbose){cat("Done plotting Visium data!\n")}
-
+  
   if(combine){
     return(
       wrap_plots(
