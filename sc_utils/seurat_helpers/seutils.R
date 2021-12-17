@@ -43,20 +43,34 @@ grepGenes <- function(
 
   genes = SEU@assays[[assay]]@counts@Dimnames[[1]]
 
-  if(verbose){
-    message(paste0("Found ", length(genes), " features in the assay '",assay,"'..."))
-    message(paste0("Looking for '", pattern, "' in these features..."))
-  }
+  
 
-  out.genes <- genes[grep(pattern=pattern,x=genes)] #get genes
+  if(length(pattern)>1){
+    if(verbose){
+      message(paste0("Found ", length(genes), " features in the assay '",assay,"'..."))
+      message(paste0("Looking for multiple patterns in these features..."))
+    }
+    out.genes <- lapply(
+      pattern,
+      FUN = function(PAT) genes[grep(pattern=PAT,x=genes)] #get genes
+    )
+    out.genes <- unlist(out.genes)
+  }else{
+    if(verbose){
+      message(paste0("Found ", length(genes), " features in the assay '",assay,"'..."))
+      message(paste0("Looking for '", pattern, "' in these features..."))
+    }
+    out.genes <- genes[grep(pattern=pattern,x=genes)] #get genes
+  }
+  
   if(length(out.genes)==0){
     message("Nothing found!\n")
     return(NULL)
   }
 
   if(!is.null(filter.pattern)){ # filter out filter.pattern
-    if(verbose){message(paste0("Removing ", filter.pattern," from output..."))}
-    out.genes <- out.genes[!grep(pattern=filter.pattern,x=out.genes)]
+    if(verbose){message(paste0("Removing features containing '", filter.pattern,"' from output..."))}
+    out.genes <- out.genes[!grepl(pattern=filter.pattern,x=out.genes)]
   }
 
   if(is.null(sort.by[1])){
