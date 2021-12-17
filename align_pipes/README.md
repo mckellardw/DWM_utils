@@ -1,8 +1,8 @@
 # align_pipes
-### A library of snakemake workflows for common alignment needs
+### Snakemake workflows for common alignment needs
 
 #### Workflows:
-- bulk_ATACseq
+- bulk_ATACseq: #TODO
 - bulk_STAR_ChROseq
 - bulk_STAR_smRNAseq
 - SS2_STAR
