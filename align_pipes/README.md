@@ -9,3 +9,7 @@
 - 10x_kallisto
 - 10x_STARsolo
 - SoloTotal
+
+
+### TODO:
+- Add details/citations on QC tools, alignment tools, etc
