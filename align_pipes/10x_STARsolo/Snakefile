@@ -112,7 +112,6 @@ rule preTrim_FastQC_R2:
         {input.MERGED_R2_FQ}
         """
 
-#TODO: log not working...
 rule trimPolyA_R2:
     input:
         MERGED_R1_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R1.fq.gz',
@@ -145,8 +144,7 @@ rule trimPolyA_R2:
         """
         # 2> {output.POLYA_REPORT}
 
-#Additional trimming step, just for 2-color Illumina chemistries (NextSeq, etc.)
-#TODO: log not working...
+#Additional trimming step, for 2-color Illumina chemistries (NextSeq, etc.)
 rule trimPolyG_R2:
     input:
         A_TRIMMED_R1_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R1_Atrimmed.fq.gz',
@@ -175,7 +173,6 @@ rule trimPolyG_R2:
         --cores {threads} \
         {input.A_TRIMMED_R1_FQ} {input.A_TRIMMED_R2_FQ} 1> {log.log}
         """
-        # 2> {output.POLYG_REPORT}
 
         #*Note- tried `--polyA` flag in trim_galore with no luck, unfortunately...
         # trim_galore \
@@ -241,7 +238,7 @@ rule STARsolo_align:
         MEMLIMIT = config['MEMLIMIT']
     threads:
         config['CORES']
-    shell: # TODO- convert to bash script?
+    shell: #*NOTE* ``--soloBarcodeReadLength 0` should be removed to ensure read-length checking on BC read (R1) is performed 
         """
         mkdir -p {params.OUTDIR}/{wildcards.sample}_STARsolo
 
@@ -264,6 +261,7 @@ rule STARsolo_align:
         --outFilterMatchNminOverLread 0 \
         --outFilterMultimapNmax 50 \
         --soloType CB_UMI_Simple \
+        --soloBarcodeReadLength 0 \
         --soloCBwhitelist {input.CB_WHITELIST} \
         --soloCellFilter EmptyDrops_CR \
         --soloFeatures Gene GeneFull SJ Velocyto \

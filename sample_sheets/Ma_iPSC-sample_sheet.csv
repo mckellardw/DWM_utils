@@ -10,3 +10,5 @@ D4_SmallPattern,/workdir/dwm269/ma_ipsc/data/fastqs/D4_SmallPattern/D4_SmallPatt
 D4_LargePattern,/workdir/dwm269/ma_ipsc/data/fastqs/D4_LargePattern/D4_LargePattern_S1_L001_R1_001.fastq.gz,/workdir/dwm269/ma_ipsc/data/fastqs/D4_LargePattern/D4_LargePattern_S1_L001_R2_001.fastq.gz,
 D21_SmallPattern,/workdir/dwm269/ma_ipsc/data/fastqs/D21_SmallPattern/D21_SmallPattern_S1_L001_R1_001.fastq.gz,/workdir/dwm269/ma_ipsc/data/fastqs/D21_SmallPattern/D21_SmallPattern_S1_L001_R2_001.fastq.gz,
 D21_LargePattern,/workdir/dwm269/ma_ipsc/data/fastqs/D21_LargePattern/D21_LargePattern_S1_L001_R1_001.fastq.gz,/workdir/dwm269/ma_ipsc/data/fastqs/D21_LargePattern/D21_LargePattern_S1_L001_R2_001.fastq.gz,
+Silva_multi_D100,/workdir/dwm269/ma_ipsc/data/fastqs/Silva_CSC/SRR12075831_1.fastq.gz,/workdir/dwm269/ma_ipsc/data/fastqs/Silva_CSC/SRR12075831_2.fastq.gz,
+Silva_gut_D100,/workdir/dwm269/ma_ipsc/data/fastqs/Silva_CSC/SRR12075832_1.fastq.gz,/workdir/dwm269/ma_ipsc/data/fastqs/Silva_CSC/SRR12075832_2.fastq.gz,
