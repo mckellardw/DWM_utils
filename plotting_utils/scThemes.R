@@ -12,6 +12,8 @@ scThemes <-function(
   pt.stroke=0.3,
   label.size=2
 ){
+  require(ggplot2)
+
   scTheme <- list()
 
   scTheme$umap <- theme(
@@ -50,8 +52,9 @@ scThemes <-function(
       axis.title = element_text(face = 'bold',size = small.font, hjust = 0.5, vjust = 1),
       axis.text.x=element_text(size = small.font, color = "black",angle = 0,hjust=0.5),
       axis.text.y=element_text(size = small.font, color = "black",hjust=0.5,angle = 90),
-      axis.ticks = element_line(color="black")
-    )+ NoLegend()
+      axis.ticks = element_line(color="black"),
+      legend.position="none"
+    )
 
   scTheme$pie <-
     theme_minimal() +
@@ -64,8 +67,9 @@ scThemes <-function(
       axis.ticks = element_blank(),
       panel.grid = element_blank(),
       title=element_text(face="bold.italic", hjust=0.5,vjust = 0.5, size=big.font),
-      plot.title=element_text(face="bold.italic", hjust=0.5,vjust = 0.5, size=big.font)
-    ) + NoLegend()
+      plot.title=element_text(face="bold.italic", hjust=0.5,vjust = 0.5, size=big.font),
+      legend.position="none"
+    )
 
   scTheme$dot <- theme(
     axis.line = element_blank(),
