@@ -1,5 +1,5 @@
 ########################################################################################################
-# STARsolo_10x
+# 10x_kallisto
 #   Snakemake workflow to use kallisto/bustools to align and quantify 10x Chromium datasets
 #   v1.0
 #   Written by David McKellar
@@ -30,12 +30,8 @@ OUTDIR = config['OUTDIR']
 # Variables and references
 ########################################################################################################
 SAMPLES = list(pd.read_csv(config['SAMPLE_SHEET'])['sampleID'])
-
 R1_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])))
-
 R2_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R2'])))
-
-KB_REF = config['KB_REF']
 
 ########################################################################################################
 # Executables
@@ -45,18 +41,18 @@ KB_EXEC = config['KB_EXEC']
 ########################################################################################################
 rule all:
     input:
-        # expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/filtered/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        # expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        expand('{OUTDIR}/{sample}_STARsolo/preTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # raw R2 fastQC results
-        expand('{OUTDIR}/{sample}_STARsolo/postTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
-        expand('{OUTDIR}/{sample}_STARsolo/cutadapt_polyA_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        expand('{OUTDIR}/{sample}_STARsolo/cutadapt_polyG_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        expand('{OUTDIR}/{sample}_STARsolo/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap plotgardener)
-        expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), # count mats
-        expand('{OUTDIR}/{sample}_STARsolo/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
-        expand('{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES), # blastn results for unmapped R1 reads
-        expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
-        expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_merged.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES) # non-strand-split bigWigs (for
+        # expand('{OUTDIR}/{sample}/Solo.out/Gene/filtered/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        # expand('{OUTDIR}/{sample}/Aligned.sortedByCoord.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        expand('{OUTDIR}/{sample}/preTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # raw R2 fastQC results
+        expand('{OUTDIR}/{sample}/postTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
+        expand('{OUTDIR}/{sample}/cutadapt_polyA_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        expand('{OUTDIR}/{sample}/cutadapt_polyG_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        expand('{OUTDIR}/{sample}/kb_out/counts_unfiltered/adata.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES) # count mats
+        # expand('{OUTDIR}/{sample}/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap plotgardener)
+        # expand('{OUTDIR}/{sample}/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
+        # expand('{OUTDIR}/{sample}/Unmapped.out.mate2_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES), # blastn results for unmapped R1 reads
+        # expand('{OUTDIR}/{sample}/Aligned.sortedByCoord.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
+        # expand('{OUTDIR}/{sample}/Aligned.sortedByCoord.out_merged.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES) # non-strand-split bigWigs (for
 
 
 #############################################
@@ -80,10 +76,10 @@ rule gunzipWhitelist:
 # Merge .fastq files (in case more than one sesquencing run was performed)
 rule merge_fastqs:
     output:
-        MERGED_R1_FQ = temp('{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R1.fq.gz'),
-        MERGED_R2_FQ = temp('{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2.fq.gz')
+        MERGED_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz'),
+        MERGED_R2_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz')
     params:
-        TMP_DIR = '{OUTDIR}/{sample}_STARsolo/tmp',
+        TMP_DIR = '{OUTDIR}/{sample}/tmp',
         R1_FQ = lambda wildcards: R1_FQS[wildcards.sample],
         R2_FQ = lambda wildcards: R2_FQS[wildcards.sample]
     run:
@@ -91,7 +87,7 @@ rule merge_fastqs:
             shell("cp {params.R1_FQ} {output.MERGED_R1_FQ}")
             shell("cp {params.R2_FQ} {output.MERGED_R2_FQ}")
         else: # shell enablinging multi-fast input; concatenate inputs
-            print("Concatenating",len(params.R1_FQ.split(" ")), ".fastq's for", wildcards.sample)
+            print("Concatenating",len(params.R1_FQ.split(" ")), ".fastq's for {wildcards.sample}")
             shell("mkdir -p {params.TMP_DIR}")
             shell("zcat {params.R1_FQ} > {params.TMP_DIR}/{wildcards.sample}_R1.fq")
             shell("zcat {params.R2_FQ} > {params.TMP_DIR}/{wildcards.sample}_R2.fq")
@@ -99,9 +95,9 @@ rule merge_fastqs:
 
 rule preTrim_FastQC_R2:
     input:
-        MERGED_R2_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2.fq.gz'
+        MERGED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{sample}_STARsolo/preTrim_fastqc_R2_out'),
+        fastqcDir = directory('{OUTDIR}/{sample}/preTrim_fastqc_R2_out')
         # fastqcReport = ''
     threads:
         config['CORES']
@@ -120,12 +116,12 @@ rule preTrim_FastQC_R2:
 #TODO: log not working...
 rule trimPolyA_R2:
     input:
-        MERGED_R1_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R1.fq.gz',
-        MERGED_R2_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2.fq.gz'
+        MERGED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz',
+        MERGED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
     output:
-        A_TRIMMED_R1_FQ = temp('{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R1_Atrimmed.fq.gz'),
-        A_TRIMMED_R2_FQ = temp('{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2_Atrimmed.fq.gz'),
-        POLYA_REPORT = '{OUTDIR}/{sample}_STARsolo/cutadapt_polyA_report.txt'
+        A_TRIMMED_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_Atrimmed.fq.gz'),
+        A_TRIMMED_R2_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R2_Atrimmed.fq.gz'),
+        POLYA_REPORT = '{OUTDIR}/{sample}/cutadapt_polyA_report.txt'
     params:
         THREE_PRIME_R2_POLYA = "A"*100,
         FIVE_PRIME_R2 = "CCCATGTACTCTGCGTTGATACCACTGCTT" #10x TSO sequence
@@ -134,7 +130,7 @@ rule trimPolyA_R2:
         config['CORES']
         # min([config['CORES'],8]) # 8 core max based on recommendations from trim_galore authors
     log:
-        '{OUTDIR}/{sample}_STARsolo/cutadapt_polyA_report.txt'
+        '{OUTDIR}/{sample}/cutadapt_polyA_report.txt'
     shell:
         """
         # TSO & polyA trimming
@@ -151,15 +147,14 @@ rule trimPolyA_R2:
         # 2> {output.POLYA_REPORT}
 
 #Additional trimming step, just for 2-color Illumina chemistries (NextSeq, etc.)
-#TODO: log not working...
 rule trimPolyG_R2:
     input:
-        A_TRIMMED_R1_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R1_Atrimmed.fq.gz',
-        A_TRIMMED_R2_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2_Atrimmed.fq.gz'
+        A_TRIMMED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_Atrimmed.fq.gz',
+        A_TRIMMED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_Atrimmed.fq.gz'
     output:
-        FINAL_R1_FQ = temp('{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R1_final.fq.gz'),
-        FINAL_R2_FQ = temp('{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2_final.fq.gz'),
-        POLYG_REPORT = '{OUTDIR}/{sample}_STARsolo/cutadapt_polyG_report.txt'
+        FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz'),
+        FINAL_R2_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'),
+        POLYG_REPORT = '{OUTDIR}/{sample}/cutadapt_polyG_report.txt'
     params:
         THREE_PRIME_R2_POLYG = "G"*100,
         FIVE_PRIME_R2 = "AAGCAGTGGTATCAACGCAGAGTACATGGG" # rev-comp of 10x TSO sequence
@@ -167,7 +162,7 @@ rule trimPolyG_R2:
         config['CORES']
         # min([config['CORES'],8]) # 8 core max based on recommendations from trim_galore authors
     log:
-        log = '{OUTDIR}/{sample}_STARsolo/cutadapt_polyG_report.txt'
+        log = '{OUTDIR}/{sample}/cutadapt_polyG_report.txt'
     shell:
         """
         cutadapt \
@@ -194,9 +189,9 @@ rule trimPolyG_R2:
 
 rule postTrim_FastQC_R2:
     input:
-        FINAL_R2_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2_final.fq.gz'
+        FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{sample}_STARsolo/postTrim_fastqc_R2_out'),
+        fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R2_out'),
         # fastqcReport = ''
     threads:
         config['CORES']
@@ -216,179 +211,169 @@ rule postTrim_FastQC_R2:
 ## Alignment
 #############################################
 # Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
-#   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
+#   Info on kallisto/bustools: https://www.kallistobus.tools/
 
-#TODO- update alignment parameters for standard chemistries?
-rule STARsolo_align:
+rule kallisto_align:
     input:
         CB_WHITELIST = config['CB_WHITELIST'],
-        FINAL_R1_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R1_final.fq.gz',
-        FINAL_R2_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2_final.fq.gz'
-    output: #TODO- add more output files?
-        SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam',
-        UNMAPPED1 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1',
-        UNMAPPED2 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2',
-        GENE = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/Gene'),
-        GENEFULL = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/GeneFull'),
-        SJ = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/SJ'),
-        VEL = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto'),
-        GENEMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/raw/matrix.mtx.gz',
-        GENEFULLMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz',
-        SJMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/SJ/raw/matrix.mtx.gz',
-        VELMAT = '{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz'
+        FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
+        FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
+    output:
+        # SORTEDBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.out.bam',
+        # UNMAPPED1 = '{OUTDIR}/{sample}/Unmapped.out.mate1',
+        # UNMAPPED2 = '{OUTDIR}/{sample}/Unmapped.out.mate2',
+        # GENE = directory('{OUTDIR}/{sample}/Solo.out/Gene'),
+        # GENEFULL = directory('{OUTDIR}/{sample}/Solo.out/GeneFull'),
+        # SJ = directory('{OUTDIR}/{sample}/Solo.out/SJ'),
+        # VEL = directory('{OUTDIR}/{sample}/Solo.out/Velocyto'),
+        COUNTMAT = '{OUTDIR}/{sample}/kb_out/counts_unfiltered/adata.h5ad'
+        # GENEFULLMAT = '{OUTDIR}/{sample}/Solo.out/GeneFull/raw/matrix.mtx.gz',
+        # SJMAT = '{OUTDIR}/{sample}/Solo.out/SJ/raw/matrix.mtx.gz',
+        # VELMAT = '{OUTDIR}/{sample}/Solo.out/Velocyto/raw/spliced.mtx.gz'
     params:
         # R1_FQ = lambda wildcards: R1_FQS[wildcards.sample],
         # R2_FQ = lambda wildcards: R2_FQS[wildcards.sample],
         OUTDIR = config['OUTDIR'],
-        STAR_EXEC = config['STAR_EXEC'],
-        STAR_REF = config['STAR_REF'],
+        KB_EXEC = config['KB_EXEC'],
+        KB_IDX = config['KB_IDX'],
+        KB_T2G = config['KB_T2G'],
+        FASTA = config['FASTA'],
+        GENES_GTF = config['GENES_GTF'],
         UMIlen = config['UMIlen'],
         MEMLIMIT = config['MEMLIMIT']
     threads:
         config['CORES']
-    shell: # TODO- convert to bash script?
-        """
-        mkdir -p {params.OUTDIR}/{wildcards.sample}_STARsolo
-
-        {params.STAR_EXEC} \
-        --runThreadN {threads} \
-        --outFileNamePrefix {params.OUTDIR}/{wildcards.sample}_STARsolo/ \
-        --outSAMtype BAM SortedByCoordinate \
-        --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
-        --readFilesCommand zcat \
-        --soloUMIlen {params.UMIlen} \
-        --genomeDir {params.STAR_REF} \
-        --genomeLoad LoadAndKeep \
-        --limitBAMsortRAM={params.MEMLIMIT} \
-        --readFilesIn {input.FINAL_R2_FQ} {input.FINAL_R1_FQ} \
-        --clipAdapterType CellRanger4 \
-        --outReadsUnmapped Fastx \
-        --outFilterMismatchNoverLmax 0.05 \
-        --outFilterMatchNmin 16 \
-        --outFilterScoreMinOverLread 0 \
-        --outFilterMatchNminOverLread 0 \
-        --outFilterMultimapNmax 50 \
-        --soloType CB_UMI_Simple \
-        --soloCBwhitelist {input.CB_WHITELIST} \
-        --soloCellFilter EmptyDrops_CR \
-        --soloFeatures Gene GeneFull SJ Velocyto \
-        --soloMultiMappers EM
-
-        gzip -qf {output.GENE}/raw/*
-        gzip -qf {output.GENE}/filtered/*
-
-        gzip -qf {output.GENEFULL}/raw/*
-        gzip -qf {output.GENEFULL}/filtered/*
-
-        gzip -qf {output.SJ}/raw/*
-
-        gzip -qf {output.VEL}/raw/*
-        gzip -qf {output.VEL}/filtered/*
-        """
-
-rule indexBAM:
-    input:
-        SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam'
-    output:
-        BAI = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam.bai'
-    threads:
-        config['CORES']
     shell:
         """
-        samtools index -@ {threads} {input.SORTEDBAM}
+        mkdir -p {params.OUTDIR}/{wildcards.sample}
+
+        {params.KB_EXEC} count \
+        -i {params.KB_IDX} \
+        -g {params.KB_T2G} \
+        -x 10xv3 \
+        -o {params.OUTDIR}/{wildcards.sample}/kb_out/ \
+        -t {threads} \
+        -m {params.MEMLIMIT} \
+        -w {input.CB_WHITELIST} \
+        --mm \
+        --h5ad \
+        {input.FINAL_R1_FQ} {input.FINAL_R2_FQ}
         """
+
+        # gzip -qf {output.GENE}/raw/*
+        # gzip -qf {output.GENE}/filtered/*
+        #
+        # gzip -qf {output.GENEFULL}/raw/*
+        # gzip -qf {output.GENEFULL}/filtered/*
+        #
+        # gzip -qf {output.SJ}/raw/*
+        #
+        # gzip -qf {output.VEL}/raw/*
+        # gzip -qf {output.VEL}/filtered/*
+
+# rule indexBAM:
+#     input:
+#         SORTEDBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.out.bam'
+#     output:
+#         BAI = '{OUTDIR}/{sample}/Aligned.sortedByCoord.out.bam.bai'
+#     threads:
+#         config['CORES']
+#     shell:
+#         """
+#         samtools index -@ {threads} {input.SORTEDBAM}
+#         """
 
 #############################################
 ## qualimap on aligned reads
 #############################################
-rule qualimapQC:
-    input:
-        SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam'
-    output:
-        qualimapDir = directory('{OUTDIR}/{sample}_STARsolo/qualimap_out'),
-        fastqcReport = '{OUTDIR}/{sample}_STARsolo/qualimap_out/qualimapReport.html'
-    params:
-        GENES_GTF = config['GENES_GTF']
-    threads:
-        config['CORES']
-    shell:
-        """
-        mkdir -p {output.qualimapDir}
-        cd {output.qualimapDir}
-
-        qualimap rnaseq \
-        -bam {input.SORTEDBAM} \
-        -gtf {params.GENES_GTF} \
-        --sequencing-protocol strand-specific-forward \
-        --sorted \
-        --java-mem-size=4G \
-        -outdir {output.qualimapDir} \
-        -outformat html
-        """
+# rule qualimapQC:
+#     input:
+#         SORTEDBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.out.bam'
+#     output:
+#         qualimapDir = directory('{OUTDIR}/{sample}/qualimap_out'),
+#         fastqcReport = '{OUTDIR}/{sample}/qualimap_out/qualimapReport.html'
+#     params:
+#         GENES_GTF = config['GENES_GTF']
+#     threads:
+#         config['CORES']
+#     shell:
+#         """
+#         mkdir -p {output.qualimapDir}
+#         cd {output.qualimapDir}
+#
+#         qualimap rnaseq \
+#         -bam {input.SORTEDBAM} \
+#         -gtf {params.GENES_GTF} \
+#         --sequencing-protocol strand-specific-forward \
+#         --sorted \
+#         --java-mem-size=4G \
+#         -outdir {output.qualimapDir} \
+#         -outformat html
+#         """
 
         # -nt {threads} \
 
 #############################################
 ## Unmapped read analyses
 #############################################
-
+#TODO
 # Run fastqc on unmapped reads; switch names because of STAR weirdness
-rule unmapped_fastqc:
-    input:
-        UNMAPPED1 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1',
-        UNMAPPED2 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2'
-    output:
-        UNMAPPED1_FQ = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1.fastq.gz',
-        UNMAPPED2_FQ = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2.fastq.gz',
-        FQC_DIR = directory('{OUTDIR}/{sample}_STARsolo/Unmapped_fastqc_out')
-    params:
-        FASTQC_EXEC = config['FASTQC_EXEC']
-    threads:
-        config['CORES']
-    shell:
-        """
-        mv {input.UNMAPPED1} {input.UNMAPPED2}.fastq
-        mv {input.UNMAPPED2} {input.UNMAPPED1}.fastq
-
-        pigz -p{threads} {input.UNMAPPED1}.fastq {input.UNMAPPED2}.fastq
-
-        mkdir -p {output.FQC_DIR}
-
-        {params.FASTQC_EXEC} -o {output.FQC_DIR} -t {threads} {output.UNMAPPED1_FQ} {output.UNMAPPED2_FQ}
-        """
+# rule unmapped_fastqc:
+#     input:
+#         UNMAPPED1 = '{OUTDIR}/{sample}/Unmapped.out.mate1',
+#         UNMAPPED2 = '{OUTDIR}/{sample}/Unmapped.out.mate2'
+#     output:
+#         UNMAPPED1_FQ = '{OUTDIR}/{sample}/Unmapped.out.mate1.fastq.gz',
+#         UNMAPPED2_FQ = '{OUTDIR}/{sample}/Unmapped.out.mate2.fastq.gz',
+#         FQC_DIR = directory('{OUTDIR}/{sample}/Unmapped_fastqc_out')
+#     params:
+#         FASTQC_EXEC = config['FASTQC_EXEC']
+#     threads:
+#         config['CORES']
+#     shell:
+#         """
+#         mv {input.UNMAPPED1} {input.UNMAPPED2}.fastq
+#         mv {input.UNMAPPED2} {input.UNMAPPED1}.fastq
+#
+#         pigz -p{threads} {input.UNMAPPED1}.fastq {input.UNMAPPED2}.fastq
+#
+#         mkdir -p {output.FQC_DIR}
+#
+#         {params.FASTQC_EXEC} -o {output.FQC_DIR} -t {threads} {output.UNMAPPED1_FQ} {output.UNMAPPED2_FQ}
+#         """
 
 
 # Only BLAST R2, which contains the insert (converts .fq to .fa, then removes the .fa file)
 ## TODO: change demux step to fastx-collapser
-rule blast_unmapped:
-    input:
-        UNMAPPED2_FQ = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2.fastq.gz'
-    output:
-        BLAST_R2 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2_blastResults.txt'
-    threads:
-        config['CORES']
-    params:
-        blastDB = config['BLASTDB'],
-        FASTX_COLLAPSER = config['FASTX_COLLAPSER'],
-        TMP_FA = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2.fa'
-    shell:
-        """
-        zcat {input.UNMAPPED2_FQ} | sed -n '1~4s/^@/>/p;2~4p' > {params.TMP_FA}
-
-        echo "Number of unmapped reads: "
-        grep -c ">" {params.TMP_FA}
-
-        vsearch --sortbysize {params.TMP_FA} --topn 1000 --output tmp.fa
-
-        blastn -db {params.blastDB}/nt \
-        -query tmp.fa \
-        -out {output.BLAST_R2} \
-        -outfmt '6 qseqid sseqid stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore' \
-        -max_target_seqs 5 \
-        -num_threads {threads}
-
-        rm {params.TMP_FA}
-		"""
+# rule blast_unmapped:
+#     input:
+#         UNMAPPED2_FQ = '{OUTDIR}/{sample}/Unmapped.out.mate2.fastq.gz'
+#     output:
+#         BLAST_R2 = '{OUTDIR}/{sample}/Unmapped.out.mate2_blastResults.txt'
+#     threads:
+#         config['CORES']
+#     params:
+#         blastDB = config['BLASTDB'],
+#         FASTX_COLLAPSER = config['FASTX_COLLAPSER'],
+#         TMP_FA = '{OUTDIR}/{sample}/Unmapped.out.mate2.fa'
+#     shell:
+#         """
+#         zcat {input.UNMAPPED2_FQ} | sed -n '1~4s/^@/>/p;2~4p' > {params.TMP_FA}
+#
+#         echo "Number of unmapped reads: "
+#         grep -c ">" {params.TMP_FA}
+#
+#         vsearch --sortbysize {params.TMP_FA} --topn 1000 --output tmp.fa
+#
+#         blastn -db {params.blastDB}/nt \
+#         -query tmp.fa \
+#         -out {output.BLAST_R2} \
+#         -outfmt '6 qseqid sseqid stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore' \
+#         -max_target_seqs 5 \
+#         -num_threads {threads}
+#
+#         rm {params.TMP_FA}
+# 		"""
 
 # cat {input.UNMAPPED1_FQ} | awk '{{if(NR%4==1) {{printf(">%s\n",substr($0,2));}} else if(NR%4==2) print;}}' > {params.TMP_FA}
 
@@ -396,21 +381,22 @@ rule blast_unmapped:
 #############################################
 ## Additional files for visualization
 #############################################
-
-rule bamToSplitBigWig:
-    input:
-        BAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam',
-        BAI = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam.bai'
-    output:
-        POS_BW = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_plus.bw',
-        MERGED_BW = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out_merged.bw'
-    params:
-        BAM2SPLITBW=config['BAM2SPLITBW'],
-        STAR_REF = config['STAR_REF'],
-        OUTPUT_DIR = '{OUTDIR}/{sample}_STARsolo'
-    threads:
-        config['CORES']
-    shell:
-        """
-        {params.BAM2SPLITBW} {input.BAM} {threads} {params.OUTPUT_DIR} {STAR_REF}/chrNameLength.txt
-        """
+#TODO
+# rule bamToSplitBigWig:
+#     input:
+#         BAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.out.bam',
+#         BAI = '{OUTDIR}/{sample}/Aligned.sortedByCoord.out.bam.bai'
+#     output:
+#         POS_BW = '{OUTDIR}/{sample}/Aligned.sortedByCoord.out_plus.bw',
+#         MERGED_BW = '{OUTDIR}/{sample}/Aligned.sortedByCoord.out_merged.bw'
+#     params:
+#         BAM2SPLITBW=config['BAM2SPLITBW'],
+#         # STAR_REF = config['STAR_REF'],
+#         OUTPUT_DIR = '{OUTDIR}/{sample}'
+#     threads:
+#         config['CORES']
+#     shell:
+#         """
+#         {params.BAM2SPLITBW} {input.BAM} {threads} {params.OUTPUT_DIR}
+#         """
+# {STAR_REF}/chrNameLength.txt
