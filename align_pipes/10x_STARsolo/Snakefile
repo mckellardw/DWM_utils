@@ -81,6 +81,8 @@ rule merge_fastqs:
         TMP_DIR = '{OUTDIR}/{sample}_STARsolo/tmp',
         R1_FQ = lambda wildcards: R1_FQS[wildcards.sample],
         R2_FQ = lambda wildcards: R2_FQS[wildcards.sample]
+    threads:
+        config['CORES']
     run:
         if len(params.R1_FQ.split(" "))==1 & len(params.R2_FQ.split(" "))==1: # shell for single fastq input
             shell("cp {params.R1_FQ} {output.MERGED_R1_FQ}")
@@ -90,7 +92,7 @@ rule merge_fastqs:
             shell("mkdir -p {params.TMP_DIR}")
             shell("zcat {params.R1_FQ} > {params.TMP_DIR}/{wildcards.sample}_R1.fq")
             shell("zcat {params.R2_FQ} > {params.TMP_DIR}/{wildcards.sample}_R2.fq")
-            shell("gzip {params.TMP_DIR}/*.fq")
+            shell("pigz -p {threads} {params.TMP_DIR}/*.fq")
 
 rule preTrim_FastQC_R2:
     input:
@@ -238,7 +240,7 @@ rule STARsolo_align:
         MEMLIMIT = config['MEMLIMIT']
     threads:
         config['CORES']
-    shell: #*NOTE* ``--soloBarcodeReadLength 0` should be removed to ensure read-length checking on BC read (R1) is performed 
+    shell: #*NOTE* ``--soloBarcodeReadLength 0` should be removed to ensure read-length checking on BC read (R1) is performed
         """
         mkdir -p {params.OUTDIR}/{wildcards.sample}_STARsolo
 
