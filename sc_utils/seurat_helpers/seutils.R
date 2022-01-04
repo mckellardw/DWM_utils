@@ -100,9 +100,37 @@ grepGenes <- function(
   )
 }
 
+# Convert ensembl IDs to gene IDs using a biomaRt reference
+ens2gene <- function(
+  ens=NULL, # vector of ensembl IDs to convert
+  biomart.info=NULL, # biomaRt database
+  ens.colname="ensembl_gene_id",
+  gene.colname="mgi_symbol",
+  verbose=F
+){
+  if(is.null(ens)){
+    message("Need ensembl IDs to convert!")
+    return(NULL)
+  }
+  if(is.null(biomart.info)){
+    message("Need biomaRt reference for conversion!")
+    return(NULL)
+  }
+  if(!ens.colname %in% colnames(biomart.info)){
+    message("ensembl ID column not found in biomaRt reference. Check input for 'ens.colname'")
+    return(NULL)
+  }
+  if(!gene.colname %in% colnames(biomart.info)){
+    message("Gene ID column not found in biomaRt reference. Check input for 'gene.colname'")
+    return(NULL)
+  }
+  print("Haven't finished this yet...")
+  # genes <- biomart.info[,gene.colname]
+  return(ens)
+}
 
 ########################################
-## General Seurat worflow helpers
+## General Seurat workflow helpers
 ########################################
 # Calculate the number of PCs that contain some proportion (default is 95%) of the variance
 npcs <- function(
@@ -129,6 +157,7 @@ npcs <- function(
 
 
 # Collapse cell/nuclei/spot counts for multimapped genes
+#TODO: parallelize!
 collapseMultimappers <- function(
   SEU,
   assay=NULL,
@@ -147,13 +176,23 @@ collapseMultimappers <- function(
 
   SEU@active.assay <- assay
 
-  multi.feats <- grepGenes(SEU, assay = assay, pattern="\\.", sort.by="abc") #Find genes with a period in them
+  multi.feats <- grepGenes( #Find genes with a period in them
+    SEU, 
+    assay = assay, 
+    pattern="\\.", 
+    sort.by="abc",
+    verbose=verbose
+  ) 
   if(length(multi.feats)==0){
     message("No multimappers found!")
     return(SEU)
   }
 
-  multi.patterns <- stringr::str_split(multi.feats, pattern = "\\.",n = 2) %>% #extract actual gene names
+  multi.patterns <- stringr::str_split( #extract actual gene names
+    multi.feats, 
+    pattern = "\\.",
+    n = 2
+  ) %>% 
     lapply(FUN=function(X) X[1]) %>%
     unlist() %>%
     unique()
@@ -196,7 +235,7 @@ collapseMultimappers <- function(
 
   SEU@active.assay <- new.assay.name
 
-  # Return seurat object!
+  # Return Seurat object!
   return(SEU)
 }
 

@@ -401,7 +401,6 @@ visListPlot <- function(
   plot.list <- lapply(
     plot.list,
     FUN = function(X){
-      
       wrap_plots(
         X,
         ncol=1,
@@ -421,7 +420,8 @@ visListPlot <- function(
       wrap_plots(
         plot.list,
         nrow=nrow,
-        ncol=ncol
+        ncol=ncol,
+        guides=NULL
       )
     )
   }else{
