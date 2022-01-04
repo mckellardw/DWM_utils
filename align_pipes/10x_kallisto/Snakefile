@@ -22,8 +22,6 @@ configfile:'config.yaml'
 ########################################################################################################
 # Directories and locations
 ########################################################################################################
-DATADIR = config['DATADIR']
-TMPDIR = config['TMPDIR']
 OUTDIR = config['OUTDIR']
 
 ########################################################################################################
@@ -237,8 +235,6 @@ rule kallisto_align:
         KB_EXEC = config['KB_EXEC'],
         KB_IDX = config['KB_IDX'],
         KB_T2G = config['KB_T2G'],
-        FASTA = config['FASTA'],
-        GENES_GTF = config['GENES_GTF'],
         UMIlen = config['UMIlen'],
         MEMLIMIT = config['MEMLIMIT']
     threads:
