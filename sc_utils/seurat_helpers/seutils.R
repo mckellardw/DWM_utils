@@ -124,9 +124,35 @@ ens2gene <- function(
     message("Gene ID column not found in biomaRt reference. Check input for 'gene.colname'")
     return(NULL)
   }
-  print("Haven't finished this yet...")
-  # genes <- biomart.info[,gene.colname]
-  return(ens)
+  
+  out <- lapply(
+    ens,
+    FUN = function(ENS){
+      tmp = biomart.info[biomart.info[[ens.colname]]==ENS,]
+      if(nrow(tmp==1)){ # only found one entry that matches
+        out = tmp[1,gene.colname]
+      }else if(length(unique(tmp[,gene.colname])==1)){ # only found one unique gene name that matches
+        out = tmp[1,gene.colname]
+      }else if(length(unique(tmp[,gene.colname])>1)){ # only found one unique gene name that matches
+        if(verbose){message(paste0("Found multiple matches for ", ENS,", returning the first one I see..."))}
+        out = tmp[1,gene.colname]
+      }else{
+        if(verbose){cat(paste0("Nothing found for ", ENS,", returning ensembl ID"))}
+        out = ENS
+      }
+      
+      if(out==""){
+        if(verbose){message(paste0("No gene name found in '", gene.colname,"', for",ENS, ", returning ensembl ID."))}
+        out = ENS
+      }
+      
+      return(out)
+    }
+  )
+  
+  return(
+    unlist(out)
+  )
 }
 
 ########################################
