@@ -3,14 +3,13 @@
 ########################################################################################################
 # Run settings
 ########################################################################################################
-#TODO- check
 # Sample sheet requires a sampleID, and locations of fastqs for R1 and R2
 #     For multi-lane inputs, use the following format (from kallisto github page):
 #       --readFilesIn Read2_Lane1.fastq.gz,Read2_Lane2.fastq.gz,Read2_Lane3.fastq.gz  Read1_Lane1.fastq.gz,Read1_Lane2.fastq.gz,Read1_Lane3.fastq.gz
 
 ## ~~~~~ Visium sample sheets ~~~~~
-SAMPLE_SHEET: ~/DWM_utils/sample_sheets/All-Vis_HeartREO-sample_sheet.csv
-# SAMPLE_SHEET: ~/DWM_utils/sample_sheets/AllClean-Vis_yPAP-sample_sheet.csv
+# SAMPLE_SHEET: ~/DWM_utils/sample_sheets/All-Vis_HeartREO-sample_sheet.csv
+SAMPLE_SHEET: ~/DWM_utils/sample_sheets/AllClean-Vis_yPAP-sample_sheet.csv
 
 ## ~~~~~ Chromium sample sheets ~~~~~
 # SAMPLE_SHEET: sample_sheets/C2Cnuc_yPAP-sample_sheet.csv
@@ -19,7 +18,16 @@ SAMPLE_SHEET: ~/DWM_utils/sample_sheets/All-Vis_HeartREO-sample_sheet.csv
 # SAMPLE_SHEET: sample_sheets/scMuscle2-sample_sheet.csv
 # SAMPLE_SHEET: sample_sheets/Ma_iPSC-sample_sheet.csv
 
-# SAMPLE_SHEET: sample_sheet.csv
+########################################################################################################
+# Important directory file paths
+########################################################################################################
+# ~~~ Mouse output directories ~~~ #
+# OUTDIR: /workdir/dwm269/totalRNA/data/kallisto/GRCm39_GENCODEM27
+OUTDIR: /workdir/dwm269/totalRNA/data/kallisto/GRCm39_REOT1L_Visium
+
+# ~~~ Human output directories ~~~ #
+# OUTDIR: /workdir/dwm269/ma_ipsc/data/kallisto/GRCh38p13
+
 
 # kallisto parameters
 CORES: 8 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
@@ -29,14 +37,6 @@ UMIlen: 12 #v2=__, v3=12, visium=12
 ## Cell Barcode white lists
 # CB_WHITELIST: resources/barcodes_10x/3M-february-2018.txt # path to cell barcodes (CB) whitelist, gunzipped (without the .gz extension) - https://kb.10xgenomics.com/hc/en-us/articles/115004506263-What-is-a-barcode-whitelist-
 CB_WHITELIST: resources/barcodes_10x/visium-v1.txt # whitelist for Visium
-
-########################################################################################################
-# Important directory file paths
-########################################################################################################
-# OUTDIR: /workdir/dwm269/totalRNA/data/kallisto/GRCm39_GENCODEM27
-OUTDIR: /workdir/dwm269/totalRNA/data/kallisto/GRCm39_REOT1L_Visium
-
-# OUTDIR: /workdir/dwm269/ma_ipsc/data/kallisto/GRCh38p13
 
 ########################################################################################################
 # Executables - file paths
