@@ -106,8 +106,12 @@ ens2gene <- function(
   biomart.info=NULL, # biomaRt database
   ens.colname="ensembl_gene_id",
   gene.colname="mgi_symbol",
+  ncores=1,
+  force.unique=F, # switch to make gene names unique (adds ".1", ".2", etc.)
   verbose=F
 ){
+  require(dplyr)
+  
   if(is.null(ens)){
     message("Need ensembl IDs to convert!")
     return(NULL)
@@ -125,33 +129,70 @@ ens2gene <- function(
     return(NULL)
   }
   
-  out <- lapply(
-    ens,
-    FUN = function(ENS){
-      tmp = biomart.info[biomart.info[[ens.colname]]==ENS,]
-      if(nrow(tmp==1)){ # only found one entry that matches
-        out = tmp[1,gene.colname]
-      }else if(length(unique(tmp[,gene.colname])==1)){ # only found one unique gene name that matches
-        out = tmp[1,gene.colname]
-      }else if(length(unique(tmp[,gene.colname])>1)){ # only found one unique gene name that matches
-        if(verbose){message(paste0("Found multiple matches for ", ENS,", returning the first one I see..."))}
-        out = tmp[1,gene.colname]
-      }else{
-        if(verbose){cat(paste0("Nothing found for ", ENS,", returning ensembl ID"))}
-        out = ENS
+  if(ncores==1){
+    out <- lapply(
+      ens,
+      FUN = function(ENS){
+        tmp = biomart.info[biomart.info[[ens.colname]]==ENS,]
+        if(nrow(tmp==1)){ # only found one entry that matches
+          feat = tmp[1,gene.colname]
+        }else if(length(unique(tmp[,gene.colname])==1)){ # only found one unique gene name that matches
+          feat = tmp[1,gene.colname]
+        }else if(length(unique(tmp[,gene.colname])>1)){ # only found one unique gene name that matches
+          if(verbose){message(paste0("Found multiple matches for ", ENS,", returning the first one I see..."))}
+          feat = tmp[1,gene.colname]
+        }else{
+          if(verbose){cat(paste0("Nothing found for ", ENS,", returning ensembl ID"))}
+          feat = ENS
+        }
+        
+        if(feat==""){
+          if(verbose){message(paste0("No gene name found in '", gene.colname,"', for",ENS, ", returning ensembl ID."))}
+          feat = ENS
+        }
+        
+        return(feat)
       }
-      
-      if(out==""){
-        if(verbose){message(paste0("No gene name found in '", gene.colname,"', for",ENS, ", returning ensembl ID."))}
-        out = ENS
-      }
-      
-      return(out)
-    }
-  )
+    ) %>% 
+      unlist()
+  }else if(ncores>1){
+    require(parallel)
+    if(verbose){message(paste0("Running on ", ncores," threads..."))}
+    
+    out <- mclapply(
+      ens,
+      FUN = function(ENS){
+        tmp = biomart.info[biomart.info[[ens.colname]]==ENS,]
+        if(nrow(tmp==1)){ # only found one entry that matches
+          feat = tmp[1,gene.colname]
+        }else if(length(unique(tmp[,gene.colname])==1)){ # only found one unique gene name that matches
+          feat = tmp[1,gene.colname]
+        }else if(length(unique(tmp[,gene.colname])>1)){ # only found one unique gene name that matches
+          if(verbose){message(paste0("Found multiple matches for ", ENS,", returning the first one I see..."))}
+          feat = tmp[1,gene.colname]
+        }else{
+          if(verbose){cat(paste0("Nothing found for ", ENS,", returning ensembl ID"))}
+          feat = ENS
+        }
+        
+        if(feat==""){
+          if(verbose){message(paste0("No gene name found in '", gene.colname,"', for",ENS, ", returning ensembl ID."))}
+          feat = ENS
+        }
+        
+        return(feat)
+      },
+      mc.cores = ncores
+    ) %>% 
+      unlist()
+  }
+  
+  if(force.unique){
+    out <- make.unique(out)
+  }
   
   return(
-    unlist(out)
+    out
   )
 }
 
