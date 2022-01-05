@@ -287,8 +287,6 @@ collapseMultimappers <- function(
   collapsed.mat <- do.call(rbind, collapsed.list) %>% as.sparse()
   rownames(collapsed.mat) <- multi.patterns
 
-  print(multi.patterns)
-
   # Add new assay with collapsed counts + the rest of the genes
   if(verbose){cat(paste0("Adding back ", nrow(collapsed.mat), " features...\n"))}
 

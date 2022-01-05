@@ -253,6 +253,7 @@ visListPlot <- function(
   na.value=gray(0.42), # color for na.value (spot where gene is not detected)
   verbose=FALSE
 ){
+  require(dplyr)
   require(Seurat)
   require(ggplot2)
   require(viridis)
@@ -266,6 +267,7 @@ visListPlot <- function(
       return(NULL)
     }
   }
+  
   #TODO- check to make sure colors are passed correctly
   # else if(!any(colormap %in% colors())){
   #   
@@ -285,6 +287,20 @@ visListPlot <- function(
     }
   )
   
+  # Check for genes
+  seu.list <- lapply(
+    seu.list,
+    FUN = function(SEU){
+      for(FEAT in features){
+        if(!FEAT %in% rownames(SEU)){
+          # Stick a bunch of zeroes into the metadata to act like an undetected gene
+          SEU@meta.data[,FEAT] <- rep(0,nrow(SEU@meta.data))
+        }
+      }
+      return(SEU)
+    }
+  )
+  
   # Get expression limits for each gene, across all datasets
   gene.lims <- lapply(
     features,
@@ -297,11 +313,12 @@ visListPlot <- function(
           }else if(FEAT %in% colnames(SEU@meta.data)){
             return(max(SEU@meta.data[,FEAT]))
           }else{
-            message(FEAT, " not found!")
+            if(verbose){message(FEAT, " not found!")}
+            return(0)
           }
         }
       ) %>% unlist() %>% max()
-      return(c(10^-100,out.max))
+      return(c(10^-100, out.max))
     }
   )
   
