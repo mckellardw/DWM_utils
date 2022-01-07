@@ -250,13 +250,15 @@ visListPlot <- function(
   nrow=NULL,
   ncol=NULL,
   colormap="viridis", # either a viridis option or a vector of colors
-  na.value=gray(0.42), # color for na.value (spot where gene is not detected)
+  na.value=gray(0.69), # color for na.value (spot where gene is not detected)
   verbose=FALSE
 ){
   require(dplyr)
   require(Seurat)
   require(ggplot2)
   require(viridis)
+  
+  if(is.null(seu.list)){message("List of Seurat objects to plot is NULL!")}
   
   if(verbose){cat(paste0("Plotting Visium data, using the assay ",assay,"!\n"))}
   
@@ -282,7 +284,8 @@ visListPlot <- function(
   seu.list <- lapply(
     seu.list,
     FUN = function(SEU){
-      SEU@active.assay <- assay
+      # SEU@active.assay <- assay
+      DefaultAssay(SEU) <- assay
       return(SEU)
     }
   )

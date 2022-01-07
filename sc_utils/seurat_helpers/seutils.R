@@ -347,8 +347,12 @@ seuPreProcess <- function(
   )
 
   #find pcs to use
-  n.pcs.use = npcs(SEU=SEU, var.total = 0.95, reduction = pca.name)
-
+  n.pcs.use = npcs(
+    SEU=SEU, 
+    var.total = 0.95, 
+    reduction = pca.name
+  )
+  
   # FindNeighbors %>% RunUMAP, FindClusters
   SEU <- FindNeighbors(
     SEU,
