@@ -53,10 +53,11 @@ STAR_EXEC = config['STAR_EXEC']
 # Target rule for TXG data
 rule all:
     input:
-        # expand('{OUTDIR}/{SAMPLE}/preTrim_fastqc_R1_out', OUTDIR=config['OUTDIR'], SAMPLE=SAMPLE_IDS), # raw R1 fastQC results
-        # expand('{OUTDIR}/{SAMPLE}/postTrim_fastqc_R1_out', OUTDIR=config['OUTDIR'], SAMPLE=SAMPLE_IDS), # TSO/polyA-trimmed R1 fastQC results
-        expand('{OUTDIR}/{SAMPLE}/cutadapt_report.txt', OUTDIR=config['OUTDIR'], SAMPLE=SAMPLE_IDS),
-        expand('{OUTDIR}/{SAMPLE}/miRge_check.txt', OUTDIR=config['OUTDIR'], SAMPLE=SAMPLE_IDS) # alignment & QC with miRge3.0
+        expand('{OUTDIR}/{SAMPLE}/preTrim_fastqc_R1_out', OUTDIR=config['OUTDIR'], SAMPLE=SAMPLE_IDS), # raw R1 fastQC results
+        expand('{OUTDIR}/{SAMPLE}/postTrim_fastqc_R1_out', OUTDIR=config['OUTDIR'], SAMPLE=SAMPLE_IDS), # TSO/polyA-trimmed R1 fastQC results
+        # expand('{OUTDIR}/{SAMPLE}/cutadapt_PolyATSO_report.txt', OUTDIR=config['OUTDIR'], SAMPLE=SAMPLE_IDS), # PolyA & TSO trimming report (cutadapt)
+        # expand('{OUTDIR}/{SAMPLE}/cutadapt_PolyATSO_report.txt', OUTDIR=config['OUTDIR'], SAMPLE=SAMPLE_IDS), # PolyG and other trimming
+        expand('{OUTDIR}/{SAMPLE}/miRge/annotation.report.html', OUTDIR=config['OUTDIR'], SAMPLE=SAMPLE_IDS) # alignment & QC with miRge3.0
 
 
 #############################################
@@ -100,82 +101,84 @@ rule preTrim_FastQC:
         {input.MERGED_FQ}
         """
 
-# Read trimming for standard smRNAseq data
-# rule trim_galore:
-#     input:
-#         MERGED_R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_R1.fq.gz'
-#     output:
-#         TRIMMED_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/merged_R1_trimmed.fastq.gz'),
-#         TRIM_REPORT = '{OUTDIR}/{SAMPLE}/trim_galore_report.txt'
-#     params:
-#         OUTDIR = '{OUTDIR}/{SAMPLE}/tmp'
-#     threads:
-#         min([config['CORES'],7]) # 7 core max based on recommendations from trim_galore authors
-#     shell:
-#         """
-#         trim_galore \
-#         --length 10 \
-#         --2colour 1 \
-#         -o {params.OUTDIR} \
-#         --cores {threads} \
-#         {input.MERGED_R1_FQ}
-#
-#         mv {params.OUTDIR}/merged_R1_trimmed.fq.gz {output.TRIMMED_FQ}
-#         mv {params.OUTDIR}/merged_R1.fq.gz_trimming_report.txt {output.TRIM_REPORT}
-#         """
-
 #Read trimming for TXG data
 rule trim_PolyA_TSO:
     input:
         MERGED_R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_R1.fq.gz'
     output:
-        A_TRIMMED_R1_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/merged_R1_trimmed.fastq.gz')
+        TRIMMED_A_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/merged_R1_trimmedA.fastq.gz')
     params:
         THREE_PRIME_POLYA = "A"*100,
-        FIVE_PRIME = "CCCATGTACTCTGCGTTGATACCACTGCTT" #10x TSO sequence
+        FIVE_PRIME = "CCCATGTACTCTGCGTTGATACCACTGCTT" #10x TSO - reverse complement
     threads:
         config['CORES']
         # min([config['CORES'],8]) # 8 core max based on recommendations from trim_galore authors
     log:
-        '{OUTDIR}/{SAMPLE}/cutadapt_report.txt'
+        '{OUTDIR}/{SAMPLE}/cutadapt_PolyA_RevComTSO_report.txt'
     shell:
         """
         cutadapt \
         --minimum-length 10 \
         -a {params.THREE_PRIME_POLYA} \
- 		-g {params.FIVE_PRIME} \
- 		-o {output.A_TRIMMED_R1_FQ} \
+        -g {params.FIVE_PRIME} \
+        -o {output.TRIMMED_A_FQ} \
         --cores {threads} \
         {input.MERGED_R1_FQ} 1> {log}
         """
 
+
 ## Additional trimming step, just for 2-color Illumina chemistries (NextSeq, etc.)
-#TODO- add log
-# rule trimPolyG:
-#     input:
-#         A_TRIMMED_R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_Atrimmed_R1.fq.gz'
-#     output:
-#         FINAL_R1_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/merged_R1_trimmed.fastq.gz')
-#     params:
-#         THREE_PRIME_R1_POLYG = "G"*100
-#     threads:
-#         config['CORES']
-#     log:
-#         '{OUTDIR}/{SAMPLE}/cutadapt_polyG_report.txt'
-#     shell:
-#         """
-#         cutadapt \
-#         --minimum-length 10 \
-#         -A {params.THREE_PRIME_R1_POLYG} \
-#         --pair-filter=any \
-#  		-o {output.FINAL_R1_FQ} \
-#         --cores {threads} \
-#         {input.A_TRIMMED_R1_FQ} 1> {log}
-#         """
+rule trimPolyG:
+    input:
+        TRIMMED_A_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_trimmedA.fastq.gz'
+    output:
+        TRIMMED_B_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/merged_R1_trimmedB.fastq.gz')
+    params:
+        THREE_PRIME_POLYG = "G"*100,
+        FIVE_PRIME = "AAGCAGTGGTATCAACGCAGAGTACATGGG" #10x TSO sequence
+    threads:
+        config['CORES']
+    log:
+        '{OUTDIR}/{SAMPLE}/cutadapt_polyG_TSO_report.txt'
+    shell:
+        """
+        cutadapt \
+        --minimum-length 10 \
+        -a {params.THREE_PRIME_POLYG} \
+        -g {params.FIVE_PRIME} \
+ 		-o {output.TRIMMED_B_FQ} \
+        --cores {threads} \
+        {input.TRIMMED_A_FQ} 1> {log}
+        """
+
+# Read trimming for standard smRNAseq data - automated adapter identification for Illumina small RNA adapters
+rule trim_galore:
+    input:
+        TRIMMED_B_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_trimmedB.fastq.gz'
+    output:
+        TRIMMED_C_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/merged_R1_trimmedC.fastq.gz'),
+        TRIM_REPORT = '{OUTDIR}/{SAMPLE}/trim_galore_report.txt'
+    params:
+        OUTDIR = '{OUTDIR}/{SAMPLE}/tmp'
+    threads:
+        min([config['CORES'],7]) # 7 core max based on recommendations from trim_galore authors
+    shell:
+        """
+        trim_galore \
+        --length 10 \
+        --2colour 1 \
+        -o {params.OUTDIR} \
+        --cores {threads} \
+        {input.TRIMMED_B_FQ}
+
+        mv {params.OUTDIR}/merged_R1_trimmedB_trimmed.fq.gz {output.TRIMMED_C_FQ}
+        mv {params.OUTDIR}/merged_R1_trimmedB.fastq.gz_trimming_report.txt {output.TRIM_REPORT}
+        """
+
 
 rule postTrim_FastQC_R1:
     input:
-        FINAL_R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_trimmed.fastq.gz',
+        FINAL_R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_trimmedC.fastq.gz',
     output:
         fastqcDir = directory('{OUTDIR}/{SAMPLE}/postTrim_fastqc_R1_out'),
         # fastqcReport = ''
@@ -198,12 +201,10 @@ rule postTrim_FastQC_R1:
 # Make output directory, align fastqs, and generate raw/filtered feature matrices
 rule STAR_align:
     input:
-        FINAL_R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_trimmed.fastq.gz'
+        FINAL_R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_trimmedC.fastq.gz'
     output:
         SORTEDBAM = '{OUTDIR}/{SAMPLE}/Aligned.sortedByCoord.out.bam',
         UNMAPPED1 = '{OUTDIR}/{SAMPLE}/Unmapped.out.mate1'
-        # UNMAPPED2 = '{OUTDIR}/{SAMPLE}/Unmapped.out.mate2',
-        # COUNTS = '{OUTDIR}/{SAMPLE}/ReadsPerGene.out.tab'
     params:
         OUTDIR = config['OUTDIR'],
         STAR_EXEC = config['STAR_EXEC'],
@@ -233,16 +234,6 @@ rule STAR_align:
         --outFilterMatchNminOverLread 0 \
         --outFilterMultimapNmax 50
         """
-        # gzip -qf {output.GENE}/raw/*
-        # gzip -qf {output.GENE}/filtered/*
-        #
-        # gzip -qf {output.GENEFULL}/raw/*
-        # gzip -qf {output.GENEFULL}/filtered/*
-        #
-        # gzip -qf {output.SJ}/raw/*
-        #
-        # gzip -qf {output.VEL}/raw/*
-        # gzip -qf {output.VEL}/filtered/*
 
 # Index the .bam output by STAR
 rule indexBAM:
@@ -289,13 +280,13 @@ rule qualimapQC:
 #############################################
 ## miRge3.0 analysis
 #############################################
-#TODO- change name of miRge output directory so it can be accessed programatically (remove timestamp in directory name)
 rule miRge3:
     input:
-        FINAL_R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_trimmed.fastq.gz'
+        FINAL_R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_trimmedC.fastq.gz'
     output:
-        # MIRGE_HTML = '{OUTDIR}/{SAMPLE}/miRge/annotation.report.html'
-        MIRGE_CHECK= '{OUTDIR}/{SAMPLE}/miRge_check.txt'
+        MIRGE_DIR = directory('{OUTDIR}/{SAMPLE}/miRge'),
+        MIRGE_HTML = '{OUTDIR}/{SAMPLE}/miRge/annotation.report.html',
+        MIRGE_CHECK = '{OUTDIR}/{SAMPLE}/miRge_check.txt'
     params:
         OUTDIR = config['OUTDIR'],
         MIRGE_EXEC = config['MIRGE_EXEC'],
@@ -316,6 +307,10 @@ rule miRge3:
         -o {params.OUTDIR}/{wildcards.SAMPLE} \
         --threads {threads} \
         -gff -nmir -ai && touch {output.MIRGE_CHECK}
+
+        mkdir -p {params.OUTDIR}/{wildcards.SAMPLE}/miRge
+        mv {params.OUTDIR}/{wildcards.SAMPLE}/miRge.*/* {params.OUTDIR}/{wildcards.SAMPLE}/miRge
+        rmdir {params.OUTDIR}/{wildcards.SAMPLE}/miRge.*
         """
 # mkdir -p {params.OUTDIR}/{wildcards.SAMPLE}/miRge
 # -a illumina \
@@ -324,7 +319,7 @@ rule miRge3:
 #############################################
 ## Unmapped read analyses
 #############################################
-
+#TODO- gzip unmapped fastq
 # Run fastqc on unmapped reads; switch names because of STAR weirdness
 rule unmapped_fastqc:
     input:
