@@ -12,9 +12,10 @@
 # SAMPLE_SHEET: sample_sheets/Isakova_smRNA-sample_sheet.csv
 # SAMPLE_SHEET: sample_sheets/smC2C-sample_sheet.csv
 SAMPLE_SHEET: sample_sheets/AllClean-Vis_yPAP-sample_sheet.csv
+# SAMPLE_SHEET: sample_sheets/Vis3_yPAP-sample_sheet.csv
 
 # Run parameters
-CORES: 6 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CORES: 8 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 50000000000 # STAR mem limit in bytes
 
 

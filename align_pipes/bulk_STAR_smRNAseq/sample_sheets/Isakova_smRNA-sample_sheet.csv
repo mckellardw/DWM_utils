@@ -13,3 +13,16 @@ Muscle_6,/workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10695941_1.fast
 Muscle_7,/workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10695942_1.fastq.gz /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR7807283_1.fastq.gz
 Muscle_8,/workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10695943_1.fastq.gz /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR7807284_1.fastq.gz
 Muscle_9,/workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10695944_1.fastq.gz /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR7807285_1.fastq.gz
+Heart_11, /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10695998_1.fastq.gz /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR7807342_1.fastq.gz
+Heart_12, /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10695999_1.fastq.gz /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR7807343_1.fastq.gz
+Heart_13, /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10696000_1.fastq.gz /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR7807344_1.fastq.gz
+Heart_14, /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10696001_1.fastq.gz /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR7807345_1.fastq.gz
+Heart_1, /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10696002_1.fastq.gz /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR7807346_1.fastq.gz
+Heart_2, /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10696003_1.fastq.gz /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR7807347_1.fastq.gz
+Heart_3, /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10696004_1.fastq.gz /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR7807348_1.fastq.gz
+Heart_4, /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10696005_1.fastq.gz /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR7807349_1.fastq.gz
+Heart_5,/workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10696006_1.fastq.gz /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR7807350_1.fastq.gz
+Heart_6,/workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10696007_1.fastq.gz /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR7807351_1.fastq.gz
+Heart_7, /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10696008_1.fastq.gz /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR7807352_1.fastq.gz
+Heart_8, /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10696009_1.fastq.gz /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR7807353_1.fastq.gz
+Heart_9,/workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR10696010_1.fastq.gz /workdir/dwm269/totalRNA/data/fastq/Isakova_smRNAseq/SRR7807354_1.fastq.gz
