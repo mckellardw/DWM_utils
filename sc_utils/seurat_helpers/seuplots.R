@@ -250,6 +250,7 @@ visListPlot <- function(
   nrow=NULL,
   ncol=NULL,
   colormap="viridis", # either a viridis option or a vector of colors
+  colormap.direction=1,
   na.value=gray(0.69), # color for na.value (spot where gene is not detected)
   verbose=FALSE
 ){
@@ -295,7 +296,9 @@ visListPlot <- function(
     seu.list,
     FUN = function(SEU){
       for(FEAT in features){
-        if(!FEAT %in% rownames(SEU)){
+        if(FEAT %in% colnames(SEU@meta.data)){
+          # skip this step for meta.data features
+        }else if(!FEAT %in% rownames(SEU)){
           # Stick a bunch of zeroes into the metadata to act like an undetected gene
           SEU@meta.data[,FEAT] <- rep(0,nrow(SEU@meta.data))
         }
@@ -374,10 +377,17 @@ visListPlot <- function(
             scale_color_viridis(
               limits=unlist(gene.lims[i]),
               option=colormap,
+              direction = colormap.direction,
               na.value = na.value
             )
         }else{
           if(verbose){message(paste0("Using custom color gradient"))}
+          
+          # Flip colormap if direction is `-1`
+          if(colormap.direction==-1){
+            colormap=rev(colormap)
+          }
+          
           tmp.plot = tmp.plot + 
             scale_color_gradientn(
               limits=unlist(gene.lims[i]),
