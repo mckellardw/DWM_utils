@@ -320,7 +320,10 @@ visListPlot <- function(
             return(0)
           }
         }
-      ) %>% unlist() %>% max()
+      ) %>% 
+        unlist() %>% 
+        max()
+      
       return(c(10^-100, out.max))
     }
   )
