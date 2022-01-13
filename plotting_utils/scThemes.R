@@ -25,7 +25,7 @@ scThemes <-function(
     legend.title = element_text(size=big.font,color="black")
   )
 
-  scTheme$fig1bcd <- theme_minimal()+
+  scTheme$scatter <- theme_minimal()+
     theme(
       axis.line = element_blank(),
       panel.grid.major = element_line(color='gray'),
@@ -37,7 +37,7 @@ scThemes <-function(
       # legend.background = element_rect(color = "black", fill='white', size=0.5),
       legend.text = element_text(size = small.font, hjust = 0, vjust = 0.5),
       legend.title = element_text(face = 'bold',size = small.font, hjust = 0.5, vjust = 0.5),
-      legend.position = c(0.2,0.6)
+      legend.position = "right"
     )
 
   scTheme$bar <- theme_minimal() +
