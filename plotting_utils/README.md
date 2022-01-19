@@ -24,7 +24,7 @@ ggplot(
     color=color
   )
 )+
-geom_point()+
+geom_point() +
 scThemes$scatter
 ```
 
@@ -50,10 +50,10 @@ mckolors <- read.csv("/path/to/DWM_utils/plotting_utils/McKolors_v1.csv") %>%
       y=y,
       color=color
     )
-  )+
-  geom_point()+
-  scThemes$scatter+
+  ) +
+  geom_point() +
+  scThemes$scatter +
   scale_color_manual(
-    values=mckolors$tab20b
+    values=mckolors$ldw29
   )
 ```
