@@ -7,3 +7,8 @@
 - Required packages & dependencies (add installation via .yml file)
 - Write out pipeline details
 - Info on sample_sheet format!
+
+
+Sources: (#TODO)
+- kallisto/BUStools (`kb`)
+- https://github.com/torognes/vsearch
