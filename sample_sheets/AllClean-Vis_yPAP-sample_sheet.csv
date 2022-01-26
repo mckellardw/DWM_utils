@@ -14,3 +14,4 @@ Vis_yPAP_3C,/workdir/dwm269/totalRNA/data/fastq/Vis_yPAP3_2K/Vis_yPAP_3C_S3_L001
 Vis_yPAP_3D,/workdir/dwm269/totalRNA/data/fastq/Vis_yPAP3_2K/Vis_yPAP_3D_S4_L001_R1_001.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/Vis_yPAP3_2K/Vis_yPAP_3D_S4_L001_R2_001.fastq.gz,
 mock_D7PI,/workdir/dwm269/totalRNA/data/fastq/Vis_CTRL_Heart_MM/spatialRNAseq_Mock_Heart_D7PI_S1_L001_R1_001.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/Vis_CTRL_Heart_MM/spatialRNAseq_Mock_Heart_D7PI_S1_L001_R2_001.fastq.gz,
 Vis_yPAP_3B_xGen,/workdir/dwm269/totalRNA/data/fastq/Vis_yPAP3_xGen/Vis_yPAP_3BxGen_S1_L001_R1_001.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/Vis_yPAP3_xGen/Vis_yPAP_3BxGen_S1_L001_R2_001.fastq.gz,
+T1L_D7PI_xGen,/workdir/dwm269/totalRNA/data/fastq/Vis_CTRL_Heart_MM/xGen/Heart_T1L-reprep3_D7PI_xGen_S2_L001_R1_001.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/Vis_CTRL_Heart_MM/xGen/Heart_T1L-reprep3_D7PI_xGen_S2_L001_R2_001.fastq.gz,

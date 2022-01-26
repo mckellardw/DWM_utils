@@ -251,6 +251,7 @@ visListPlot <- function(
   ncol=NULL,
   colormap="viridis", # either a viridis option or a vector of colors
   colormap.direction=1,
+  colormap.same.scale=F, #whether (T) or not (F) to set all features to the same colormap scale
   na.value=gray(0.69), # color for na.value (spot where gene is not detected)
   verbose=FALSE
 ){
@@ -330,6 +331,14 @@ visListPlot <- function(
       return(c(10^-100, out.max))
     }
   )
+  
+  # Set colormap scale to the global min/max of all features 
+  if(colormap.same.scale){
+    gene.lims <- lapply(
+      gene.lims,
+      FUN=function(X) c( min(unlist(gene.lims)), max(unlist(gene.lims)) )
+    )
+  }
   
   # Get plot heights
   if(abs.heights){
