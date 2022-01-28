@@ -12,18 +12,20 @@
 SAMPLE_SHEET: ~/DWM_utils/sample_sheets/AllClean-Vis_yPAP-sample_sheet.csv
 
 ## ~~~~~ Chromium sample sheets ~~~~~
-# SAMPLE_SHEET: sample_sheets/C2Cnuc_yPAP-sample_sheet.csv
-# SAMPLE_SHEET: sample_sheets/All_yPAP_chromium-sample_sheet.csv
-# SAMPLE_SHEET: sample_sheets/All_primary_yPAP_chromium-sample_sheet.csv
-# SAMPLE_SHEET: sample_sheets/scMuscle2-sample_sheet.csv
-# SAMPLE_SHEET: sample_sheets/Ma_iPSC-sample_sheet.csv
+# SAMPLE_SHEET: ~/DWM_utils/sample_sheets/C2Cnuc_yPAP-sample_sheet.csv
+# SAMPLE_SHEET: ~/DWM_utils/sample_sheets/All_yPAP_chromium-sample_sheet.csv
+# SAMPLE_SHEET: ~/DWM_utils/sample_sheets/All_primary_yPAP_chromium-sample_sheet.csv
+# SAMPLE_SHEET: ~/DWM_utils/sample_sheets/scMuscle2-sample_sheet.csv
+# SAMPLE_SHEET: ~/DWM_utils/sample_sheets/Ma_iPSC-sample_sheet.csv
 
 ########################################################################################################
 # Important directory file paths
 ########################################################################################################
 # ~~~ Mouse output directories ~~~ #
 # OUTDIR: /workdir/dwm269/totalRNA/data/kallisto/GRCm39_GENCODEM27
-OUTDIR: /workdir/dwm269/totalRNA/data/kallisto/GRCm39_REOT1L_Visium
+
+OUTDIR: /workdir/dwm269/totalRNA/data/kallisto/GRCm39_GENCODEM27_Visium
+# OUTDIR: /workdir/dwm269/totalRNA/data/kallisto/GRCm39_REOT1L_Visium
 
 # ~~~ Human output directories ~~~ #
 # OUTDIR: /workdir/dwm269/ma_ipsc/data/kallisto/GRCh38p13
@@ -50,17 +52,19 @@ BLASTDB: /shared_data/genome_db/BLAST_NCBI # path to where the nt BLAST database
 ########################################################################################################
 # Resources - file paths
 ########################################################################################################
-### Mouse ###
-# KB_IDX: /workdir/dwm269/genomes/mm39_all/GRCm39_kallisto_GENCODE_M27/transcriptome.idx # path to kallisto index file
-# KB_T2G: /workdir/dwm269/genomes/mm39_all/GRCm39_kallisto_GENCODE_M27/transcripts_to_genes.txt # path to transcripts_to_genes.txt
-# FASTA: /workdir/dwm269/genomes/mm39_all/GENCODE_M27/GRCm39.genome.fa # primary assembly
-# GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M27/gencode.vM27.chr_patch_hapl_scaff.annotation.gtf # annotations used to generate .idx & T2G
+### Mouse ####
+KB_IDX: /workdir/dwm269/genomes/mm39_all/kallisto_GRCm39_GENCODEM27/transcriptome.idx # path to kallisto index file
+KB_T2G: /workdir/dwm269/genomes/mm39_all/kallisto_GRCm39_GENCODEM27/transcripts_to_genes.txt # path to transcripts_to_genes.txt
+KB_INTRON_T2C: /workdir/dwm269/genomes/mm39_all/kallisto_GRCm39_GENCODEM27/
+KB_CDNA_T2C: /workdir/dwm269/genomes/mm39_all/kallisto_GRCm39_GENCODEM27/
+FASTA: /workdir/dwm269/genomes/mm39_all/GENCODE_M27/GRCm39.genome.fa # primary assembly
+GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M27/gencode.vM27.chr_patch_hapl_scaff.annotation.gtf # annotations used to generate .idx & T2G
 
 ### Mouse + Reovirus-T1L ###
-KB_IDX: /workdir/dwm269/genomes/mm39_all/GRCm39M27_REOT1L_kallisto/mixed_index.idx # path to kallisto index file
-KB_T2G: /workdir/dwm269/genomes/mm39_all/GRCm39M27_REOT1L_kallisto/mixed_t2g.txt # path to transcripts_to_genes.txt
-FASTA: /workdir/dwm269/genomes/mm39_all/GENCODE_M27/GRCm39.genome.fa,/workdir/dwm269/genomes/reo_T1L.fasta # primary assembly
-GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M27/gencode.vM27.chr_patch_hapl_scaff.annotation.gtf,/workdir/dwm269/genomes/reo_T1L.gtf # annotations used to generate .idx & T2G
+# KB_IDX: /workdir/dwm269/genomes/mm39_all/GRCm39M27_REOT1L_kallisto/mixed_index.idx # path to kallisto index file
+# KB_T2G: /workdir/dwm269/genomes/mm39_all/GRCm39M27_REOT1L_kallisto/mixed_t2g.txt # path to transcripts_to_genes.txt
+# FASTA: /workdir/dwm269/genomes/mm39_all/GENCODE_M27/GRCm39.genome.fa,/workdir/dwm269/genomes/reo_T1L.fasta # primary assembly
+# GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M27/gencode.vM27.chr_patch_hapl_scaff.annotation.gtf,/workdir/dwm269/genomes/reo_T1L.gtf # annotations used to generate .idx & T2G
 
 ### Human ###
 #TODO
