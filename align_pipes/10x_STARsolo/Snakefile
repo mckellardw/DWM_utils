@@ -43,6 +43,7 @@ rule all:
         # expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/filtered/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         expand('{OUTDIR}/{sample}_STARsolo/Processed.out.bam', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         expand('{OUTDIR}/{sample}_STARsolo/Processed.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES),        
         expand('{OUTDIR}/{sample}_STARsolo/preTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # raw R2 fastQC results
         expand('{OUTDIR}/{sample}_STARsolo/postTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
         expand('{OUTDIR}/{sample}_STARsolo/cutadapt_polyA_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
@@ -50,9 +51,9 @@ rule all:
         expand('{OUTDIR}/{sample}_STARsolo/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap plotgardener)
         expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), # count mats
         expand('{OUTDIR}/{sample}_STARsolo/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
-        expand('{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES) # blastn results for unmapped R1 reads
-        # expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
-        # expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out_merged.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES) # non-strand-split bigWigs (for
+        expand('{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES), # blastn results for unmapped R1 reads
+        expand('{OUTDIR}/{sample}_STARsolo/Processed.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
+        expand('{OUTDIR}/{sample}_STARsolo/Processed.out_merged.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES) # non-strand-split bigWigs (for
 
 
 #############################################
@@ -317,8 +318,8 @@ rule dedupBAM:
         PICARD_EXEC = config['PICARD_EXEC'],
         OUTDIR = config['OUTDIR'],
         TMPDIR = '{OUTDIR}/{sample}_STARsolo/_STARtmp',
-        STAR_EXEC = config['STAR_EXEC'],
-        TMPBAM = '{OUTDIR}/{sample}_STARsolo/tmp.bam'
+        STAR_EXEC = config['STAR_EXEC']
+        # TMPBAM = '{OUTDIR}/{sample}_STARsolo/tmp.bam'
     threads:
         config['CORES']*2
     shell:
@@ -332,7 +333,6 @@ rule dedupBAM:
         --outTmpDir {params.TMPDIR} \
         --bamRemoveDuplicatesType UniqueIdentical
         """
-
 
 rule indexDedupBAM:
     input:
@@ -348,49 +348,61 @@ rule indexDedupBAM:
 
 # Remove reads that don't have a corrected spot/cell barcode with samtools, then remove duplicates w/ **umi-tools**
 ## High mem usage? Check here! https://umi-tools.readthedocs.io/en/latest/faq.html
-# rule dedupBAM:
-#     input:
-#         CB_WHITELIST = config['CB_WHITELIST'],
-#         SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam'
-#     output:
-#         DEDUPBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out.bam'
-#     params:
-#         OUTPUT_PREFIX='{OUTDIR}/{sample}_STARsolo/umitools_dedup/{sample}',
-#         TMPBAM = '{OUTDIR}/{sample}_STARsolo/tmp.bam'
-#     threads:
-#         config['CORES']
-#         #1
-#     log:
-#         '{OUTDIR}/{sample}_STARsolo/umitools_dedup/dedup.log'
-#     shell:
-#         """
-#         samtools view -1 \
-#         -@ {threads} \
-#         --tag-file CB:{input.CB_WHITELIST} \
-#         {input.SORTEDBAM} \
-#         > {params.TMPBAM}
-#
-#         samtools index \
-#         -@ {threads} \
-#         {params.TMPBAM}
-#
-#         umi_tools dedup \
-#         --stdin={params.TMPBAM} \
-#         --output-stats={params.OUTPUT_PREFIX} \
-#         --extract-umi-method=tag \
-#         --umi-tag=UB \
-#         --cell-tag=CB \
-#         --method=unique \
-#         --per-cell \
-#         --unmapped-reads=discard \
-#         > {output.DEDUPBAM}
-#
-#         """
+rule umitools_dedupBAM:
+    input:
+        CB_WHITELIST = config['CB_WHITELIST'],
+        SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam'
+    output:
+        DEDUPBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out.bam'
+    params:
+        OUTPUT_PREFIX='{OUTDIR}/{sample}_STARsolo/umitools_dedup/{sample}',
+        TMPBAM = '{OUTDIR}/{sample}_STARsolo/tmp.bam'
+    threads:
+        config['CORES']
+        #1
+    log:
+        '{OUTDIR}/{sample}_STARsolo/umitools_dedup/dedup.log'
+    shell:
+        """
+        samtools view -1 \
+        -@ {threads} \
+        --tag-file CB:{input.CB_WHITELIST} \
+        {input.SORTEDBAM} \
+        > {params.TMPBAM}
+
+        samtools index \
+        -@ {threads} \
+        {params.TMPBAM}
+
+        umi_tools dedup \
+        --stdin={params.TMPBAM} \
+        --output-stats={params.OUTPUT_PREFIX} \
+        --extract-umi-method=tag \
+        --umi-tag=UB \
+        --cell-tag=CB \
+        --method=unique \
+        --per-cell \
+        --unmapped-reads=discard \
+        > {output.DEDUPBAM}
+        """
         # --log={log} \
         # --umi-separator=: \
         # --stdin={input.SORTEDBAM} \
         # --umi-whitelist={input.CB_WHITELIST} \
         # rm {params.TMPBAM}
+
+
+rule umitools_indexDedupBAM:
+    input:
+        SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out.bam'
+    output:
+        BAI = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai'
+    threads:
+        config['CORES']
+    shell:
+        """
+        samtools index -@ {threads} {input.SORTEDBAM}
+        """
 
 # Mark/remove duplicates - **picard**
 ## https://broadinstitute.github.io/picard/command-line-overview.html#UmiAwareMarkDuplicatesWithMateCigar
@@ -576,11 +588,11 @@ rule blast_unmapped:
 
 rule bamToSplitBigWig:
     input:
-        BAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out.bam',
-        BAI = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai'
+        BAM = '{OUTDIR}/{sample}_STARsolo/Processed.out.bam',
+        BAI = '{OUTDIR}/{sample}_STARsolo/Processed.out.bam.bai'
     output:
-        POS_BW = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out_plus.bw',
-        MERGED_BW = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out_merged.bw'
+        POS_BW = '{OUTDIR}/{sample}_STARsolo/Processed.out_plus.bw',
+        MERGED_BW = '{OUTDIR}/{sample}_STARsolo/Processed.out_merged.bw'
     params:
         BAM2SPLITBW=config['BAM2SPLITBW'],
         STAR_REF = config['STAR_REF'],
