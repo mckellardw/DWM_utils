@@ -36,7 +36,7 @@ CB_WHITELIST: resources/barcodes_10x/visium-v1.txt # whitelist for Visium
 TMPDIR: /workdir/dwm269/totalRNA/tmp # directory for temporary files
 # OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM28
 # OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM27_Visium
-OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM28_Visium
+OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM28_Visium/REO
 DATADIR: /workdir/dwm269/scMuscle2/data/fastqs
 
 # TMPDIR: /workdir/dwm269/ma_ipsc/tmp

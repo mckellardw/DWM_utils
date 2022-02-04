@@ -19,8 +19,8 @@ MEMLIMIT: 50000000000 # limit in bytes
 # Important directory file paths
 ########################################################################################################
 TMPDIR: /workdir/dwm269/tmp # directory for temporary files
-OUTDIR: /workdir/dwm269/totalRNA/data/ChROseq_STAR
-DATADIR: /workdir/dwm269/chroseq_ncrna/data/chroseq_injury
+OUTDIR: /workdir/dwm269/totalRNA/data/ChROseq_STAR/M28
+# DATADIR: /workdir/dwm269/chroseq_ncrna/data/chroseq_injury
 
 ########################################################################################################
 # Executables - file paths
@@ -35,8 +35,11 @@ BLASTDB: /shared_data/genome_db/BLAST_NCBI # path to where the nt BLAST database
 # Resources - file paths
 ########################################################################################################
 ### Mouse ###
-STAR_REF: /workdir/dwm269/genomes/mm39_all/GRCm39_STAR_GENCODE_M27 # path to STAR-formatted reference genome
-GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M27/gencode.vM27.chr_patch_hapl_scaff.annotation.gtf
+# STAR_REF: /workdir/dwm269/genomes/mm39_all/GRCm39_STAR_GENCODE_M27 # path to STAR-formatted reference genome
+# GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M27/gencode.vM27.chr_patch_hapl_scaff.annotation.gtf
+
+STAR_REF: /workdir/dwm269/genomes/mm39_all/STAR_GRCm39_GENCODEM28 # path to STAR-formatted reference genome
+GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M28/gencode.vM28.chr_patch_hapl_scaff.annotation.gtf
 
 ### Human ###
 # STAR_REF: /workdir/dwm269/genomes/GRCh38_all/GRCh38p13_STAR # path to STAR-formatted reference genome
