@@ -12,7 +12,7 @@
 SAMPLE_SHEET: sample_sheets/All_ChRO-sample_sheet.csv
 
 # STARsolo parameters
-CORES: 10 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CORES: 4 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 50000000000 # limit in bytes
 
 ########################################################################################################

@@ -240,14 +240,14 @@ rule qualimapQC:
 ## Unmapped read analyses
 #############################################
 
-# Run fastqc on unmapped reads; switch names because of STAR weirdness
+# Run fastqc on unmapped reads
 rule unmapped_fastqc:
     input:
         UNMAPPED1 = '{OUTDIR}/{sample}/Unmapped.out.mate1',
         UNMAPPED2 = '{OUTDIR}/{sample}/Unmapped.out.mate2'
     output:
-        UNMAPPED1_FQ = '{OUTDIR}/{sample}/Unmapped.out.mate1.fastq',
-        UNMAPPED2_FQ = '{OUTDIR}/{sample}/Unmapped.out.mate2.fastq',
+        UNMAPPED1_FQ = '{OUTDIR}/{sample}/Unmapped.out.mate1.fastq.gz',
+        UNMAPPED2_FQ = '{OUTDIR}/{sample}/Unmapped.out.mate2.fastq.gz',
         FQC_DIR = directory('{OUTDIR}/{sample}/Unmapped_fastqc_out')
     params:
         FASTQC_EXEC = config['FASTQC_EXEC']
@@ -255,8 +255,8 @@ rule unmapped_fastqc:
         config['CORES']
     shell:
         """
-        mv {input.UNMAPPED1} {input.UNMAPPED2}.fastq
-        mv {input.UNMAPPED2} {input.UNMAPPED1}.fastq
+        mv {input.UNMAPPED1} {input.UNMAPPED1}.fastq
+        mv {input.UNMAPPED2} {input.UNMAPPED2}.fastq
 
         pigz -p{threads} {input.UNMAPPED1}.fastq {input.UNMAPPED2}.fastq
 
@@ -269,7 +269,7 @@ rule unmapped_fastqc:
 ## TODO: change demux step to fastx-collapser
 rule blast_unmapped:
     input:
-        UNMAPPED2_FQ = '{OUTDIR}/{sample}/Unmapped.out.mate2.fastq'
+        UNMAPPED2_FQ = '{OUTDIR}/{sample}/Unmapped.out.mate2.fastq.gz'
     output:
         # BLAST_R1 = '{OUTDIR}/{sample}/Unmapped.out.mate1_blastResults.txt',
         BLAST_R2 = '{OUTDIR}/{sample}/Unmapped.out.mate2_blastResults.txt'
@@ -281,7 +281,7 @@ rule blast_unmapped:
         TMP_FA = '{OUTDIR}/{sample}/Unmapped.out.mate1'
     shell:
         """
-        sed -n '1~4s/^@/>/p;2~4p' {input.UNMAPPED2_FQ} > {params.TMP_FA}
+        zcat {input.UNMAPPED2_FQ} | sed -n '1~4s/^@/>/p;2~4p' > {params.TMP_FA}
 
         echo "Number of unmapped reads: "
         grep -c ">" {params.TMP_FA}
@@ -297,6 +297,8 @@ rule blast_unmapped:
 
         rm {params.TMP_FA}
 		"""
+
+
 
 # cat {input.UNMAPPED1_FQ} | awk '{{if(NR%4==1) {{printf(">%s\n",substr($0,2));}} else if(NR%4==2) print;}}' > {params.TMP_FA}
 

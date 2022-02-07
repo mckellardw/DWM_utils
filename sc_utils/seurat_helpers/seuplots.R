@@ -1,12 +1,11 @@
 ###############################
-# seutils -  Seurat utility functions
+# seuplots -  Seurat-compatible plotting functions
 # Written by: David McKellar
 # version: 1.0
-###############################
 
 #############################################################################
-## Utils
-#############################################################################
+## Utils --------------------------------------------------------------------
+
 
 # Split violin plots
 .GeomSplitViolin <- ggproto(
@@ -89,8 +88,8 @@
   }
 
 #############################################################################
-## Differential Gene Expression Plots
-#############################################################################
+## Differential Gene Expression Plots ---------------------------------------
+
 # Build volcano plot after running FindMarkers()
 #   *Note- requires Seurat v4 or greater (b/c colnames in the output file changed for some reason...)
 ggVolcano_v2 <- function(
@@ -229,8 +228,8 @@ ggVolcano_v2 <- function(
 
 
 #############################################################################
-## Spatial/Visium plot functions
-#############################################################################
+## Spatial/Visium plot functions --------------------------------------------
+
 
 # Generate feature plots given a list of Visium/Seurat objects
 visListPlot <- function(
@@ -249,7 +248,7 @@ visListPlot <- function(
   abs.heights=TRUE, # Use absolute heights to size each subplot
   nrow=NULL,
   ncol=NULL,
-  colormap="viridis", # either a viridis option or a vector of colors
+  colormap="viridis", # either a viridis option, a vector of colors, or a list of options corresponding to `features`
   colormap.direction=1,
   colormap.same.scale=F, #whether (T) or not (F) to set all features to the same colormap scale
   na.value=gray(0.69), # color for na.value (spot where gene is not detected)
@@ -265,43 +264,78 @@ visListPlot <- function(
   if(verbose){cat(paste0("Plotting Visium data, using the assay ",assay,"!\n"))}
   
   # Check colormap
-  if(length(colormap)==1){
-    if(!colormap %in% c("magma","inferno","plasma","viridis","cividis")){
+  if(length(colormap)==1){ # single colormap option
+    if(!colormap %in% c("magma","inferno","plasma","viridis","cividis","A","B","C","D")){
       message(paste0("Color palette '", colormap, "' not found!"))
+      return(NULL)
+    }else{
+      colormap = rep(
+        x=colormap,
+        length=length(features)
+      )%>%
+        as.list()
+    }
+  }else if(length(colormap)>1 & !is.list(colormap)){ 
+    colormap = rep(
+      x=list(colormap),
+      length=length(features)
+    )
+  }else if(is.list(colormap)){ # list for feature-specific colormaps
+    if(length(colormap)!= length(features)){
+      message(paste0("Wrong number of color palettes!"))
       return(NULL)
     }
   }
-  
-  #TODO- check to make sure colors are passed correctly
-  # else if(!any(colormap %in% colors())){
-  #   
-  # }
   
   # Alternate feature names
   if(is.null(alt.titles)){
     alt.titles=features
   }
   
+  # Check slot, assay length(s)
+  if(length(assay)==1){
+    assay = rep(assay,length(features))
+  }else if(length(assay) != length(features)){
+    message("`assay` and `features` lengths don't match!")
+  }
+  
+  if(length(slot)==1){
+    slot = rep(slot,length(features))
+  }else if(length(slot) != length(features)){
+    message("`slot` and `features` lengths don't match!")
+  }
+  
   # Set active assay
-  seu.list <- lapply(
-    seu.list,
-    FUN = function(SEU){
-      # SEU@active.assay <- assay
-      DefaultAssay(SEU) <- assay
-      return(SEU)
-    }
-  )
+  #deprecated
+  # seu.list <- lapply(
+  #   seu.list,
+  #   FUN = function(SEU){
+  #     # SEU@active.assay <- assay
+  #     DefaultAssay(SEU) <- assay
+  #     return(SEU)
+  #   }
+  # )
   
   # Check for genes
+  tmp.features = paste0("tmp.",features) # place-holder name for features; allows assay-specific feature plotting in FeaturePlot
+  
   seu.list <- lapply(
     seu.list,
     FUN = function(SEU){
-      for(FEAT in features){
-        if(FEAT %in% colnames(SEU@meta.data)){
-          # skip this step for meta.data features
-        }else if(!FEAT %in% rownames(SEU)){
+      for(i in 1:length(features)){
+        if(features[i] %in% colnames(SEU@meta.data)){
+          SEU@meta.data[,tmp.features[i]] <- SEU@meta.data[,features[i]]
+          
+        }else if(!features[i] %in% rownames(SEU)){
           # Stick a bunch of zeroes into the metadata to act like an undetected gene
-          SEU@meta.data[,FEAT] <- rep(0,nrow(SEU@meta.data))
+          SEU@meta.data[,tmp.features[i]] <- rep(0,nrow(SEU@meta.data))
+          
+        }else{
+          SEU@meta.data[,tmp.features[i]] <- GetAssayData(
+            SEU,
+            assay=assay[i],
+            slot=slot[i]
+          )[features[i],]
         }
       }
       return(SEU)
@@ -309,14 +343,13 @@ visListPlot <- function(
   )
   
   # Get expression limits for each gene, across all datasets
-  gene.lims <- lapply(
-    features,
-    FUN = function(FEAT){
+  gene.lims <- mapply(
+    FUN = function(FEAT, ASS, SLOT){
       out.max <- lapply(
         seu.list,
         FUN = function(SEU){
           if(FEAT %in% rownames(SEU)){
-            return(max(GetAssayData(SEU,assay=assay,slot=slot)[FEAT,]))
+            return(max(GetAssayData(SEU,assay=ASS,slot=SLOT)[FEAT,]))
           }else if(FEAT %in% colnames(SEU@meta.data)){
             return(max(SEU@meta.data[,FEAT]))
           }else{
@@ -329,7 +362,11 @@ visListPlot <- function(
         max()
       
       return(c(10^-100, out.max))
-    }
+    },
+    SIMPLIFY = F,
+    FEAT = features,
+    ASS = assay,
+    SLOT = slot
   )
   
   # Set colormap scale to the global min/max of all features 
@@ -341,6 +378,7 @@ visListPlot <- function(
   }
   
   # Get plot heights
+  #TODO- build in coord_fixed() 
   if(abs.heights){
     heights <- lapply(
       seu.list,
@@ -362,8 +400,8 @@ visListPlot <- function(
       FUN = function(SEU){
         tmp.plot = FeaturePlot(
           SEU,
-          slot = slot,
-          features = features[i],
+          slot = slot[i],
+          features = tmp.features[i],
           pt.size = pt.size,
           reduction = reduction
         ) +
@@ -380,12 +418,12 @@ visListPlot <- function(
           )
         
         # set colormap
-        if(length(colormap)==1){
+        if(length(colormap[[i]])==1){
           if(verbose){message(paste0("Using viridis palette ", colormap))}
           tmp.plot = tmp.plot + 
             scale_color_viridis(
-              limits=unlist(gene.lims[i]),
-              option=colormap,
+              limits = unlist(gene.lims[i]),
+              option = colormap[[i]],
               direction = colormap.direction,
               na.value = na.value
             )
@@ -394,7 +432,7 @@ visListPlot <- function(
           
           # Flip colormap if direction is `-1`
           if(colormap.direction==-1){
-            colormap=rev(colormap)
+            colormap=rev(colormap[[i]])
           }
           
           tmp.plot = tmp.plot + 
@@ -472,9 +510,139 @@ visListPlot <- function(
 }
 
 
+# Plot co-expression of any two genes/features
+## Built on top of visListPlot()
+visCoMap <- function(
+  seu.list,
+  features=NULL, # pair of genes 
+  alt.titles=NULL, # alternative titles for genes/features being passed
+  sample.titles=NULL, # Sample IDs (y-axis labels)
+  assay='Spatial', # Either a single assay, or a pair of assays (useful for spliced vs. unspliced plotting)
+  reduction="space",
+  slot="data", # Either a single slot, or a pair of slots 
+  legend.position="bottom",
+  pt.size=1,
+  font.size=8,
+  axis.title.angle.y=90, #y-axis title angle (parameter for ggplot::element_text)
+  combine=TRUE,
+  abs.heights=TRUE, # Use absolute heights to size each subplot
+  nrow=NULL,
+  ncol=NULL,
+  colormap=NULL, # either a viridis option, a vector of colors, or a list of options corresponding to `features`
+  colormap.direction=1,
+  colormap.same.scale=F, #whether (T) or not (F) to set all features to the same colormap scale
+  na.value=gray(0.69), # color for na.value (spot where gene is not detected)
+  comap.fxn = prod,
+  coex.name = NULL, # plot title for computed co-expression values
+  verbose=FALSE
+){
+  require(dplyr)
+  require(Seurat)
+  require(ggplot2)
+  require(viridis)
+  
+  if(is.null(seu.list)){message("List of Seurat objects to plot is NULL!")}
+  
+  if(verbose){cat(paste0("Plotting Visium data, using the assay ",assay,"!\n"))}
+  
+  # Check colormap
+  if(is.null(colormap)){
+    colormap=list(
+      mckolors$blue_ramp, 
+      mckolors$red_ramp, 
+      mckolors$purple_ramp
+    )
+  }
+  
+  # Alternate feature names
+  if(is.null(alt.titles)){
+    alt.titles=features
+  }
+  
+  # Check `features` length
+  if(length(features)!=2){
+    message(paste0("Only supports plotting co-=expression of 2 features... for now..."))
+  }
+  
+  # Check slot, assay length(s)
+  if(length(assay)==1){
+    assay = rep(assay,2)
+  }
+  if(length(slot)==1){
+    slot = rep(slot,2)
+  }
+  
+  # Compute co-expression values and add back to Seurat objects (as entry in meta.data)
+  if(is.null(coex.name)){
+    coex.name = "coexpression.tmp.values"
+  }
+  
+  lapply(
+    seu.list,
+    FUN = function(SEU){
+      tmp.coex <- list()
+      
+      DefaultAssay(SEU) <- assay[1]
+      tmp.coex[[1]] <- FetchData(
+        object = SEU,
+        vars = features[1],
+        slot = slot[1]
+      ) 
+      
+      DefaultAssay(SEU) <- assay[1]
+      tmp.coex[[2]] <- FetchData(
+        object = SEU,
+        vars = features[2],
+        slot = slot[2]
+      ) 
+      
+      tmp.coex <- do.call(
+        cbind,
+        tmp.coex
+      ) %>%
+        apply(
+          # X = tmp.coex,
+          MARGIN = 1,
+          FUN = prod # Function for co-expression
+        ) 
+      
+      # SEU <- AddMetaData(
+      #   object = SEU,
+      #   metadata = tmp.coex,
+      #   col.name = coex.name
+      # )
+      SEU@meta.data[,coex.name] <- tmp.coex
+      return(SEU)
+    }
+  ) %>%
+    visListPlot( # Plot all three with visListPlot
+      # seu.list=seu.list,
+      features=c(features,coex.name), # pass two features plus the co-expression values
+      alt.titles=c(alt.titles, coex.name),
+      sample.titles=sample.titles,
+      reduction=reduction,
+      assay=c(assay,assay[1]), #extra assay entry for the coex data
+      slot=c(slot,slot[1]),#extra assay entry for the coex data
+      legend.position=legend.position,
+      pt.size=pt.size,
+      font.size=font.size,
+      axis.title.angle.y=axis.title.angle.y,
+      combine=combine,
+      abs.heights=abs.heights,
+      nrow=nrow,
+      ncol=ncol,
+      colormap=colormap,
+      colormap.direction=colormap.direction,
+      colormap.same.scale=colormap.same.scale,
+      na.value=na.value,
+      verbose=verbose
+    ) %>%
+    return()
+}
+
 
 # Generate split violin plots for Visium data to look at co-occurence of cell types & gene expression
-#   Co-occurence is based on bayesprism theta values
+#   Co-occurence is based on BayesPrism theta values
 visCoocVlnPlot<-function(
   SEU,
   assay.ge='Spatial',# gene expression assay
