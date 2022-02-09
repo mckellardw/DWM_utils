@@ -70,7 +70,9 @@ grepGenes <- function(
 
   if(!is.null(filter.pattern)){ # filter out filter.pattern
     if(verbose){message(paste0("Removing features containing '", filter.pattern,"' from output..."))}
-    out.genes <- out.genes[!grepl(pattern=filter.pattern,x=out.genes)]
+    for(fp in filter.pattern){
+      out.genes <- out.genes[!grepl(pattern=fp, x=out.genes)]
+    }
   }
 
   if(is.null(sort.by[1])){

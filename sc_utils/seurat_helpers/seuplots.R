@@ -326,7 +326,7 @@ visListPlot <- function(
         if(features[i] %in% colnames(SEU@meta.data)){
           SEU@meta.data[,tmp.features[i]] <- SEU@meta.data[,features[i]]
           
-        }else if(!features[i] %in% rownames(SEU)){
+        }else if(!features[i] %in% Features(SEU, assay = assay[i])){
           # Stick a bunch of zeroes into the metadata to act like an undetected gene
           SEU@meta.data[,tmp.features[i]] <- rep(0,nrow(SEU@meta.data))
           
@@ -348,7 +348,7 @@ visListPlot <- function(
       out.max <- lapply(
         seu.list,
         FUN = function(SEU){
-          if(FEAT %in% rownames(SEU)){
+          if(FEAT %in% Features(SEU, assay=ASS)){
             return(max(GetAssayData(SEU,assay=ASS,slot=SLOT)[FEAT,]))
           }else if(FEAT %in% colnames(SEU@meta.data)){
             return(max(SEU@meta.data[,FEAT]))
@@ -438,7 +438,7 @@ visListPlot <- function(
           tmp.plot = tmp.plot + 
             scale_color_gradientn(
               limits=unlist(gene.lims[i]),
-              colors=colormap,
+              colors=colormap[[i]],
               na.value = na.value
             )
         }
@@ -583,18 +583,29 @@ visCoMap <- function(
       tmp.coex <- list()
       
       DefaultAssay(SEU) <- assay[1]
-      tmp.coex[[1]] <- FetchData(
-        object = SEU,
-        vars = features[1],
-        slot = slot[1]
-      ) 
+      if(features[1] %in% Features(SEU,assay=assay[1])){
+        tmp.coex[[1]] <- FetchData(
+          object = SEU,
+          vars = features[1],
+          slot = slot[1]
+        ) 
+      }else{
+        if(verbose){message(paste0(features[1], " is missing from `", assay[1], "`"))}
+        tmp.coex[[1]] <- rep(0, ncol(SEU))
+        
+      }
       
-      DefaultAssay(SEU) <- assay[1]
-      tmp.coex[[2]] <- FetchData(
-        object = SEU,
-        vars = features[2],
-        slot = slot[2]
-      ) 
+      DefaultAssay(SEU) <- assay[2]
+      if(features[2] %in% Features(SEU,assay=assay[2])){
+        tmp.coex[[2]] <- FetchData(
+          object = SEU,
+          vars = features[2],
+          slot = slot[2]
+        )  
+      }else{
+        if(verbose){message(paste0(features[2], " is missing from `", assay[2], "`"))}
+        tmp.coex[[2]] <- rep(0, ncol(SEU))
+      }
       
       tmp.coex <- do.call(
         cbind,
