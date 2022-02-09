@@ -41,9 +41,9 @@ STAR_EXEC = config['STAR_EXEC']
 rule all:
     input:
         # expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/filtered/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        expand('{OUTDIR}/{sample}_STARsolo/Processed.out.bam', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        # expand('{OUTDIR}/{sample}_STARsolo/Processed.out.bam', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         expand('{OUTDIR}/{sample}_STARsolo/Processed.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES),        
+        expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES), # umi_tools deduplicated .bam (currently broken)
         expand('{OUTDIR}/{sample}_STARsolo/preTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # raw R2 fastQC results
         expand('{OUTDIR}/{sample}_STARsolo/postTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
         expand('{OUTDIR}/{sample}_STARsolo/cutadapt_polyA_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
@@ -364,7 +364,7 @@ rule umitools_dedupBAM:
         '{OUTDIR}/{sample}_STARsolo/umitools_dedup/dedup.log'
     shell:
         """
-        samtools view -1 \
+        samtools view -1 -b \
         -@ {threads} \
         --tag-file CB:{input.CB_WHITELIST} \
         {input.SORTEDBAM} \
@@ -375,16 +375,17 @@ rule umitools_dedupBAM:
         {params.TMPBAM}
 
         umi_tools dedup \
-        --stdin={params.TMPBAM} \
-        --output-stats={params.OUTPUT_PREFIX} \
+        -I {params.TMPBAM} \
         --extract-umi-method=tag \
         --umi-tag=UB \
         --cell-tag=CB \
         --method=unique \
         --per-cell \
         --unmapped-reads=discard \
-        > {output.DEDUPBAM}
+        -S {output.DEDUPBAM}
         """
+        # --output-stats={params.OUTPUT_PREFIX} \
+
         # --log={log} \
         # --umi-separator=: \
         # --stdin={input.SORTEDBAM} \
