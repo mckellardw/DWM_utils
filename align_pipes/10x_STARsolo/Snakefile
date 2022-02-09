@@ -52,8 +52,8 @@ rule all:
         expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), # count mats
         expand('{OUTDIR}/{sample}_STARsolo/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
         expand('{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES), # blastn results for unmapped R1 reads
-        expand('{OUTDIR}/{sample}_STARsolo/Processed.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
-        expand('{OUTDIR}/{sample}_STARsolo/Processed.out_merged.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES) # non-strand-split bigWigs (for
+        expand('{OUTDIR}/{sample}_STARsolo/dedup.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
+        expand('{OUTDIR}/{sample}_STARsolo/dedup.out_merged.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES) # non-strand-split bigWigs (for
 
 
 #############################################
@@ -383,6 +383,9 @@ rule umitools_dedupBAM:
         --per-cell \
         --unmapped-reads=discard \
         -S {output.DEDUPBAM}
+
+        rm {params.TMPBAM}
+        rm (params.TMPBAM).bai
         """
         # --output-stats={params.OUTPUT_PREFIX} \
 
@@ -589,11 +592,11 @@ rule blast_unmapped:
 
 rule bamToSplitBigWig:
     input:
-        BAM = '{OUTDIR}/{sample}_STARsolo/Processed.out.bam',
-        BAI = '{OUTDIR}/{sample}_STARsolo/Processed.out.bam.bai'
+        BAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out.bam',
+        BAI = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai'
     output:
-        POS_BW = '{OUTDIR}/{sample}_STARsolo/Processed.out_plus.bw',
-        MERGED_BW = '{OUTDIR}/{sample}_STARsolo/Processed.out_merged.bw'
+        POS_BW = '{OUTDIR}/{sample}_STARsolo/dedup.out_plus.bw',
+        MERGED_BW = '{OUTDIR}/{sample}_STARsolo/dedup.out_merged.bw'
     params:
         BAM2SPLITBW=config['BAM2SPLITBW'],
         STAR_REF = config['STAR_REF'],
