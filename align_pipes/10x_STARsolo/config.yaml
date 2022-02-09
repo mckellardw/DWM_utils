@@ -9,8 +9,8 @@
 #       --readFilesIn Read2_Lane1.fastq.gz,Read2_Lane2.fastq.gz,Read2_Lane3.fastq.gz  Read1_Lane1.fastq.gz,Read1_Lane2.fastq.gz,Read1_Lane3.fastq.gz
 
 ## ~~~~~ Visium sample sheets ~~~~~
-SAMPLE_SHEET: /home/dwm269/DWM_utils/sample_sheets/All-Vis_HeartREO-sample_sheet.csv
-# SAMPLE_SHEET: /home/dwm269/DWM_utils/sample_sheets/AllClean-Vis_yPAP-sample_sheet.csv
+# SAMPLE_SHEET: /home/dwm269/DWM_utils/sample_sheets/All-Vis_HeartREO-sample_sheet.csv
+SAMPLE_SHEET: /home/dwm269/DWM_utils/sample_sheets/AllClean-Vis_yPAP-sample_sheet.csv
 # SAMPLE_SHEET: /home/dwm269/DWM_utils/sample_sheets/test-sample_sheet.csv
 
 ## ~~~~~ Chromium sample sheets ~~~~~
@@ -36,7 +36,7 @@ CB_WHITELIST: resources/barcodes_10x/visium-v1.txt # whitelist for Visium
 TMPDIR: /workdir/dwm269/totalRNA/tmp # directory for temporary files
 # OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM28
 # OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM27_Visium
-OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM28_Visium
+OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM28_Visium/REO
 DATADIR: /workdir/dwm269/scMuscle2/data/fastqs
 
 # TMPDIR: /workdir/dwm269/ma_ipsc/tmp
