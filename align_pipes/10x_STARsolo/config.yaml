@@ -36,7 +36,7 @@ CB_WHITELIST: resources/barcodes_10x/visium-v1.txt # whitelist for Visium
 TMPDIR: /workdir/dwm269/totalRNA/tmp # directory for temporary files
 # OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM28
 # OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM27_Visium
-OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM28_Visium/REO
+OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM28_Visium
 DATADIR: /workdir/dwm269/scMuscle2/data/fastqs
 
 # TMPDIR: /workdir/dwm269/ma_ipsc/tmp
@@ -64,8 +64,8 @@ GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M28/gencode.vM28.chr_patch_h
 # MIRGE_LIB: /home/dwm269/usr/bin/miRge3_Lib
 
 ### Mouse + Reovirus-T1L###
-# STAR_REF: /workdir/dwm269/genomes/mm39_all/GRCm39_GENCODEM27_REOT1L_STAR # path to STAR-formatted reference genome
-# GENES_GTF: /workdir/dwm269/genomes/mm39_all/GRCm39_GENCODEM27_REOT1L_STAR/GRCm39_ReoT1L_merged_genes.gtf
+# STAR_REF: /workdir/dwm269/genomes/mm39_all/STAR_GRCm39_GENCODEM28_REOT1L-as # path to STAR-formatted reference genome
+# GENES_GTF: /workdir/dwm269/genomes/mm39_all/STAR_GRCm39_GENCODEM28_REOT1L-as/GRCm39_ReoT1L_merged_genes.gtf
 
 ### Human ###
 # STAR_REF: /workdir/dwm269/genomes/GRCh38_all/GRCh38p13_STAR # path to STAR-formatted reference genome

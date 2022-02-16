@@ -14,3 +14,5 @@ Dependencies & Sources:
 - `qualimap` [v##]()
 - `vsearch` [v#](https://github.com/torognes/vsearch)
 - `BLAST`
+
+Outputs:

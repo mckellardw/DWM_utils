@@ -42,7 +42,7 @@ rule all:
     input:
         # expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Gene/filtered/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES), #non-deduplicated .bam; used for saturation estimation
-        expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES), # umi_tools deduplicated .bam 
+        expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES), # umi_tools deduplicated .bam
         expand('{OUTDIR}/{sample}_STARsolo/preTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # raw R2 fastQC results
         expand('{OUTDIR}/{sample}_STARsolo/postTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
         expand('{OUTDIR}/{sample}_STARsolo/cutadapt_polyA_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
@@ -222,10 +222,10 @@ rule STARsolo_align:
         SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.out.bam', #TODO: add temp()
         UNMAPPED1 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate1',
         UNMAPPED2 = '{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2',
-        UNIQUE_POS_BG = '{OUTDIR}/{sample}_STARsolo/Unique.pos.bedGraph',
-        UNIQUE_NEG_BG = '{OUTDIR}/{sample}_STARsolo/Unique.neg.bedGraph',
-        UNIQUE_MULTI_POS_BG = '{OUTDIR}/{sample}_STARsolo/UniqueMultiple.pos.bedGraph',
-        UNIQUE_MULTI_NEG_BG = '{OUTDIR}/{sample}_STARsolo/UniqueMultiple.neg.bedGraph',
+        # UNIQUE_POS_BG = '{OUTDIR}/{sample}_STARsolo/Unique.pos.bedGraph',
+        # UNIQUE_NEG_BG = '{OUTDIR}/{sample}_STARsolo/Unique.neg.bedGraph',
+        # UNIQUE_MULTI_POS_BG = '{OUTDIR}/{sample}_STARsolo/UniqueMultiple.pos.bedGraph',
+        # UNIQUE_MULTI_NEG_BG = '{OUTDIR}/{sample}_STARsolo/UniqueMultiple.neg.bedGraph',
         GENE = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/Gene'),
         GENEFULL = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/GeneFull'),
         SJ = directory('{OUTDIR}/{sample}_STARsolo/Solo.out/SJ'),
@@ -282,12 +282,14 @@ rule STARsolo_align:
         gzip -qf {output.VEL}/raw/*
         gzip -qf {output.VEL}/filtered/*
 
-        mv {OUTDIR}/{wildcards.sample}_STARsolo/Signal.UniqueMultiple.str1.out.bg {output.UNIQUE_MULTI_POS_BG}
-        mv {OUTDIR}/{wildcards.sample}_STARsolo/Signal.UniqueMultiple.str2.out.bg {output.UNIQUE_MULTI_NEG_BG}
-
-        mv {OUTDIR}/{wildcards.sample}_STARsolo/Signal.Unique.str1.out.bg {output.UNIQUE_POS_BG}
-        mv {OUTDIR}/{wildcards.sample}_STARsolo/Signal.Unique.str2.out.bg {output.UNIQUE_NEG_BG}
         """
+
+        # mv {OUTDIR}/{wildcards.sample}_STARsolo/Signal.UniqueMultiple.str1.out.bg {output.UNIQUE_MULTI_POS_BG}
+        # mv {OUTDIR}/{wildcards.sample}_STARsolo/Signal.UniqueMultiple.str2.out.bg {output.UNIQUE_MULTI_NEG_BG}
+        #
+        # mv {OUTDIR}/{wildcards.sample}_STARsolo/Signal.Unique.str1.out.bg {output.UNIQUE_POS_BG}
+        # mv {OUTDIR}/{wildcards.sample}_STARsolo/Signal.Unique.str2.out.bg {output.UNIQUE_NEG_BG}
+
         # Options to output bedGraph/bigWIgs (not properly dedup'ed though!)
         # --outWigType bedGraph \
         # --outWigStrand Stranded \
@@ -382,6 +384,7 @@ rule umitools_dedupBAM:
         --method=unique \
         --per-cell \
         --unmapped-reads=discard \
+        --output-stats={params.OUTPUT_PREFIX} \
         --log {log} \
         -S {output.DEDUPBAM}
 
