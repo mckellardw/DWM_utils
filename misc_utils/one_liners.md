@@ -20,7 +20,6 @@ sed -E 's/("([^"]*)")?,/\2\t/g' file.csv > file.tsv
 awk '{ if ($0 ~ "transcript_id") print $0; else print $0" transcript_id \"\";"; }'
 ```
 
-<<<<<<< HEAD
 ## TXG helpers
 - Number of reads per cell/spot barcode (.bam tag `CB`)
  ```
@@ -32,17 +31,11 @@ samtools view sub.bam | grep CB:Z: | sed 's/.*CR:Z:\([ACGT]*\).*/\1/' | sort | u
  samtools view sub.bam | grep CR:Z: | sed 's/.*CR:Z:\([ACGT]*\).*/\1/' | sort | uniq -c > reads_per_umi.txt
  ```
 
-=======
->>>>>>> e0463747d49c4217184f8f5c4c474f871c87bc01
 ## samtools
 
 ```
 
 ```
-<<<<<<< HEAD
-=======
-
->>>>>>> e0463747d49c4217184f8f5c4c474f871c87bc01
 ##
 - Convert .gtf (from GENCODE) to a .bed
 ```

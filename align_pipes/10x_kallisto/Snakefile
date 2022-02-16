@@ -212,7 +212,7 @@ rule postTrim_FastQC_R2:
 # Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
 #   Info on kallisto/bustools: https://www.kallistobus.tools/
 #TODO gzip outputs w/ pigz
-rule kallisto_standard:
+rule kb_standard:
     input:
         CB_WHITELIST = config['CB_WHITELIST'],
         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
@@ -256,7 +256,7 @@ rule kallisto_standard:
         # gzip -qf {params.OUTDIR}/{wildcards.sample}/kb_standard/counts_unfiltered/*.mtx
 
 #TODO gzip outputs w/ pigz
-rule kallisto_lamanno:
+rule kb_lamanno:
     input:
         CB_WHITELIST = config['CB_WHITELIST'],
         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
@@ -273,7 +273,7 @@ rule kallisto_lamanno:
         UMIlen = config['UMIlen'],
         MEMLIMIT = config['MEMLIMIT']
     log:
-        '{OUTDIR}/{sample}/kb_standard/kallisto_lamanno.log'
+        '{OUTDIR}/{sample}/kb_lamanno/kallisto_lamanno.log'
     threads:
         config['CORES']
     shell:
@@ -302,6 +302,42 @@ rule kallisto_lamanno:
         #
         # gzip -qf {params.OUTDIR}/{wildcards.sample}/kb_lamanno/counts_unfiltered/*.txt
         # gzip -qf {params.OUTDIR}/{wildcards.sample}/kb_lamanno/counts_unfiltered/*.mtx
+
+
+# Output pseudobam files for coverage plots, etc.
+# rule kallisto_genomebam:
+#     input:
+#         CB_WHITELIST = config['CB_WHITELIST'],
+#         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
+#         FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
+#     output:
+#         GENMOEBAME_DIR = directory('{OUTDIR}/{sample}/kallisto_bam')
+#         COUNTMAT = '{OUTDIR}/{sample}/kb_lamanno/counts_filtered/adata.h5ad'
+#     params:
+#         OUTDIR = config['OUTDIR'],
+#         KB_EXEC = config['KB_EXEC'],
+#         KBL_IDX = config['KBL_IDX'],
+#         KBL_T2G = config['KBL_T2G'],
+#         KBL_CDNA_T2C = config['KBL_CDNA_T2C'],
+#         KBL_INTRON_T2C = config['KBL_INTRON_T2C'],
+#         UMIlen = config['UMIlen'],
+#         MEMLIMIT = config['MEMLIMIT']
+#     threads:
+#         config['CORES']
+#     shell:
+#     """
+#     {params.KB_EXEC} quant \
+#     -i index \
+#     -o {output.GENOMEBAM_DIR} \
+#     --genomebam \
+#     --chromosomes
+#     --gtf
+#     --single \
+#     -l 200 \
+#     -s 20 \
+#     -t {threads} \
+#     file1.fastq.gz file2.fastq.gz
+#     """
 
 #############################################
 ## qualimap on aligned reads
