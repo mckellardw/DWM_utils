@@ -25,6 +25,15 @@ scThemes <-function(
     legend.title = element_text(size=big.font,color="black")
   )
 
+  scTheme$space <- theme(
+    axis.line = element_blank(),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    legend.text = element_text(size=small.font,color="black"),
+    legend.title = element_text(size=big.font,color="black")
+  )
+  
   scTheme$scatter <- theme_minimal()+
     theme(
       axis.line = element_blank(),
