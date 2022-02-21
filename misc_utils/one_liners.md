@@ -20,6 +20,12 @@ sed -E 's/("([^"]*)")?,/\2\t/g' file.csv > file.tsv
 awk '{ if ($0 ~ "transcript_id") print $0; else print $0" transcript_id \"\";"; }'
 ```
 
+- Filter .fastq [by read length](https://www.biostars.org/p/66996/)
+*Note* that if you use this line in a snakemake shell call, both the `\` and the `{}` have to be escaped (`\`->`\\` and `{}`-> `{{}}`)
+```
+zcat your.fastq.gz | awk 'BEGIN {FS = "\t" ; OFS = "\n"} {header = $0 ; getline seq ; getline qheader ; getline qseq ; if (length(seq) >= ${MIN_LENGTH} && length(seq) <= ${MAX_LENGTH}) {print header, seq, qheader, qseq}}' > filtered.fastq
+```
+
 ## TXG helpers
 - Number of reads per cell/spot barcode (.bam tag `CB`)
  ```
@@ -36,10 +42,15 @@ samtools view sub.bam | grep CB:Z: | sed 's/.*CR:Z:\([ACGT]*\).*/\1/' | sort | u
 ```
 
 ```
-##
+## .gtf finagling
 - Convert .gtf (from GENCODE) to a .bed
 ```
 tail -n +6 /path/to/gencode.vM28.chr_patch_hapl_scaff.annotation.gtf | \
 awk '{ if ($0 ~ "transcript_id") print $0; else print $0" transcript_id \"\";"; }' | \
 gtf2bed --max-mem=16G > gencode.vM28.chr_patch_hapl_scaff.annotation.bed
+```
+
+- Filter a .gtf by gene biotype
+```
+cat gencode.vM28.chr_patch_hapl_scaff.annotation.gtf | grep -E 'transcript_type "miRNA"' > gencode.vM28.miRNAs.gtf
 ```
