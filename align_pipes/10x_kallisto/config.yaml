@@ -26,16 +26,15 @@ SAMPLE_SHEET: ~/DWM_utils/sample_sheets/AllClean-Vis_yPAP-sample_sheet.csv
 # OUTDIR: /workdir/dwm269/totalRNA/data/kallisto/GRCm39_GENCODEM27
 
 # OUTDIR: /workdir/dwm269/totalRNA/data/kallisto/GRCm39_GENCODEM27_Visium
-# OUTDIR: /workdir/dwm269/totalRNA/data/kallisto/GRCm39_GENCODEM28_Visium
-# OUTDIR: /workdir/dwm269/totalRNA/data/kallisto/GRCm39_GENCODEM27_REOT1L_Visium
 OUTDIR: /workdir/dwm269/totalRNA/data/kallisto/GRCm39_GENCODEM28_Visium
+# OUTDIR: /workdir/dwm269/totalRNA/data/kallisto/GRCm39_GENCODEM28_Visium/REO
 
 # ~~~ Human output directories ~~~ #
 # OUTDIR: /workdir/dwm269/ma_ipsc/data/kallisto/GRCh38p13
 
 
 # kallisto parameters
-CORES: 20 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CORES: 8 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 32G # limit in bytes
 UMIlen: 12 #v2=__, v3=12, visium=12
 
@@ -47,6 +46,8 @@ CB_WHITELIST: resources/barcodes_10x/visium-v1.txt # whitelist for Visium
 # Executables - file paths
 ########################################################################################################
 KB_EXEC: kb
+KALLISTO_EXEC: kallisto
+BUST_EXEC: bustools
 FASTQC_EXEC: fastqc
 BAM2SPLITBW: /home/dwm269/DWM_utils/seq_utils/bam2splitBigWig.sh #Custom function in DWM_utils that splits a bam file by strand and converts it into bigwig format
 FASTX_COLLAPSER: fastx_collapser
@@ -75,12 +76,12 @@ KBL_IDX: /workdir/dwm269/genomes/mm39_all/kallisto_GRCm39_GENCODEM28_lamanno/tra
 KBL_T2G: /workdir/dwm269/genomes/mm39_all/kallisto_GRCm39_GENCODEM28_lamanno/transcripts_to_genes.txt # path to transcripts_to_genes.txt
 KBL_INTRON_T2C: /workdir/dwm269/genomes/mm39_all/kallisto_GRCm39_GENCODEM28_lamanno/introns.t2c
 KBL_CDNA_T2C: /workdir/dwm269/genomes/mm39_all/kallisto_GRCm39_GENCODEM28_lamanno/cDNA.t2c
-
 KBmir_IDX: /workdir/dwm269/genomes/mm39_all/kallisto_mirbase_k11/transcriptome.idx # path to kallisto index file
 KBmir_T2G: /workdir/dwm269/genomes/mm39_all/kallisto_mirbase_k11/transcripts_to_genes.txt # path to transcripts_to_genes.txt
-
+#
 FASTA: /workdir/dwm269/genomes/mm39_all/GENCODE_M28/GRCm39.genome.fa # primary assembly
 GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M28/gencode.vM28.chr_patch_hapl_scaff.annotation.gtf # annotations used to generate .idx & T2G
+CHROMOSOMES: /workdir/dwm269/genomes/mm39_all/STAR_GRCm39_GENCODEM28/chrNameLength.txt
 
 ### Mouse + Reovirus-T1L ###
 # KB_IDX: /workdir/dwm269/genomes/mm39_all/GRCm39M27_REOT1L_kallisto/mixed_index.idx # path to kallisto index file
@@ -96,7 +97,8 @@ GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M28/gencode.vM28.chr_patch_h
 # KBL_INTRON_T2C: /workdir/dwm269/genomes/mm39_all/kallisto_GRCm39_GENCODEM28_lamanno/introns.t2c
 # KBL_CDNA_T2C: /workdir/dwm269/genomes/mm39_all/kallisto_GRCm39_GENCODEM28_lamanno/cDNA.t2c
 # FASTA: /workdir/dwm269/genomes/mm39_all/GENCODE_M28/GRCm39.genome.fa # primary assembly
-# GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M28/gencode.vM28.chr_patch_hapl_scaff.annotation.gtf # annotations used to generate .idx & T2G
+# GENES_GTF: /workdir/dwm269/genomes/mm39_all/STAR_GRCm39_GENCODEM28_REOT1L-as/GRCm39_ReoT1L_merged_genes.gtf # annotations used to generate .idx & T2G
+# CHROMOSOMES: /workdir/dwm269/genomes/mm39_all/STAR_GRCm39_GENCODEM28_REOT1L-as/chrNameLength.txt
 
 ### Human ###
 #TODO
