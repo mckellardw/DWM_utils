@@ -43,10 +43,11 @@ rule all:
         expand('{OUTDIR}/{sample}/postTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
         expand('{OUTDIR}/{sample}/cutadapt_polyA_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         expand('{OUTDIR}/{sample}/cutadapt_polyG_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        expand('{OUTDIR}/{sample}/kb_standard/counts_unfiltered/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        expand('{OUTDIR}/{sample}/kb_standard/pseudoalignments.bam', OUTDIR=config['OUTDIR'], sample=SAMPLES)
-        # expand('{OUTDIR}/{sample}/kb_standard/counts_filtered/adata.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES), # count mats
-        # expand('{OUTDIR}/{sample}/kb_miRNA/counts_filtered/adata.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES)
+        expand('{OUTDIR}/{sample}/kb_standard/counts_unfiltered/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES)
+        # expand('{OUTDIR}/{sample}/kb_standard/quant/pseudoalignments.bam', OUTDIR=config['OUTDIR'], sample=SAMPLES)
+        # expand('{OUTDIR}/{sample}/kb_miRNA/counts_unfiltered/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES)
+        # expand('{OUTDIR}/{sample}/kb_k11/counts_unfiltered/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES)
+
         # expand('{OUTDIR}/{sample}/kb_lamanno/counts_unfiltered/adata.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES)
 
         # expand('{OUTDIR}/{sample}/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap plotgardener)
@@ -258,95 +259,125 @@ rule postTrim_FastQC_R2:
         # gzip -qf {params.OUTDIR}/{wildcards.sample}/kb_standard/counts_unfiltered/*.mtx
 
 #TODO- make chemistry passable
+# rule kallisto_bus_standard:
+#     input:
+#         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
+#         FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
+#     output:
+#         OUTBUS = temp('{OUTDIR}/{sample}/kb_standard/output.bus')
+#     params:
+#         OUTDIR = config['OUTDIR'],
+#         KALLISTO_EXEC = config['KALLISTO_EXEC'],
+#         KB_IDX = config['KB_IDX'],
+#         # KB_T2G = config['KB_T2G'],
+#         MEMLIMIT = config['MEMLIMIT']
+#     log:
+#         '{OUTDIR}/{sample}/kb_standard/kallisto_bus.log'
+#     threads:
+#         config['CORES']
+#     shell:
+#         """
+#         mkdir -p {params.OUTDIR}/{wildcards.sample}
+#
+#         {params.KALLISTO_EXEC} bus \
+#         -i {params.KB_IDX} \
+#         -x Visium \
+#         --fr-stranded \
+#         -o {params.OUTDIR}/{wildcards.sample}/kb_standard/ \
+#         -t {threads} \
+#         --verbose \
+#         {input.FINAL_R1_FQ} {input.FINAL_R2_FQ} 2> {log}
+#         """
+#
+# rule bustools_sort_standard:
+#     input:
+#         OUTBUS = '{OUTDIR}/{sample}/kb_standard/output.bus'
+#     output:
+#         SORTBUS = temp('{OUTDIR}/{sample}/kb_standard/output.sorted.bus')
+#     params:
+#         OUTDIR = config['OUTDIR'],
+#         BUST_EXEC = config['BUST_EXEC'],
+#         MEMLIMIT = config['MEMLIMIT']
+#     log:
+#         '{OUTDIR}/{sample}/kb_standard/bustools_sort.log'
+#     threads:
+#         config['CORES']
+#     shell:
+#         """
+#         {params.BUST_EXEC} sort \
+#         -t {threads} \
+#         -m {params.MEMLIMIT} \
+#         -o {output.SORTBUS} \
+#         {input.OUTBUS} 2> {log}
+#         """
+#
+# rule bustools_correct_standard:
+#     input:
+#         CB_WHITELIST = config['CB_WHITELIST'],
+#         SORTBUS = '{OUTDIR}/{sample}/kb_standard/output.sorted.bus'
+#     output:
+#         CORBUS = '{OUTDIR}/{sample}/kb_standard/output.corrected.bus'
+#     params:
+#         OUTDIR = config['OUTDIR'],
+#         BUST_EXEC = config['BUST_EXEC'],
+#         MEMLIMIT = config['MEMLIMIT']
+#     log:
+#         '{OUTDIR}/{sample}/kb_standard/bustools_correct.log'
+#     threads:
+#         config['CORES']
+#     shell:
+#         """
+#         {params.BUST_EXEC} correct \
+#         --whitelist {input.CB_WHITELIST} \
+#         -o {output.CORBUS} \
+#         {input.SORTBUS} 2> {log}
+#         """
+#
+# rule bus2txt_standard:
+#     input:
+#         CORBUS = '{OUTDIR}/{sample}/kb_standard/output.corrected.bus'
+#     output:
+#         BUSTEXT = temp('{OUTDIR}/{sample}/kb_standard/output.corrected.txt')
+#     params:
+#         OUTDIR = config['OUTDIR'],
+#         BUST_EXEC = config['BUST_EXEC']
+#     threads:
+#         config['CORES']
+#     shell:
+#         """
+#         {params.BUST_EXEC} text \
+#         -o {output.BUSTEXT} \
+#         {input.CORBUS}
+#         """
+
 rule kallisto_bus_standard:
     input:
+        CB_WHITELIST = config['CB_WHITELIST'],
         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
         FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
     output:
-        OUTBUS = temp('{OUTDIR}/{sample}/kb_standard/output.bus')
+        BUSTEXT = temp('{OUTDIR}/{sample}/kb_standard/output.corrected.txt')
     params:
         OUTDIR = config['OUTDIR'],
         KALLISTO_EXEC = config['KALLISTO_EXEC'],
         KB_IDX = config['KB_IDX'],
         # KB_T2G = config['KB_T2G'],
+        CHEMISTRY = 'VISIUM',
         MEMLIMIT = config['MEMLIMIT']
     log:
-        '{OUTDIR}/{sample}/kb_standard/kallisto_bus.log'
+        '{OUTDIR}/{sample}/kb_standard/kallisto_bus_standard.log'
     threads:
         config['CORES']
     shell:
         """
-        mkdir -p {params.OUTDIR}/{wildcards.sample}
-
-        {params.KALLISTO_EXEC} bus \
-        -i {params.KB_IDX} \
-        -x Visium \
-        --rf-stranded \
-        -o {params.OUTDIR}/{wildcards.sample}/kb_standard/ \
-        -t {threads} \
-        --verbose \
-        {input.FINAL_R1_FQ} {input.FINAL_R2_FQ} 2> {log}
-        """
-
-rule bustools_sort_standard:
-    input:
-        OUTBUS = '{OUTDIR}/{sample}/kb_standard/output.bus'
-    output:
-        SORTBUS = temp('{OUTDIR}/{sample}/kb_standard/output.sorted.bus')
-    params:
-        OUTDIR = config['OUTDIR'],
-        BUST_EXEC = config['BUST_EXEC'],
-        MEMLIMIT = config['MEMLIMIT']
-    log:
-        '{OUTDIR}/{sample}/kb_standard/bustools_sort.log'
-    threads:
-        config['CORES']
-    shell:
-        """
-        {params.BUST_EXEC} sort \
-        -t {threads} \
-        -m {params.MEMLIMIT} \
-        -o {output.SORTBUS} \
-        {input.OUTBUS} 2> {log}
-        """
-
-rule bustools_correct_standard:
-    input:
-        CB_WHITELIST = config['CB_WHITELIST'],
-        SORTBUS = '{OUTDIR}/{sample}/kb_standard/output.sorted.bus'
-    output:
-        CORBUS = '{OUTDIR}/{sample}/kb_standard/output.corrected.bus'
-    params:
-        OUTDIR = config['OUTDIR'],
-        BUST_EXEC = config['BUST_EXEC'],
-        MEMLIMIT = config['MEMLIMIT']
-    log:
-        '{OUTDIR}/{sample}/kb_standard/bustools_correct.log'
-    threads:
-        config['CORES']
-    shell:
-        """
-        {params.BUST_EXEC} correct \
-        --whitelist {input.CB_WHITELIST} \
-        -o {output.CORBUS} \
-        {input.SORTBUS} 2> {log}
-        """
-
-rule bus2txt_standard:
-    input:
-        CORBUS = '{OUTDIR}/{sample}/kb_standard/output.corrected.bus'
-    output:
-        BUSTEXT = temp('{OUTDIR}/{sample}/kb_standard/output.corrected.txt')
-    params:
-        OUTDIR = config['OUTDIR'],
-        BUST_EXEC = config['BUST_EXEC']
-    threads:
-        config['CORES']
-    shell:
-        """
-        {params.BUST_EXEC} text \
-        -o {output.BUSTEXT} \
-        {input.CORBUS}
+        bash scripts/kb.sh {params.OUTDIR}/{wildcards.sample}/kb_standard \
+        {params.KB_IDX} \
+        {input.CB_WHITELIST} \
+        {params.CHEMISTRY} \
+        {log} \
+        {threads} \
+        {params.MEMLIMIT} \
+        {input.FINAL_R1_FQ} {input.FINAL_R2_FQ}
         """
 
 rule bus2mat_standard:
@@ -363,7 +394,7 @@ rule bus2mat_standard:
         #config['CORES']
     shell:
         """
-        mkdir -p {params.OUTDIR}/counts_unfiltered
+        mkdir -p {params.OUTDIR}/{sample}/kb_standard/counts_unfiltered
 
         python scripts/bus2mat.py \
         {params.OUTDIR}/{wildcards.sample}/kb_standard \
@@ -375,15 +406,14 @@ rule bus2mat_standard:
 # /workdir/dwm269/genomes/mm39_all/kallisto_GRCm39_GENCODEM28_REOT1L-as/mixed_t2g.txt \
 # output.corrected.txt
 
-
-#TODO - finish genomeBam output for IGV/viz
+# Generate pseudobam for IGV/visualization
 rule kallisto_quant_standard:
     input:
         CB_WHITELIST = config['CB_WHITELIST'],
         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
         FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
     output:
-        GENOMEBAM = '{OUTDIR}/{sample}/kb_standard/pseudoalignments.bam'
+        GENOMEBAM = '{OUTDIR}/{sample}/kb_standard/quant/pseudoalignments.bam'
     params:
         OUTDIR = config['OUTDIR'],
         KALLISTO_EXEC = config['KALLISTO_EXEC'],
@@ -397,17 +427,18 @@ rule kallisto_quant_standard:
         config['CORES']
     shell:
         """
-        mkdir -p {params.OUTDIR}/{wildcards.sample}
+        mkdir -p {params.OUTDIR}/{wildcards.sample}/kb_standard/quant
 
         {params.KALLISTO_EXEC} quant \
         -i {params.KB_IDX} \
-        -o {params.OUTDIR}/{wildcards.sample}/kb_standard/ \
+        -o {params.OUTDIR}/{wildcards.sample}/kb_standard/quant/ \
         -t {threads} \
-        --rf-stranded \
+        --fr-stranded \
+        --single \
         --genomebam \
         --chromosomes {params.CHROMOSOMES} \
         --gtf {params.GENES_GTF} \
-        {input.FINAL_R1_FQ} {input.FINAL_R2_FQ} 2> {log}
+        {input.FINAL_R2_FQ}
         """
 
 ##########
@@ -491,6 +522,7 @@ rule length_filter_R2:
         {input.FINAL_R2_FQ} {input.FINAL_R1_FQ} 1> {log}
         """
 
+# pseudoalign to a miRNA-only reference
 rule kb_miRNA:
     input:
         CB_WHITELIST = config['CB_WHITELIST'],
@@ -531,6 +563,47 @@ rule kb_miRNA:
         {input.FINAL_R1_FQ} {input.FINAL_R2_FQ} > {log}
         """
 
+
+# pseudoalign only small RNAs (<30bp) to a low k-value index
+rule kb_k11:
+    input:
+        CB_WHITELIST = config['CB_WHITELIST'],
+        FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
+        FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
+    output:
+        COUNTMAT_kb_k11 = '{OUTDIR}/{sample}/kb_k11/counts_filtered/adata.h5ad'
+    params:
+        OUTDIR = config['OUTDIR'],
+        TMPDIR = '{OUTDIR}/{sample}/tmp',
+        KB_EXEC = config['KB_EXEC'],
+        KB_IDX = config['KB_IDX_K11'],
+        KB_T2G = config['KB_T2G_K11'],
+        UMIlen = config['UMIlen'],
+        MEMLIMIT = config['MEMLIMIT']
+    log:
+        '{OUTDIR}/{sample}/kb_k11/kb_k11.log'
+    threads:
+        config['CORES']
+    shell:
+        """
+        mkdir -p {params.OUTDIR}/{wildcards.sample}
+
+        {params.KB_EXEC} count \
+        -i {params.KB_IDX} \
+        -g {params.KB_T2G} \
+        -x Visium \
+        -o {params.OUTDIR}/{wildcards.sample}/kb_k11/ \
+        --tmp {params.TMPDIR} \
+        -t {threads} \
+        -m {params.MEMLIMIT} \
+        -w {input.CB_WHITELIST} \
+        --mm \
+        --filter \
+        --h5ad \
+        --workflow standard \
+        --report {log} \
+        {input.FINAL_R1_FQ} {input.FINAL_R2_FQ}
+        """
 
 #############################################
 ## qualimap on aligned reads
