@@ -1,6 +1,6 @@
 ###################################################################################
-# Custom plotting themes and color pallettes for single-cell analyses
-# Compiled by David McKellar
+# Custom plotting themes and color palettes for single-cell analyses
+# Compiled by David W. McKellar
 ###################################################################################
 
 require(ggplot2)
