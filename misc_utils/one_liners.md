@@ -22,6 +22,7 @@ awk '{ if ($0 ~ "transcript_id") print $0; else print $0" transcript_id \"\";"; 
 
 - Filter .fastq [by read length](https://www.biostars.org/p/66996/)
 *Note* that if you use this line in a snakemake shell call, both the `\` and the `{}` have to be escaped (`\`->`\\` and `{}`-> `{{}}`)
+*Also note* this only works for a single-end read- use cutadapt for paired end (or reads w/ UMIs/barcodes)
 ```
 zcat your.fastq.gz | awk 'BEGIN {FS = "\t" ; OFS = "\n"} {header = $0 ; getline seq ; getline qheader ; getline qseq ; if (length(seq) >= ${MIN_LENGTH} && length(seq) <= ${MAX_LENGTH}) {print header, seq, qheader, qseq}}' > filtered.fastq
 ```

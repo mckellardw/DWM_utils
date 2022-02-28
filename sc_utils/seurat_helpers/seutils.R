@@ -43,7 +43,7 @@ grepGenes <- function(
 
   genes = SEU@assays[[assay]]@counts@Dimnames[[1]]
 
-  
+
 
   if(length(pattern)>1){
     if(verbose){
@@ -62,7 +62,7 @@ grepGenes <- function(
     }
     out.genes <- genes[grep(pattern=pattern,x=genes)] #get genes
   }
-  
+
   if(length(out.genes)==0){
     message("Nothing found!\n")
     return(NULL)
@@ -113,7 +113,7 @@ ens2gene <- function(
   verbose=F
 ){
   require(dplyr)
-  
+
   if(is.null(ens)){
     message("Need ensembl IDs to convert!")
     return(NULL)
@@ -130,7 +130,7 @@ ens2gene <- function(
     message("Gene ID column not found in biomaRt reference. Check input for 'gene.colname'")
     return(NULL)
   }
-  
+
   if(ncores==1){
     out <- lapply(
       ens,
@@ -147,20 +147,20 @@ ens2gene <- function(
           if(verbose){cat(paste0("Nothing found for ", ENS,", returning ensembl ID"))}
           feat = ENS
         }
-        
+
         if(feat==""){
           if(verbose){message(paste0("No gene name found in '", gene.colname,"', for",ENS, ", returning ensembl ID."))}
           feat = ENS
         }
-        
+
         return(feat)
       }
-    ) %>% 
+    ) %>%
       unlist()
   }else if(ncores>1){
     require(parallel)
     if(verbose){message(paste0("Running on ", ncores," threads..."))}
-    
+
     out <- mclapply(
       ens,
       FUN = function(ENS){
@@ -176,23 +176,23 @@ ens2gene <- function(
           if(verbose){cat(paste0("Nothing found for ", ENS,", returning ensembl ID"))}
           feat = ENS
         }
-        
+
         if(feat==""){
           if(verbose){message(paste0("No gene name found in '", gene.colname,"', for",ENS, ", returning ensembl ID."))}
           feat = ENS
         }
-        
+
         return(feat)
       },
       mc.cores = ncores
-    ) %>% 
+    ) %>%
       unlist()
   }
-  
+
   if(force.unique){
     out <- make.unique(out)
   }
-  
+
   return(
     out
   )
@@ -246,22 +246,22 @@ collapseMultimappers <- function(
   SEU@active.assay <- assay
 
   multi.feats <- grepGenes( #Find genes with a period in them
-    SEU, 
-    assay = assay, 
-    pattern="\\.", 
+    SEU,
+    assay = assay,
+    pattern="\\.",
     sort.by="abc",
     verbose=verbose
-  ) 
+  )
   if(length(multi.feats)==0){
     message("No multimappers found!")
     return(SEU)
   }
 
   multi.patterns <- stringr::str_split( #extract actual gene names
-    multi.feats, 
+    multi.feats,
     pattern = "\\.",
     n = 2
-  ) %>% 
+  ) %>%
     lapply(FUN=function(X) X[1]) %>%
     unlist() %>%
     unique()
@@ -350,11 +350,11 @@ seuPreProcess <- function(
 
   #find pcs to use
   n.pcs.use = npcs(
-    SEU=SEU, 
-    var.total = 0.95, 
+    SEU=SEU,
+    var.total = 0.95,
     reduction = pca.name
   )
-  
+
   # FindNeighbors %>% RunUMAP, FindClusters
   SEU <- FindNeighbors(
     SEU,
@@ -589,6 +589,7 @@ seu_biotypes <- function(
   biotype.colname,
   add.as=c("metadata","assay"), # how percent features should be added
   assay="RNA",
+  prefix="pct.",
   verbose=TRUE
 ){
 
@@ -618,13 +619,14 @@ seu_biotypes <- function(
       if(add.as[1]=="metadata"){
         SEU <- PercentageFeatureSet(
           SEU,
-          col.name = paste0("pct.",biotype),
+          col.name = paste0(prefix, biotype),
           assay = assay,
           features=tmp.feat
         )
       }
       if(add.as[1]=="assay"){
-
+        #TODO
+        message("Not implemented yet...")
       }
     }
   }
