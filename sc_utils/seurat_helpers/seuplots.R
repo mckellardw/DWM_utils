@@ -373,7 +373,7 @@ visListPlot <- function(
   if(colormap.same.scale){
     gene.lims <- lapply(
       gene.lims,
-      FUN=function(X) c( min(unlist(gene.lims)), max(unlist(gene.lims)) )
+      FUN=function(X) c( 10^-100, max(unlist(gene.lims)) )
     )
   }
   
