@@ -198,6 +198,61 @@ ens2gene <- function(
   )
 }
 
+getSpatialLocation <- function(
+  SEU,
+  whitelist="/home/dwm269/DWM_utils/align_pipes/10x_kallisto/resources/barcodes_10x/visium-v1_coordinates.txt",
+  assay="RNA",
+  reduction.name = "space",
+  verbose=F
+){
+  require(Seurat)
+  require(dplyr)
+  
+  # Check assays
+  if(!assay %in% Assays(SEU)){
+    assay=SEU@active.assay
+    if(verbose){message("Using the default assay...")}
+  }
+  
+  # Read in whitelist coordinates
+  bc.coords <- read.table(
+    whitelist,
+    row.names = 1,
+    col.names = c(
+      "X",
+      "Y"
+    )
+  )
+  
+  # Build reduction based on spot barcodes & whitelist
+  bcs <- Cells(SEU)
+  if(verbose){
+    message(paste0(
+      table(bcs %in% rownames(bc.coords))["TRUE"], " out of ", length(bcs), "barcodes found in whitelist..."
+    ))
+  }
+  
+  #TODO- check/remove '-1'
+  
+  tmp.mat <- lapply(
+    bcs,
+    FUN=function(BC) bc.coords[BC,]
+  ) %>%
+    do.call(what=rbind)
+  
+  colnames(tmp.mat) <- paste0(reduction.name, 1:2)
+  rownames(tmp.mat) <- bcs
+  
+  # Add reduc to seurat obj
+  SEU[[reduction.name]] <- CreateDimReducObject(
+    embeddings=as.matrix(tmp.mat),
+    assay = assay,
+    key = paste0(reduction.name,"_")
+  )
+  
+  return(SEU)
+}
+
 ########################################
 ## General Seurat workflow helpers
 ########################################
@@ -423,8 +478,8 @@ AddCellTypeIdents <- function(
 write_sparse <- function(
   path, # name of new directory
   x, # matrix to write as sparse
-  barcodes, # cell IDs, colnames
-  features # gene IDs, rownames
+  barcodes=NULL, # cell IDs, colnames
+  features=NULL # gene IDs, rownames
 
   # gene.symbol,#not used
   # gene.type
@@ -437,6 +492,12 @@ write_sparse <- function(
     dir.create(path, showWarnings=FALSE)
   }
 
+  if(is.null(barcodes)){
+    barcodes=colnames(x)
+  }
+  if(is.null(features)){
+    features=rownames(x)
+  }
   # gene.info <- data.frame(gene.id, gene.symbol, stringsAsFactors=FALSE)
 
   # gene.info$gene.type <- rep(gene.type, length.out=nrow(gene.info))
@@ -590,6 +651,7 @@ seu_biotypes <- function(
   add.as=c("metadata","assay"), # how percent features should be added
   assay="RNA",
   prefix="pct.",
+  scale=c(1,100),
   verbose=TRUE
 ){
 
@@ -623,6 +685,13 @@ seu_biotypes <- function(
           assay = assay,
           features=tmp.feat
         )
+        if(scale[1]==1){
+          SEU[[paste0(prefix, biotype)]] <- SEU[[paste0(prefix, biotype)]]/100
+        }else if(scale[1]==100){
+          #Do nothing...
+        }else{
+          message("Given scale was not found. Scaling to 100...")
+        }
       }
       if(add.as[1]=="assay"){
         #TODO

@@ -45,15 +45,16 @@ rule all:
         expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES), # umi_tools deduplicated .bam
         expand('{OUTDIR}/{sample}_STARsolo/preTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # raw R2 fastQC results
         expand('{OUTDIR}/{sample}_STARsolo/postTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
+        expand('{OUTDIR}/{sample}_STARsolo/postTrim_FastQC_R2_lengthFiltered', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         expand('{OUTDIR}/{sample}_STARsolo/cutadapt_polyA_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         expand('{OUTDIR}/{sample}_STARsolo/cutadapt_polyG_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         expand('{OUTDIR}/{sample}_STARsolo/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap plotgardener)
         expand('{OUTDIR}/{sample}_STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), # count mats
+        # expand('{OUTDIR}/{sample}_STARsolo/mirbase/Solo.out/Gene/raw/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES), # mirbase count mat
         expand('{OUTDIR}/{sample}_STARsolo/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
         expand('{OUTDIR}/{sample}_STARsolo/Unmapped.out.mate2_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES), # blastn results for unmapped R1 reads
         expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
         expand('{OUTDIR}/{sample}_STARsolo/Aligned.sortedByCoord.dedup.out_merged.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES) # non-strand-split bigWigs (for
-
 
 #############################################
 ## Pre-alignment set up
@@ -192,6 +193,26 @@ rule postTrim_FastQC_R2:
         FINAL_R2_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2_final.fq.gz'
     output:
         fastqcDir = directory('{OUTDIR}/{sample}_STARsolo/postTrim_fastqc_R2_out'),
+        # fastqcReport = ''
+    threads:
+        config['CORES']
+        # min([config['CORES'],8]) # 8 core max based on recommendations from trim_galore authors
+    shell:
+        """
+        mkdir -p {output.fastqcDir}
+        cd {output.fastqcDir}
+
+        fastqc \
+        --outdir {output.fastqcDir} \
+        --threads {threads} \
+        {input.FINAL_R2_FQ}
+        """
+
+rule postTrim_FastQC_R2_lengthFiltered:
+    input:
+        FINAL_R2_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2_final_filtered.fq.gz'
+    output:
+        fastqcDir = directory('{OUTDIR}/{sample}_STARsolo/postTrim_FastQC_R2_lengthFiltered'),
         # fastqcReport = ''
     threads:
         config['CORES']
@@ -546,6 +567,96 @@ rule blast_unmapped:
 
 # cat {input.UNMAPPED1_FQ} | awk '{{if(NR%4==1) {{printf(">%s\n",substr($0,2));}} else if(NR%4==2) print;}}' > {params.TMP_FA}
 
+
+#############################################
+## mirbase alignment
+#############################################
+# Filter reads by R2 length, so that only short reads are included in miRNA quantification
+rule length_filter_R2:
+    input:
+        FINAL_R1_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R1_final.fq.gz',
+        FINAL_R2_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2_final.fq.gz'
+    output:
+        FINAL_R1_TRIMMED = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R1_final_filtered.fq.gz',
+        FINAL_R2_TRIMMED = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2_final_filtered.fq.gz'
+    params:
+        MIN_LENGTH = 14,
+        MAX_LENGTH = 30,
+        FIVE_PRIME_R2 = "AAGCAGTGGTATCAACGCAGAGTACATGGG"
+    log:
+        '{OUTDIR}/{sample}_STARsolo/mirbase/'
+    threads:
+        config['CORES']
+    shell:
+        """
+        cutadapt \
+        --minimum-length {params.MIN_LENGTH} \
+        --maximum-length {params.MAX_LENGTH} \
+        --pair-filter=first \
+ 		-a {params.FIVE_PRIME_R2} \
+ 		-g X{params.FIVE_PRIME_R2} \
+ 		-o {output.FINAL_R2_TRIMMED} \
+        -p {output.FINAL_R1_TRIMMED} \
+        --cores {threads} \
+        {input.FINAL_R2_FQ} {input.FINAL_R1_FQ} 1> {log}
+        """
+
+# Strict STAR alignment with only 1 mismatch allowed and no soft-clipping
+rule mirbase_align:
+    input:
+        CB_WHITELIST = config['CB_WHITELIST'],
+        FINAL_R1_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R1_final_filtered.fq.gz',
+        FINAL_R2_FQ = '{OUTDIR}/{sample}_STARsolo/tmp/{sample}_R2_final_filtered.fq.gz'
+    output:
+        SORTEDBAM = '{OUTDIR}/{sample}_STARsolo/mirbase/Aligned.sortedByCoord.out.bam', #TODO: add temp()?
+        UNMAPPED1 = '{OUTDIR}/{sample}_STARsolo/mirbase/Unmapped.out.mate1',
+        UNMAPPED2 = '{OUTDIR}/{sample}_STARsolo/mirbase/Unmapped.out.mate2',
+        GENE = directory('{OUTDIR}/{sample}_STARsolo/mirbase/Solo.out/Gene'),
+        GENEMAT = '{OUTDIR}/{sample}_STARsolo/mirbase/Solo.out/Gene/raw/matrix.mtx'
+    params:
+        OUTDIR = config['OUTDIR'],
+        STAR_EXEC = config['STAR_EXEC'],
+        STAR_REF = config['STAR_MIRBASE_REF'],
+        UMIlen = config['UMIlen'],
+        MEMLIMIT = config['MEMLIMIT']
+    threads:
+        config['CORES']
+    shell:
+        """
+        mkdir -p {params.OUTDIR}/{wildcards.sample}_STARsolo/mirbase/
+
+        {params.STAR_EXEC} \
+        --runThreadN {threads} \
+        --outFileNamePrefix {params.OUTDIR}/{wildcards.sample}_STARsolo/mirbase/ \
+        --outSAMtype BAM SortedByCoordinate \
+        --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
+        --readFilesCommand zcat \
+        --soloUMIlen {params.UMIlen} \
+        --genomeDir {params.STAR_REF} \
+        --genomeLoad LoadAndKeep \
+        --limitBAMsortRAM={params.MEMLIMIT} \
+        --readFilesIn {input.FINAL_R2_FQ} {input.FINAL_R1_FQ} \
+        --clipAdapterType CellRanger4 \
+        --outReadsUnmapped Fastx \
+        --soloType CB_UMI_Simple \
+        --soloBarcodeReadLength 0 \
+        --soloCBwhitelist {input.CB_WHITELIST} \
+        --soloCellFilter EmptyDrops_CR \
+        --soloFeatures Gene GeneFull \
+        --soloMultiMappers EM \
+        --alignEndsType EndToEnd \
+        --outFilterMismatchNoverReadLmax 0.2 \
+        --outFilterMultimapNmax 10 \
+        --outFilterScoreMinOverLread 0 \
+        --outFilterMatchNminOverLread 0 \
+        --alignSJDBoverhangMin 1000 \
+        --alignIntronMax 1
+        """
+        # --outFilterMultimapScoreRange 0 \
+        # --outFilterMatchNmin 16 \
+
+        # gzip -qf {output.GENE}/raw/*
+        # gzip -qf {output.GENE}/filtered/*
 
 #############################################
 ## miRge3.0 analysis
