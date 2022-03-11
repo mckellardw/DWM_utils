@@ -534,6 +534,9 @@ visCoMap <- function(
   na.value=gray(0.69), # color for na.value (spot where gene is not detected)
   comap.fxn = prod,
   coex.name = NULL, # plot title for computed co-expression values
+  include.scatter = F,
+  scatter.group.by= 'orig.ident',
+  scatter.theme= NULL, # default is theme_minimal()
   verbose=FALSE
 ){
   require(dplyr)
@@ -577,7 +580,7 @@ visCoMap <- function(
     coex.name = "coexpression.tmp.values"
   }
   
-  lapply(
+  maps.out <- lapply(
     seu.list,
     FUN = function(SEU){
       tmp.coex <- list()
@@ -647,8 +650,202 @@ visCoMap <- function(
       colormap.same.scale=colormap.same.scale,
       na.value=na.value,
       verbose=verbose
-    ) %>%
-    return()
+    )
+  
+  #Scatter plot
+  if(include.scatter){
+    if(is.null(scatter.theme)){
+      scatter.theme <- theme_minimal()
+    }
+    
+    # Get expression limits for each gene, across all datasets
+    gene.lims <- mapply(
+      FUN = function(FEAT, ASS, SLOT){
+        out.max <- lapply(
+          seu.list,
+          FUN = function(SEU){
+            if(FEAT %in% Features(SEU, assay=ASS)){
+              return(max(GetAssayData(SEU,assay=ASS,slot=SLOT)[FEAT,]))
+            }else if(FEAT %in% colnames(SEU@meta.data)){
+              return(max(SEU@meta.data[,FEAT]))
+            }else{
+              if(verbose){message(FEAT, " not found!")}
+              return(0)
+            }
+          }
+        ) %>% 
+          unlist() %>% 
+          max()
+        
+        return(c(0, out.max))
+      },
+      SIMPLIFY = F,
+      FEAT = features,
+      ASS = assay,
+      SLOT = slot
+    )
+    
+    scatter.out <- lapply(
+      seu.list,
+      FUN=function(VIS){
+        
+        # tmp.nonzeros <- GetAssayData(
+        #   VIS,
+        #   assay=assay,
+        # )[c(features[1],features[2]),]%>%
+        #   apply(
+        #     MARGIN=2,
+        #     FUN=function(X) data.frame(
+        #       FEAT1 = X[1]>0 & X[2]==0,
+        #       FEAT2 = X[1]==0 & X[2]>0,
+        #       DP = X[1]>0 & X[2]>0
+        #     )
+        #   )%>%
+        #   do.call(what=rbind)
+        
+        # tmp.label <- paste0(
+        #   "Notch1+: ",table(tmp.nonzeros$NOTCH)["TRUE"],"/",sum(tmp.nonzeros),"\n",
+        #   "Gm13568+:",table(tmp.nonzeros$GM)["TRUE"],"/",sum(tmp.nonzeros),"\n",
+        #   "Double Pos: ",table(tmp.nonzeros$DP)["TRUE"],"/",sum(tmp.nonzeros)
+        # )
+        
+        # FeatureScatter(
+        #   VIS,
+        #   shuffle = T,
+        #   jitter = F,
+        #   feature1 = features[1],
+        #   feature2 = features[2],
+        #   plot.cor = F,
+        #   pt.size = pt.size,
+        #   cols=c("#c42a2e", "#d8a837", "#2e6198"),#TODO: parameterize
+        #   group.by = scatter.group.by
+        # )+
+        # geom_label(
+        #   x=1,
+        #   y=5.2,
+        #   size = small.font/ggplot2::.pt,
+        #   # size = small.font/4,
+        #   label=tmp.label
+        # )+
+        # 
+        # tmp.df <- cbind(
+        #   VIS@meta.data,
+        #   t(
+        #     GetAssayData(
+        #       VIS,
+        #       assay=assay[1],
+        #       slot=slot[1]
+        #     )[features[1],] 
+        #   ),
+        #   t(
+        #     GetAssayData(
+        #       VIS,
+        #       assay=assay[2],
+        #       slot=slot[2]
+        #     )[features[2],] 
+        #   )
+        # )
+        # 
+        # #Plot
+        # ggplot(
+        #   tmp.df[sample(rownames(tmp.df)),],
+        #   aes_string(
+        #     x=features[1],
+        #     y=features[2]
+        #   )
+        # )+
+        #   geom_point(
+        #     alpha=0.7
+        #   )+
+        
+        #For undetected features...
+        for(i in 1:length(features)){
+          if(!features[i] %in% Features(VIS,assay=assay[i])){
+            features[i] <- paste0("tmp_",features[i])# in case gene starts with a number...
+            VIS@meta.data[[features[i]]]<- rep(0, length(Cells(VIS)))
+          }
+        }
+        
+        tmp.plot <- FeatureScatter(
+          VIS,
+          shuffle = T,
+          jitter = F,
+          feature1 = features[1],
+          feature2 = features[2],
+          plot.cor = T,
+          pt.size = pt.size,
+          cols = "black",
+          # cols=c("#c42a2e", "#d8a837", "#2e6198"),#TODO: parameterize
+          group.by = scatter.group.by
+        )+
+          geom_smooth(
+            method="lm",
+            formula = "y ~ x",
+            color="black"
+          )+
+          xlim(gene.lims[[features[1]]])+ 
+          ylim(gene.lims[[features[2]]])+
+          labs(
+            x=stringr::str_remove(features[1],pattern="tmp_"),
+            y=stringr::str_remove(features[2],pattern="tmp_")
+          )+
+          scale_color_manual(
+            values = c("#c42a2e", "#d8a837", "#2e6198"),#TODO: parameterize
+          )+
+          guides(
+            color = guide_legend(override.aes = list(size=2))
+          )+
+          scatter.theme+
+          theme(
+            axis.title.y = element_text(
+              face="bold.italic",
+              hjust=0.5,
+              size=font.size
+            ),
+            axis.title.x = element_blank(),
+            legend.position = "right",
+            plot.margin = unit(rep(0,4),"cm")
+          )+
+          coord_fixed(
+            ratio=max(gene.lims[[features[1]]])/max(gene.lims[[features[2]]])
+          )
+        
+        tmp.plot$layers[[1]]$aes_params$alpha <- 0.5
+        
+        return(tmp.plot)
+      }
+    )
+    
+    scatter.out[[length(scatter.out)]] <- scatter.out[[length(scatter.out)]]+
+      theme(
+        axis.title.x = element_text(
+          face="bold.italic",
+          hjust=0.5,
+          size=font.size
+        )
+      )
+    
+    scatter.out <- wrap_plots(
+      scatter.out,
+      ncol=1,
+      heights=rep(1,length(scatter.out)),
+      guides="collect"
+    )&theme(
+      legend.position="none"#TODO
+    )
+    
+    return(
+      # scatter.out
+      wrap_plots(
+        maps.out,
+        scatter.out,
+        nrow=1,
+        widths=c(3,1.5)
+      )
+    )
+  }else{
+    return(maps.out)
+  }
 }
 
 

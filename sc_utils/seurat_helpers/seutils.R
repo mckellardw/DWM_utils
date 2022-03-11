@@ -198,6 +198,93 @@ ens2gene <- function(
   )
 }
 
+
+# Collapse cell/nuclei/spot counts for multimapped genes - these are features with a period ("\\.") in their name
+#TODO: parallelize!
+collapseMultimappers <- function(
+    SEU,
+    assay=NULL,
+    new.assay.name=NULL,
+    verbose=F
+){
+  
+  if(is.null(new.assay.name)){
+    new.assay.name = paste0(assay,"_collpased")
+    message("Using ",new.assay.name, " as new.assay.name...")
+  }
+  if(is.null(new.assay.name)){
+    message("Need new.assay.name!")
+    return(SEU)
+  }
+  
+  SEU@active.assay <- assay
+  
+  multi.feats <- grepGenes( #Find genes with a period in them
+    SEU,
+    assay = assay,
+    pattern="\\.",
+    sort.by="abc",
+    verbose=verbose
+  )
+  if(length(multi.feats)==0){
+    message("No multimappers found!")
+    return(SEU)
+  }
+  
+  multi.patterns <- stringr::str_split( #extract actual gene names
+    multi.feats,
+    pattern = "\\.",
+    n = 2
+  ) %>%
+    lapply(FUN=function(X) X[1]) %>%
+    unlist() %>%
+    unique()
+  
+  if(verbose){
+    message(paste0("Found ", length(multi.patterns), " multimappers and ", length(multi.feats)," loci..."))
+  }
+  
+  # Collapse counts for each gene
+  mat.multi <- GetAssayData(
+    SEU, 
+    assay=assay,
+    slot="counts"
+  ) 
+  
+  collapsed.list <- lapply(
+    multi.patterns,
+    FUN=function(X){
+      tmp.genes = rownames(mat.multi)[grep(rownames(mat.multi),pattern=X)]
+      tmp.mat = mat.multi[tmp.genes,]
+      
+      if(length(tmp.genes)==1){
+        return(tmp.mat)
+      }else{
+        return(colSums(tmp.mat))
+      }
+    }
+  )
+  collapsed.mat <- do.call(rbind, collapsed.list) %>% as.sparse()
+  rownames(collapsed.mat) <- multi.patterns
+  
+  # Add new assay with collapsed counts + the rest of the genes
+  if(verbose){cat(paste0("Adding back ", nrow(collapsed.mat), " features...\n"))}
+  
+  solo.feats <- rownames(SEU)[!rownames(SEU)%in%c(multi.feats,multi.patterns)]
+  
+  out.mat <- rbind(
+    GetAssayData(SEU,assay=assay, slot="counts")[solo.feats,],
+    collapsed.mat
+  )
+  SEU[[new.assay.name]] <- CreateAssayObject(counts=out.mat)
+  
+  SEU@active.assay <- new.assay.name
+  
+  # Return Seurat object!
+  return(SEU)
+}
+
+
 getSpatialLocation <- function(
   SEU,
   whitelist="/home/dwm269/DWM_utils/align_pipes/10x_kallisto/resources/barcodes_10x/visium-v1_coordinates.txt",
@@ -279,87 +366,6 @@ npcs <- function(
   return(n.pcs)
 }
 
-
-# Collapse cell/nuclei/spot counts for multimapped genes
-#TODO: parallelize!
-collapseMultimappers <- function(
-  SEU,
-  assay=NULL,
-  new.assay.name=NULL,
-  verbose=F
-){
-
-  if(is.null(new.assay.name)){
-    new.assay.name = paste0(assay,"_collpased")
-    message("Using ",new.assay.name, " as new.assay.name...")
-  }
-  if(is.null(new.assay.name)){
-    message("Need new.assay.name!")
-    return(SEU)
-  }
-
-  SEU@active.assay <- assay
-
-  multi.feats <- grepGenes( #Find genes with a period in them
-    SEU,
-    assay = assay,
-    pattern="\\.",
-    sort.by="abc",
-    verbose=verbose
-  )
-  if(length(multi.feats)==0){
-    message("No multimappers found!")
-    return(SEU)
-  }
-
-  multi.patterns <- stringr::str_split( #extract actual gene names
-    multi.feats,
-    pattern = "\\.",
-    n = 2
-  ) %>%
-    lapply(FUN=function(X) X[1]) %>%
-    unlist() %>%
-    unique()
-
-  if(verbose){
-    message(paste0("Found ", length(multi.patterns), " multimappers and ", length(multi.feats)," loci..."))
-  }
-
-  # Collapse counts for each gene
-  mat.multi <- GetAssayData(SEU, assay=assay, slot="counts") # count mat
-
-  collapsed.list <- lapply(
-    multi.patterns,
-    FUN=function(X){
-      tmp.genes = rownames(mat.multi)[grep(rownames(mat.multi),pattern=X)]
-      tmp.mat = mat.multi[tmp.genes,]
-
-      if(length(tmp.genes)==1){
-        return(tmp.mat)
-      }else{
-        return(colSums(tmp.mat))
-      }
-    }
-  )
-  collapsed.mat <- do.call(rbind, collapsed.list) %>% as.sparse()
-  rownames(collapsed.mat) <- multi.patterns
-
-  # Add new assay with collapsed counts + the rest of the genes
-  if(verbose){cat(paste0("Adding back ", nrow(collapsed.mat), " features...\n"))}
-
-  solo.feats <- rownames(SEU)[!rownames(SEU)%in%multi.feats]
-
-  out.mat <- rbind(
-    GetAssayData(SEU,assay=assay, slot="counts")[solo.feats,],
-    collapsed.mat
-  )
-  SEU[[new.assay.name]] <- CreateAssayObject(counts=out.mat)
-
-  SEU@active.assay <- new.assay.name
-
-  # Return Seurat object!
-  return(SEU)
-}
 
 
 # Preprocessing wrapper function
@@ -479,19 +485,22 @@ write_sparse <- function(
   path, # name of new directory
   x, # matrix to write as sparse
   barcodes=NULL, # cell IDs, colnames
-  features=NULL # gene IDs, rownames
-
-  # gene.symbol,#not used
-  # gene.type
+  features=NULL, # gene IDs, rownames
+  overwrite=F,
+  verbose=F
 ){
   require(utils,quietly = T)
   require(Matrix,quietly = T)
   require(R.utils,quietly = T)
 
   if(!dir.exists(path)){
-    dir.create(path, showWarnings=FALSE)
+    dir.create(
+      path, 
+      showWarnings=verbose,
+      recursive = T
+    )
   }
-
+  
   if(is.null(barcodes)){
     barcodes=colnames(x)
   }
@@ -509,6 +518,20 @@ write_sparse <- function(
     close(fhandle)
   })
 
+  if(overwrite){
+    if(verbose){message("Overwriting old files if they exist...")}
+    
+    if(file.exists(paste0(mhandle,".gz"))){
+      file.remove(paste0(mhandle,".gz"))
+    }
+    if(file.exists(bhandle)){
+      file.remove(bhandle)
+    }
+    if(file.exists(fhandle)){
+      file.remove(fhandle)
+    }
+  }
+  
   writeMM(x, file=mhandle)
   write(barcodes, file=bhandle)
   write.table(features, file=fhandle, row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
