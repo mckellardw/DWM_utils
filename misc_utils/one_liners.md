@@ -27,6 +27,12 @@ awk '{ if ($0 ~ "transcript_id") print $0; else print $0" transcript_id \"\";"; 
 zcat your.fastq.gz | awk 'BEGIN {FS = "\t" ; OFS = "\n"} {header = $0 ; getline seq ; getline qheader ; getline qseq ; if (length(seq) >= ${MIN_LENGTH} && length(seq) <= ${MAX_LENGTH}) {print header, seq, qheader, qseq}}' > filtered.fastq
 ```
 
+- Extract (unique) sequences from a .fastq.gz file
+    - Remove `|sort | uniq` if you want all sequences...
+```
+zcat reads.fastq.gz | awk '(NR%4==2)' | sort | uniq
+```
+
 ## TXG helpers
 - Number of reads per cell/spot barcode (.bam tag `CB`)
  ```
@@ -39,10 +45,11 @@ samtools view sub.bam | grep CB:Z: | sed 's/.*CB:Z:\([ACGT]*\).*/\1/' | sort | u
  ```
 
 ## samtools
-
+- Subset bam by strand
+```
+samtools view -F 0x10 file.bam > file_pos.bam
 ```
 
-```
 ## .gtf finagling
 - Convert .gtf (from GENCODE) to a .bed
 ```
