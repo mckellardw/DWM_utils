@@ -47,7 +47,7 @@ samtools view sub.bam | grep CB:Z: | sed 's/.*CB:Z:\([ACGT]*\).*/\1/' | sort | u
 ## samtools
 - Subset bam by strand
 ```
-samtools view -F 0x10 file.bam > file_pos.bam
+samtools view -F 0x10 -b file.bam > file_pos.bam
 ```
 
 ## .gtf finagling

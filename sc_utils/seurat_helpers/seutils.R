@@ -207,7 +207,7 @@ collapseMultimappers <- function(
     new.assay.name=NULL,
     verbose=F
 ){
-  
+
   if(is.null(new.assay.name)){
     new.assay.name = paste0(assay,"_collpased")
     message("Using ",new.assay.name, " as new.assay.name...")
@@ -216,9 +216,9 @@ collapseMultimappers <- function(
     message("Need new.assay.name!")
     return(SEU)
   }
-  
+
   SEU@active.assay <- assay
-  
+
   multi.feats <- grepGenes( #Find genes with a period in them
     SEU,
     assay = assay,
@@ -230,7 +230,7 @@ collapseMultimappers <- function(
     message("No multimappers found!")
     return(SEU)
   }
-  
+
   multi.patterns <- stringr::str_split( #extract actual gene names
     multi.feats,
     pattern = "\\.",
@@ -239,24 +239,24 @@ collapseMultimappers <- function(
     lapply(FUN=function(X) X[1]) %>%
     unlist() %>%
     unique()
-  
+
   if(verbose){
     message(paste0("Found ", length(multi.patterns), " multimappers and ", length(multi.feats)," loci..."))
   }
-  
+
   # Collapse counts for each gene
   mat.multi <- GetAssayData(
-    SEU, 
+    SEU,
     assay=assay,
     slot="counts"
-  ) 
-  
+  )
+
   collapsed.list <- lapply(
     multi.patterns,
     FUN=function(X){
       tmp.genes = rownames(mat.multi)[grep(rownames(mat.multi),pattern=X)]
       tmp.mat = mat.multi[tmp.genes,]
-      
+
       if(length(tmp.genes)==1){
         return(tmp.mat)
       }else{
@@ -266,26 +266,27 @@ collapseMultimappers <- function(
   )
   collapsed.mat <- do.call(rbind, collapsed.list) %>% as.sparse()
   rownames(collapsed.mat) <- multi.patterns
-  
+
   # Add new assay with collapsed counts + the rest of the genes
   if(verbose){cat(paste0("Adding back ", nrow(collapsed.mat), " features...\n"))}
-  
+
   solo.feats <- rownames(SEU)[!rownames(SEU)%in%c(multi.feats,multi.patterns)]
-  
+
   out.mat <- rbind(
     GetAssayData(SEU,assay=assay, slot="counts")[solo.feats,],
     collapsed.mat
   )
   SEU[[new.assay.name]] <- CreateAssayObject(counts=out.mat)
-  
+
   SEU@active.assay <- new.assay.name
-  
+
   # Return Seurat object!
   return(SEU)
 }
 
-
-getSpatialLocation <- function(
+# Add spatial location for each cell/spot/bead in a Seurat object, given a whitelist of barcods/locations (X- & Y- coordinates)
+#TODO: generalize whitelist formatting/reading in
+addSpatialLocation <- function(
   SEU,
   whitelist="/home/dwm269/DWM_utils/align_pipes/10x_kallisto/resources/barcodes_10x/visium-v1_coordinates.txt",
   assay="RNA",
@@ -294,13 +295,13 @@ getSpatialLocation <- function(
 ){
   require(Seurat)
   require(dplyr)
-  
+
   # Check assays
   if(!assay %in% Assays(SEU)){
     assay=SEU@active.assay
     if(verbose){message("Using the default assay...")}
   }
-  
+
   # Read in whitelist coordinates
   bc.coords <- read.table(
     whitelist,
@@ -310,7 +311,7 @@ getSpatialLocation <- function(
       "Y"
     )
   )
-  
+
   # Build reduction based on spot barcodes & whitelist
   bcs <- Cells(SEU)
   if(verbose){
@@ -318,25 +319,25 @@ getSpatialLocation <- function(
       table(bcs %in% rownames(bc.coords))["TRUE"], " out of ", length(bcs), "barcodes found in whitelist..."
     ))
   }
-  
+
   #TODO- check/remove '-1'
-  
+
   tmp.mat <- lapply(
     bcs,
     FUN=function(BC) bc.coords[BC,]
   ) %>%
     do.call(what=rbind)
-  
+
   colnames(tmp.mat) <- paste0(reduction.name, 1:2)
   rownames(tmp.mat) <- bcs
-  
+
   # Add reduc to seurat obj
   SEU[[reduction.name]] <- CreateDimReducObject(
     embeddings=as.matrix(tmp.mat),
     assay = assay,
     key = paste0(reduction.name,"_")
   )
-  
+
   return(SEU)
 }
 
@@ -495,12 +496,12 @@ write_sparse <- function(
 
   if(!dir.exists(path)){
     dir.create(
-      path, 
+      path,
       showWarnings=verbose,
       recursive = T
     )
   }
-  
+
   if(is.null(barcodes)){
     barcodes=colnames(x)
   }
@@ -520,7 +521,7 @@ write_sparse <- function(
 
   if(overwrite){
     if(verbose){message("Overwriting old files if they exist...")}
-    
+
     if(file.exists(paste0(mhandle,".gz"))){
       file.remove(paste0(mhandle,".gz"))
     }
@@ -531,10 +532,20 @@ write_sparse <- function(
       file.remove(fhandle)
     }
   }
-  
+
   writeMM(x, file=mhandle)
-  write(barcodes, file=bhandle)
-  write.table(features, file=fhandle, row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
+  write(
+    barcodes, 
+    file=bhandle
+  )
+  write.table(
+    features, 
+    file=fhandle, 
+    row.names=FALSE, 
+    col.names=FALSE, 
+    quote=FALSE, 
+    sep="\t"
+  )
 
   # Annoyingly, writeMM doesn't take connection objects.
   gzip(mhandle)

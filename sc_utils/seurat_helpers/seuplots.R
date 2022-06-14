@@ -248,6 +248,7 @@ visListPlot <- function(
   abs.heights=TRUE, # Use absolute heights to size each subplot
   nrow=NULL,
   ncol=NULL,
+  flip_row_col=F, #Default is samples in rows, features in cols. Set to `T` for samples in cols, features in rows
   colormap="viridis", # either a viridis option, a vector of colors, or a list of options corresponding to `features`
   colormap.direction=1,
   colormap.same.scale=F, #whether (T) or not (F) to set all features to the same colormap scale
@@ -304,17 +305,6 @@ visListPlot <- function(
   }else if(length(slot) != length(features)){
     message("`slot` and `features` lengths don't match!")
   }
-  
-  # Set active assay
-  #deprecated
-  # seu.list <- lapply(
-  #   seu.list,
-  #   FUN = function(SEU){
-  #     # SEU@active.assay <- assay
-  #     DefaultAssay(SEU) <- assay
-  #     return(SEU)
-  #   }
-  # )
   
   # Check for genes
   tmp.features = paste0("tmp.",features) # place-holder name for features; allows assay-specific feature plotting in FeaturePlot
@@ -377,6 +367,7 @@ visListPlot <- function(
     )
   }
   
+  #DEPRECATED- just use coord_fixed()!
   # Get plot heights
   #TODO- build in coord_fixed() 
   if(abs.heights){
@@ -446,53 +437,109 @@ visListPlot <- function(
       }
     )
     
-    tmp[[1]] <- tmp[[1]] +
-      theme(
-        plot.title = element_text(
-          size=font.size,
-          face="bold.italic",
-          vjust=1
-        )
-      ) +
-      labs(title=alt.titles[i])
+    if(!flip_row_col){
+      tmp[[1]] <- tmp[[1]] +
+        theme(
+          plot.title = element_text(
+            size=font.size,
+            face="bold.italic",
+            vjust=1
+          )
+        ) +
+        labs(title=alt.titles[i])
+    }
     
     plot.list[[i]] <- tmp
   }
   
-  for(i in 1:length(plot.list[[1]]) ){
-    plot.list[[1]][[i]] <- plot.list[[1]][[i]] +
-      theme(
-        axis.title.y = element_text(
-          size=font.size,
-          face="bold",
-          color="black",
-          hjust=0.5,
-          vjust=0.5,
-          angle=axis.title.angle.y
-        )
-      )
+  if(flip_row_col){ #samples=columns; features=rows
     
-    if(!is.null(sample.titles)){ # add sample titles
+    # Add sample titles
+    for(i in 1: length(plot.list[[1]])){
       plot.list[[1]][[i]] <- plot.list[[1]][[i]] +
-        labs(y=sample.titles[i])
+        theme(
+          plot.title = element_text(
+            size=font.size,
+            face="bold",
+            vjust=1
+          )
+        ) +
+        labs(title=sample.titles[i])
     }
+    
+    # Feature titles on y-axis
+    for(j in 1:length(plot.list)){
+      plot.list[[j]][[1]] <- plot.list[[j]][[1]] +
+        theme(
+          axis.title.y = element_text(
+            size=font.size,
+            face="bold.italic",
+            color="black",
+            hjust=0.5,
+            vjust=0.5,
+            angle=axis.title.angle.y
+          )
+        )
+      
+      if(!is.null(alt.titles)){ # add feature titles
+        plot.list[[j]][[1]] <- plot.list[[j]][[1]] +
+          labs(y=alt.titles[j])
+      }
+    }
+    
+    #Wrap
+    plot.list <- lapply(
+      plot.list,
+      FUN = function(X){
+        wrap_plots(
+          X,
+          nrow=1,
+          heights=heights,
+          guides="collect"
+        )&theme(
+          legend.position=legend.position,
+          legend.margin = margin(0,0,0,0,"inches")
+        )
+      }
+    )
+    
+  }else{ #samples=rows; features=columns
+    # Feature axis title
+    for(i in 1:length(plot.list[[1]]) ){
+      plot.list[[1]][[i]] <- plot.list[[1]][[i]] +
+        theme(
+          axis.title.y = element_text(
+            size=font.size,
+            face="bold",
+            color="black",
+            hjust=0.5,
+            vjust=0.5,
+            angle=axis.title.angle.y
+          )
+        )
+      
+      if(!is.null(sample.titles)){ # add sample titles
+        plot.list[[1]][[i]] <- plot.list[[1]][[i]] +
+          labs(y=sample.titles[i])
+      }
+    }
+    
+    # Sample axis title
+    plot.list <- lapply(
+      plot.list,
+      FUN = function(X){
+        wrap_plots(
+          X,
+          ncol=1,
+          heights=heights,
+          guides="collect"
+        )&theme(
+          legend.position=legend.position,
+          legend.margin = margin(0,0,0,0,"inches")
+        )
+      }
+    )
   }
-  
-  plot.list <- lapply(
-    plot.list,
-    FUN = function(X){
-      wrap_plots(
-        X,
-        ncol=1,
-        heights=heights,
-        guides="collect"
-      )&theme(
-        legend.position=legend.position,
-        legend.margin = margin(0,0,0,0,"inches")
-      )
-    }
-  )
-  
   if(verbose){cat("Done plotting Visium data!\n")}
   
   if(combine){
