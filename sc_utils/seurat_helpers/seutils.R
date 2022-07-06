@@ -303,6 +303,7 @@ addSpatialLocation <- function(
   }
 
   # Read in whitelist coordinates
+  if(file.exists(whitelist)){
   bc.coords <- read.table(
     whitelist,
     row.names = 1,
@@ -311,12 +312,20 @@ addSpatialLocation <- function(
       "Y"
     )
   )
-
+  }else{
+    cat("Whitelist file not found!")
+    return(SEU)
+  }
+  
   # Build reduction based on spot barcodes & whitelist
-  bcs <- Cells(SEU)
+  bcs <- stringr::str_remove_all(
+    string=Cells(SEU), 
+    pattern="_"
+  )
+  
   if(verbose){
     message(paste0(
-      table(bcs %in% rownames(bc.coords))["TRUE"], " out of ", length(bcs), "barcodes found in whitelist..."
+      table(bcs %in% rownames(bc.coords))["TRUE"], " out of ", length(bcs), " barcodes found in whitelist..."
     ))
   }
 
@@ -476,6 +485,73 @@ AddCellTypeIdents <- function(
 
 }
 
+
+# A 1-function wrapper for DoubletFinder
+RunDoubletFinder <- function(
+  SEU,
+  NCORES=1,
+  to.filter=F
+){
+  
+  # Estimated Doublet Rate for each dataset
+  edr <- estimateDoubletRate.DWM(seur.list = seu.list)/100 #use your own known EDR here
+  
+  for(i in 1:length(seu.list)){
+    cat(' --------------------------------------------\n',
+        '### DoubletFinder for dataset number ', i, '###\n',
+        '--------------------------------------------\n')
+    
+    n.pcs = npcs(SEU)
+    
+    # SEU@reductions$umap_RNA@misc$n.pcs.used
+    
+    ## pK Identification (no ground-truth)
+    bcmvn<- paramSweep_v3_DWM(
+      seu=SEU, 
+      PCs = 1:n.pcs, 
+      num.cores = ncores
+    ) %>% summarizeSweep(#sweep.res.list, 
+      GT = FALSE
+    ) %>% find.pK(#sweep.stats
+    ) 
+    
+    # Pull out max of bcmvn
+    pK <- as.numeric(as.character(bcmvn$pK[bcmvn$BCmetric==max(bcmvn$BCmetric)])) # ugly, but functional...
+    
+    ## Homotypic Doublet Proportion Estimate
+    homotypic.prop <- modelHomotypic(SEU$seurat_clusters) 
+    
+    nExp_poi <- round(edr*length(colnames(SEU)))  
+    nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+    
+    gc()
+  }
+  
+    rm(bcmvn, pK, nExp_poi, nExp_poi.adj)
+    gc()
+  
+  
+  SEU <- 
+    doubletFinder_V3.DWM_v2(
+      seu=SEU, 
+      PCs = 1:SEU@reductions$umap_RNA@misc$n.pcs.used, 
+      pN = 0.25, 
+      pK= pK, 
+      nExp = nExp_poi.adj,  
+      reuse.pANN = F,
+      classification.name='DF.individual', 
+      pANN.name='DF.pANN.individual'
+    )
+  gc()
+  
+  #Filter seurat objects
+  if(to.filter){
+    return()
+  }else{
+    return(SEU)
+  }
+  
+}
 
 # Borrowed/adapted from the Marioni Lab, DropletUtils package (https://rdrr.io/github/MarioniLab/DropletUtils/src/R/write10xCounts.R)
 #   (Had R version issues getting it to work as a dependency)
