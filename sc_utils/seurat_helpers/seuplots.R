@@ -248,11 +248,14 @@ visListPlot <- function(
   abs.heights=TRUE, # Use absolute heights to size each subplot
   nrow=NULL,
   ncol=NULL,
+  x.window = NULL, # list of xlim parameters for each sample; if length is one, # TODO:will use the same params for each samples
+  y.window = NULL, # list of ylim parameters for each sample; if length is one, # TODO:will use the same params for each samples
   flip_row_col=F, #Default is samples in rows, features in cols. Set to `T` for samples in cols, features in rows
   colormap="viridis", # either a viridis option, a vector of colors, or a list of options corresponding to `features`
   colormap.direction=1,
   colormap.same.scale=F, #whether (T) or not (F) to set all features to the same colormap scale
   na.value=gray(0.69), # color for na.value (spot where gene is not detected)
+  min.value=10^-100, #minimum value use to label "na" spots
   verbose=FALSE
 ){
   require(dplyr)
@@ -306,6 +309,27 @@ visListPlot <- function(
     message("`slot` and `features` lengths don't match!")
   }
   
+  # Check x.window & y.window params
+  if(is.null(x.window)){
+    x.window <- rep(list(c(NA,NA)),length(seu.list))
+  }else if(!is.list(x.window) & length(x.window)==2){
+    x.window <- rep(list(x.window),length(seu.list))
+  }else if(is.list(x.window)&length(x.window)==length(seu.list)){
+    #Do nothing
+  }else{
+    message("Error with `x.window` - incorrect parameterization!")
+  }
+  
+  if(is.null(y.window)){
+    y.window <- rep(list(c(NA,NA)),length(seu.list))
+  }else if(!is.list(y.window) & length(y.window)==2){
+    y.window <- rep(list(y.window),length(seu.list))
+  }else if(is.list(y.window)&length(y.window)==length(seu.list)){
+    #Do nothing
+  }else{
+    message("Error with `y.window` - incorrect parameterization!")
+  }
+  
   # Check for genes
   tmp.features = paste0("tmp.",features) # place-holder name for features; allows assay-specific feature plotting in FeaturePlot
   
@@ -351,7 +375,7 @@ visListPlot <- function(
         unlist() %>% 
         max()
       
-      return(c(10^-100, out.max))
+      return(c(min.value, out.max))
     },
     SIMPLIFY = F,
     FEAT = features,
@@ -363,20 +387,26 @@ visListPlot <- function(
   if(colormap.same.scale){
     gene.lims <- lapply(
       gene.lims,
-      FUN=function(X) c( 10^-100, max(unlist(gene.lims)) )
+      FUN=function(X) c(min.value, max(unlist(gene.lims)) )
     )
   }
   
-  #DEPRECATED- just use coord_fixed()!
   # Get plot heights
   #TODO- build in coord_fixed() 
   if(abs.heights){
+    # Select axis for setting plot heights/widths; dependent on orientation of the plot grid
+    if(flip_row_col){
+      column = 1
+    }else{
+      column=2
+    }
+    
     heights <- lapply(
       seu.list,
-      FUN=function(SEU) abs(diff(range(SEU@reductions[[reduction]]@cell.embeddings[,2])))
+      FUN=function(SEU) abs(diff(range(SEU@reductions[[reduction]]@cell.embeddings[,column])))
     ) %>% unlist()
     if(verbose){
-      message(paste0("Using these plot heights:"))
+      message(paste0("Using these plot ",c("widths","heights")[column],":"))
       print(heights)
     }
   }else{
@@ -407,6 +437,11 @@ visListPlot <- function(
             legend.title = element_text(size=font.size,face="bold", hjust=0.5),
             legend.text = element_text(size=font.size,face="bold")
           )
+        #TODO
+        # lims(
+        #   x=x.window[[i]],
+        #   y=y.window[[i]]
+        # )
         
         # set colormap
         if(length(colormap[[i]])==1){
@@ -488,21 +523,20 @@ visListPlot <- function(
     }
     
     #Wrap
-    plot.list <- lapply(
-      plot.list,
-      FUN = function(X){
-        wrap_plots(
-          X,
-          nrow=1,
-          heights=heights,
-          guides="collect"
-        )&theme(
-          legend.position=legend.position,
-          legend.margin = margin(0,0,0,0,"inches")
-        )
-      }
-    )
-    
+      plot.list <- lapply(
+        plot.list,
+        FUN = function(X){
+          wrap_plots(
+            X,
+            nrow=1,
+            heights=heights,
+            guides="collect"
+          )&theme(
+            legend.position=legend.position,
+            legend.margin = margin(0,0,0,0,"inches")
+          )
+        }
+      )
   }else{ #samples=rows; features=columns
     # Feature axis title
     for(i in 1:length(plot.list[[1]]) ){
@@ -531,7 +565,7 @@ visListPlot <- function(
         wrap_plots(
           X,
           ncol=1,
-          heights=heights,
+          widths=heights,
           guides="collect"
         )&theme(
           legend.position=legend.position,
