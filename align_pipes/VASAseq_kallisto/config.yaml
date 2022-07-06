@@ -21,13 +21,13 @@ OUTDIR: /workdir/dwm269/totalRNA/data/kallisto/GRCm39_GENCODEM28_VASAseq
 
 
 # kallisto parameters
-CHEMISTRY: 'VISIUM' #
-UMIlen: 12 #v2=__, v3=12, visium=12
-CORES: 4 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CHEMISTRY: '0,6,22:0,0,6:1,0,0' # kallisto chemistry formula for vasadrop [bc:umi:seq]; not that this does not reflect the actual chemistry, just the reformatted fastqs the authors uploaded to GEO
+UMIlen: 6 #v2=10, v3=12, visium=12
+CORES: 9 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 32G # limit in bytes
 
 ## Cell Barcode white lists
-CB_WHITELIST: TODO
+CB_WHITELIST: /home/dwm269/DWM_utils/align_pipes/VASAseq_kallisto/resources/VASAdrop_custom_whitelist.txt
 
 ########################################################################################################
 # Executables - file paths
