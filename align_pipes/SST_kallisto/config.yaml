@@ -23,7 +23,7 @@ OUTDIR: /workdir/dwm269/totalRNA/data/kallisto/GRCm39_GENCODEM28_SST
 # kallisto parameters
 CHEMISTRY: 'VISIUM' #
 UMIlen: 12 #v2=__, v3=12, visium=12
-CORES: 2 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CORES: 4 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 32G # limit in bytes
 
 ## Cell Barcode white lists

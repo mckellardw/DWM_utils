@@ -30,7 +30,6 @@ OUTDIR = config['OUTDIR']
 SAMPLES = list(pd.read_csv(config['SAMPLE_SHEET'])['sampleID'])
 R1_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])))
 R2_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R2'])))
-
 ########################################################################################################
 # Executables
 ########################################################################################################
@@ -39,24 +38,26 @@ KB_EXEC = config['KB_EXEC']
 ########################################################################################################
 rule all:
     input:
-        expand('{OUTDIR}/{sample}/preTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # raw R2 fastQC results
-        expand('{OUTDIR}/{sample}/postTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
-        expand('{OUTDIR}/{sample}/postTrim_FastQC_R2_lengthFiltered', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
-        # expand('{OUTDIR}/{sample}/cutadapt_polyA_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        # expand('{OUTDIR}/{sample}/cutadapt_polyG_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        # expand('{OUTDIR}/{sample}/kb_miRNA_k11/counts_unfiltered/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        # expand('{OUTDIR}/{sample}/kb_standard_k11/counts_unfiltered/matrix.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        # expand('{OUTDIR}/{sample}/kb_standard/quant/pseudoalignments.bam', OUTDIR=config['OUTDIR'], sample=SAMPLES)
-        expand('{OUTDIR}/{sample}/kb_wrapper/counts_unfiltered/adata.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        expand('{OUTDIR}/{sample}/cutadapt_polyA_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        expand('{OUTDIR}/{sample}/cutadapt_polyG_report.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        # expand('{OUTDIR}/{sample}/preTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # raw R2 fastQC results
+        # expand('{OUTDIR}/{sample}/postTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
+        # expand('{OUTDIR}/{sample}/postTrim_FastQC_R2_lengthFiltered', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
+        # expand('{OUTDIR}/{sample}/kb_miRNA_k11/counts_unfiltered/output.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        # expand('{OUTDIR}/{sample}/kb_standard_k11/counts_unfiltered/output.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        # expand('{OUTDIR}/{sample}/kb_standard_k11/quant/pseudoalignments.bam', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        # expand('{OUTDIR}/{sample}/kb_standard_k11/quant/pseudoalignments_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
+        # expand('{OUTDIR}/{sample}/kb_wrapper/counts_unfiltered/adata.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         # expand('{OUTDIR}/{sample}/kb_standard/counts_unfiltered/genes.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        # expand('{OUTDIR}/{sample}/kb_standard/quant/pseudoalignments.bam', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        # expand('{OUTDIR}/{sample}/kb_standard/quant/pseudoalignments_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
+        expand('{OUTDIR}/{sample}/kb_lamanno/counts_unfiltered/adata.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         expand('{OUTDIR}/{sample}/kb_standard/counts_unfiltered/output.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES)
-
-        # expand('{OUTDIR}/{sample}/kb_lamanno/counts_unfiltered/adata.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES)
 
         # expand('{OUTDIR}/{sample}/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap plotgardener)
         # expand('{OUTDIR}/{sample}/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
         # expand('{OUTDIR}/{sample}/Unmapped.out.mate2_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES), # blastn results for unmapped R1 reads
-        # expand('{OUTDIR}/{sample}/Aligned.sortedByCoord.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
+
         # expand('{OUTDIR}/{sample}/Aligned.sortedByCoord.out_merged.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES) # non-strand-split bigWigs (for
 
 
@@ -284,7 +285,7 @@ rule kallisto_bus_standard:
         OUTDIR = config['OUTDIR'],
         KALLISTO_EXEC = config['KALLISTO_EXEC'],
         KB_IDX = config['KB_IDX'],
-        CHEMISTRY = 'VISIUM',
+        CHEMISTRY = config['CHEMISTRY'],
         MEMLIMIT = config['MEMLIMIT']
     log:
         '{OUTDIR}/{sample}/kb_standard/kallisto_bus_standard.log'
@@ -343,7 +344,44 @@ rule bus2mat_standard:
         # {input.BUSTEXT}
         # """
 
-# kallisto/bustools workflow (fastq to bus/txt)
+rule kallisto_quant_standard:
+    input:
+        CB_WHITELIST = config['CB_WHITELIST'],
+        FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
+        FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
+    output:
+        GENOMEBAM = '{OUTDIR}/{sample}/kb_standard/quant/pseudoalignments.bam'
+    params:
+        OUTDIR = config['OUTDIR'],
+        KALLISTO_EXEC = config['KALLISTO_EXEC'],
+        KB_IDX = config['KB_IDX'],
+        MEMLIMIT = config['MEMLIMIT'],
+        GENES_GTF = config['GENES_GTF'],
+        CHROMOSOMES = config['CHROMOSOMES']
+    log:
+        '{OUTDIR}/{sample}/kb_standard/kallisto_quant_standard.log'
+    threads:
+        config['CORES']
+    shell:
+        """
+        mkdir -p {params.OUTDIR}/{wildcards.sample}/kb_standard/quant
+
+        {params.KALLISTO_EXEC} quant \
+        -i {params.KB_IDX} \
+        -o {params.OUTDIR}/{wildcards.sample}/kb_standard/quant/ \
+        -t {threads} \
+        --fr-stranded \
+        --single \
+        -l 85 \
+        -s 10 \
+        --genomebam \
+        --chromosomes {params.CHROMOSOMES} \
+        --gtf {params.GENES_GTF} \
+        {input.FINAL_R2_FQ}
+        """
+
+# Repeat with a reduced kmer length
+## kallisto/bustools workflow (fastq to bus)
 #TODO- make chemistry passable
 rule kallisto_bus_standard_k11:
     input:
@@ -351,15 +389,17 @@ rule kallisto_bus_standard_k11:
         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
         FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
     output:
-        BUSTEXT = temp('{OUTDIR}/{sample}/kb_standard_k11/output.corrected.txt')
+        BUSTEXT = temp('{OUTDIR}/{sample}/kb_standard_k11/output.corrected.bus'),
+        TRANSCRIPTS = '{OUTDIR}/{sample}/kb_standard_k11/transcripts.txt',
+        ECMAP = '{OUTDIR}/{sample}/kb_standard_k11/matrix.ec'
     params:
         OUTDIR = config['OUTDIR'],
         KALLISTO_EXEC = config['KALLISTO_EXEC'],
-        KB_IDX = config['KB_IDX_K11'],
+        KB_IDX = config['KB_IDX'],
         CHEMISTRY = 'VISIUM',
         MEMLIMIT = config['MEMLIMIT']
     log:
-        '{OUTDIR}/{sample}/kb_standard_k11/kallisto_bus_standard_k11.log'
+        '{OUTDIR}/{sample}/kb_standard_k11/kallisto_bus_standard.log'
     threads:
         config['CORES']
     shell:
@@ -373,7 +413,6 @@ rule kallisto_bus_standard_k11:
         {params.MEMLIMIT} \
         {input.FINAL_R1_FQ} {input.FINAL_R2_FQ}
         """
-
 
 rule bus2mat_standard_k11:
     input:
@@ -405,35 +444,36 @@ rule bus2mat_standard_k11:
         """
 
 # Generate pseudobam for IGV/visualization
-#TODO- fix fq input (needs frag length for single-end input?)
-rule kallisto_quant_standard:
+rule kallisto_quant_standard_k11:
     input:
         CB_WHITELIST = config['CB_WHITELIST'],
         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
         FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
     output:
-        GENOMEBAM = '{OUTDIR}/{sample}/kb_standard/quant/pseudoalignments.bam'
+        GENOMEBAM = '{OUTDIR}/{sample}/kb_standard_k11/quant/pseudoalignments.bam'
     params:
         OUTDIR = config['OUTDIR'],
         KALLISTO_EXEC = config['KALLISTO_EXEC'],
-        KB_IDX = config['KB_IDX'],
+        KB_IDX = config['KB_IDX_K11'],
         MEMLIMIT = config['MEMLIMIT'],
         GENES_GTF = config['GENES_GTF'],
         CHROMOSOMES = config['CHROMOSOMES']
     log:
-        '{OUTDIR}/{sample}/kb_standard/kallisto_quant_standard.log'
+        '{OUTDIR}/{sample}/kb_standard_k11/kallisto_quant_standard_k11.log'
     threads:
         config['CORES']
     shell:
         """
-        mkdir -p {params.OUTDIR}/{wildcards.sample}/kb_standard/quant
+        mkdir -p {params.OUTDIR}/{wildcards.sample}/kb_standard_k11/quant
 
         {params.KALLISTO_EXEC} quant \
         -i {params.KB_IDX} \
-        -o {params.OUTDIR}/{wildcards.sample}/kb_standard/quant/ \
+        -o {params.OUTDIR}/{wildcards.sample}/kb_standard_k11/quant/ \
         -t {threads} \
         --fr-stranded \
         --single \
+        -l 85 \
+        -s 10 \
         --genomebam \
         --chromosomes {params.CHROMOSOMES} \
         --gtf {params.GENES_GTF} \
@@ -450,7 +490,7 @@ rule kb_lamanno:
         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
         FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
     output:
-        COUNTMAT = '{OUTDIR}/{sample}/kb_lamanno/counts_filtered/adata.h5ad'
+        COUNTMAT = '{OUTDIR}/{sample}/kb_lamanno/counts_unfiltered/adata.h5ad'
     params:
         OUTDIR = config['OUTDIR'],
         KB_EXEC = config['KB_EXEC'],
@@ -758,22 +798,39 @@ rule bus2mat_miRNA:
 #############################################
 ## Additional files for visualization
 #############################################
-#TODO
-# rule bamToSplitBigWig:
-#     input:
-#         BAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.out.bam',
-#         BAI = '{OUTDIR}/{sample}/Aligned.sortedByCoord.out.bam.bai'
-#     output:
-#         POS_BW = '{OUTDIR}/{sample}/Aligned.sortedByCoord.out_plus.bw',
-#         MERGED_BW = '{OUTDIR}/{sample}/Aligned.sortedByCoord.out_merged.bw'
-#     params:
-#         BAM2SPLITBW=config['BAM2SPLITBW'],
-#         # STAR_REF = config['STAR_REF'],
-#         OUTPUT_DIR = '{OUTDIR}/{sample}'
-#     threads:
-#         config['CORES']
-#     shell:
-#         """
-#         {params.BAM2SPLITBW} {input.BAM} {threads} {params.OUTPUT_DIR}
-#         """
-# {STAR_REF}/chrNameLength.txt
+
+rule bamToSplitBigWig:
+    input:
+        BAM = '{OUTDIR}/{sample}/kb_standard/quant/pseudoalignments.bam',
+        BAI = '{OUTDIR}/{sample}/kb_standard/quant/pseudoalignments.bam.bai'
+    output:
+        POS_BW = '{OUTDIR}/{sample}/kb_standard/quant/pseudoalignments_plus.bw',
+        MERGED_BW = '{OUTDIR}/{sample}/kb_standard/quant/pseudoalignments_merged.bw'
+    params:
+        BAM2SPLITBW=config['BAM2SPLITBW'],
+        CHROMOSOMES = config['CHROMOSOMES'],
+        OUTPUT_DIR = '{OUTDIR}/{sample}/kb_standard/quant/'
+    threads:
+        config['CORES']
+    shell:
+        """
+        {params.BAM2SPLITBW} {input.BAM} {threads} {params.OUTPUT_DIR} {params.CHROMOSOMES}
+        """
+
+rule bamToSplitBigWig_k11:
+    input:
+        BAM = '{OUTDIR}/{sample}/kb_standard_k11/quant/pseudoalignments.bam',
+        BAI = '{OUTDIR}/{sample}/kb_standard_k11/quant/pseudoalignments.bam.bai'
+    output:
+        POS_BW = '{OUTDIR}/{sample}/kb_standard_k11/quant/pseudoalignments_plus.bw',
+        MERGED_BW = '{OUTDIR}/{sample}/kb_standard_k11/quant/pseudoalignments_merged.bw'
+    params:
+        BAM2SPLITBW=config['BAM2SPLITBW'],
+        CHROMOSOMES = config['CHROMOSOMES'],
+        OUTPUT_DIR = '{OUTDIR}/{sample}/kb_standard_k11/quant/'
+    threads:
+        config['CORES']
+    shell:
+        """
+        {params.BAM2SPLITBW} {input.BAM} {threads} {params.OUTPUT_DIR} {params.CHROMOSOMES}
+        """

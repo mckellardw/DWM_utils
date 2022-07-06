@@ -44,7 +44,6 @@ kallisto bus \
 ${R1FQ} ${R2FQ} 2>> ${LOG}
 echo " " >> ${LOG}
 
-
 # Correct cell/spot barcodes
 echo "~~~Correcting barcodes... " >> ${LOG}
 bustools correct \

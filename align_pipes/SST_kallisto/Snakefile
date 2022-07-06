@@ -29,8 +29,6 @@ OUTDIR = config['OUTDIR']
 ########################################################################################################
 SAMPLES = list(pd.read_csv(config['SAMPLE_SHEET'])['sampleID'])
 
-# SAMPLES = SAMPLES[:4]
-
 R1_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])))
 
 
@@ -54,15 +52,15 @@ rule all:
 ## Pre-alignment set up
 #############################################
 # Unzip the whitelist file if it hasn't been done yet
-rule gunzipWhitelist:
-    input:
-        config['CB_WHITELIST']+'.gz'
-    output:
-        config['CB_WHITELIST']
-    shell:
-        """
-        gunzip {input}
-        """
+# rule gunzipWhitelist:
+#     input:
+#         config['CB_WHITELIST']+'.gz'
+#     output:
+#         config['CB_WHITELIST']
+#     shell:
+#         """
+#         gunzip {input}
+#         """
 
 #############################################
 ## Trimming and FastQC
@@ -219,7 +217,7 @@ rule kb_wrapper:
 #TODO- make chemistry passable
 rule kallisto_bus_standard:
     input:
-        CB_WHITELIST = config['CB_WHITELIST'],
+        # CB_WHITELIST = config['CB_WHITELIST'],
         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz'
     output:
         TRANSCRIPTS = '{OUTDIR}/{sample}/kb_standard/abundance.tsv'

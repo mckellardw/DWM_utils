@@ -1,5 +1,5 @@
 ########################################################################################################
-# STARsolo_10x
+# bulk_STAR_smRNAseq
 #   Snakemake workflow to use STAR to align and quantify bulk RNAseq datasets (total and small RNAseq)
 #   v1.0
 #   Written by David McKellar
@@ -280,6 +280,7 @@ rule qualimapQC:
 #############################################
 ## miRge3.0 analysis
 #############################################
+#Source: https://mirge3.readthedocs.io/en/latest/quick_start.html
 rule miRge3:
     input:
         FINAL_R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_trimmedC.fastq.gz'
@@ -383,7 +384,7 @@ rule blast_unmapped:
 #############################################
 ## Additional files for visualization
 #############################################
-
+#TODO
 rule bamToSplitBigWig:
     input:
         BAM = '{OUTDIR}/{SAMPLE}/Aligned.sortedByCoord.out.bam',
