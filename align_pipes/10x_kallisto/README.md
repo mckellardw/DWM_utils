@@ -8,12 +8,21 @@
 - Write out pipeline details
 - Info on sample_sheet format!
 
+# Barcode whitelist info:
+[Name of barcodes list	Chemistry:](https://kb.10xgenomics.com/hc/en-us/articles/115004506263-What-is-a-barcode-whitelist-)
+`3M-febrary-2018.txt.gz`: Single Cell 3' v3, Single Cell 3' v3.1, Single Cell 3' HT v3.1
+`737k-august-2016.txt`:	Single Cell 3' v2, Single Cell 5' v1 and v2, Single Cell 5' HT v2
+`737k-april-2014_rc.txt`:	Single Cell 3' v1
+`737k-arc-v1.txt.gz`:	Single Cell Multiome (ATAC+GEX) v1
+`9K-LT-march-2021.txt.gz`:	Single Cell 3' LT
+`737k-fixed-rna-profiling.txt.gz`:	Fixed RNA Profiling (Present starting from Cell Ranger v7.0)
 
-Sources: (#TODO)
+# Sources: (#TODO)
 - kallisto/BUStools (`kb`)
 - https://github.com/torognes/vsearch
 
-Output for {sample}:
+# Output for {sample}:
+*Note*- comment out undesired outputs in `Snakefile` to reduce run time
 ```
 {sample}
 ├── cutadapt_polyA_report.txt
