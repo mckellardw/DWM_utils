@@ -30,10 +30,17 @@ estimateDoubletRate.DWM <- function(
 # Modified DoubletFinder functions  ####
 #     parallel_paramSweep_V3 ####
 parallel_paramSweep_v3_DWM <- function(
-    n,
-    n_real.cells, real.cells, pK, pN, data, orig.commands, PCs,
-    assay='RNA',slot='counts',
-    sct
+  n,
+  n_real.cells,
+  real.cells,
+  pK,
+  pN,
+  data,
+  orig.commands,
+  PCs,
+  assay='RNA',
+  slot='counts',
+  sct
 ){
 
   sweep.res.list = list()
@@ -54,9 +61,9 @@ parallel_paramSweep_v3_DWM <- function(
     seu_wdoublets <- CreateSeuratObject(counts = data_wdoublets)
     seu_wdoublets <- NormalizeData(
       seu_wdoublets,
-      normalization.method = orig.commands$NormalizeData.RNA@params$normalization.method,
-      scale.factor = orig.commands$NormalizeData.RNA@params$scale.factor,
-      margin = orig.commands$NormalizeData.RNA@params$margin
+      normalization.method = orig.commands[[paste0("NormalizeData.",assay)]]@params$normalization.method,
+      scale.factor = orig.commands[[paste0("NormalizeData.",assay)]]@params$scale.factor,
+      margin = orig.commands[[paste0("NormalizeData.",assay)]]@params$margin
     )
   }else if(slot=='data'){
     cat("Creating Seurat object with artificial doublets...\n")
@@ -87,29 +94,29 @@ parallel_paramSweep_v3_DWM <- function(
     cat("     Piping, FindVariableGenes(), FindVariableFeatures(), ScaleData(), and RunPCA()...\n")
     seu_wdoublets <-  FindVariableFeatures(
       seu_wdoublets,
-      selection.method = orig.commands$FindVariableFeatures.RNA$selection.method,
-      loess.span = orig.commands$FindVariableFeatures.RNA$loess.span,
-      clip.max = orig.commands$FindVariableFeatures.RNA$clip.max,
-      mean.function = orig.commands$FindVariableFeatures.RNA$mean.function,
-      dispersion.function = orig.commands$FindVariableFeatures.RNA$dispersion.function,
-      num.bin = orig.commands$FindVariableFeatures.RNA$num.bin,
-      binning.method = orig.commands$FindVariableFeatures.RNA$binning.method,
-      nfeatures = orig.commands$FindVariableFeatures.RNA$nfeatures,
-      mean.cutoff = orig.commands$FindVariableFeatures.RNA$mean.cutoff,
-      dispersion.cutoff = orig.commands$FindVariableFeatures.RNA$dispersion.cutoff
+      selection.method = orig.commands[[paste0("FindVariableFeatures.",assay)]]$selection.method,
+      loess.span = orig.commands[[paste0("FindVariableFeatures.",assay)]]$loess.span,
+      clip.max = orig.commands[[paste0("FindVariableFeatures.",assay)]]$clip.max,
+      mean.function = orig.commands[[paste0("FindVariableFeatures.",assay)]]$mean.function,
+      dispersion.function = orig.commands[[paste0("FindVariableFeatures.",assay)]]$dispersion.function,
+      num.bin = orig.commands[[paste0("FindVariableFeatures.",assay)]]$num.bin,
+      binning.method = orig.commands[[paste0("FindVariableFeatures.",assay)]]$binning.method,
+      nfeatures = orig.commands[[paste0("FindVariableFeatures.",assay)]]$nfeatures,
+      mean.cutoff = orig.commands[[paste0("FindVariableFeatures.",assay)]]$mean.cutoff,
+      dispersion.cutoff = orig.commands[[paste0("FindVariableFeatures.",assay)]]$dispersion.cutoff
     ) %>% ScaleData(
-      features = orig.commands$ScaleData.RNA$features,
-      model.use = orig.commands$ScaleData.RNA$model.use,
-      do.scale = orig.commands$ScaleData.RNA$do.scale,
-      do.center = orig.commands$ScaleData.RNA$do.center,
-      scale.max = orig.commands$ScaleData.RNA$scale.max,
-      block.size = orig.commands$ScaleData.RNA$block.size,
-      min.cells.to.block = orig.commands$ScaleData.RNA$min.cells.to.block
+      features = orig.commands[[paste0("ScaleData.",assay)]]$features,
+      model.use = orig.commands[[paste0("ScaleData.",assay)]]$model.use,
+      do.scale = orig.commands[[paste0("ScaleData.",assay)]]$do.scale,
+      do.center = orig.commands[[paste0("ScaleData.",assay)]]$do.center,
+      scale.max = orig.commands[[paste0("ScaleData.",assay)]]$scale.max,
+      block.size = orig.commands[[paste0("ScaleData.",assay)]]$block.size,
+      min.cells.to.block = orig.commands[[paste0("ScaleData.",assay)]]$min.cells.to.block
     )%>% RunPCA(
-      features = orig.commands$ScaleData.RNA$features,
+      features = orig.commands[[paste0("RunPCA.",assay)]]$features,
       npcs = length(PCs),
-      rev.pca =  orig.commands$RunPCA.RNA$rev.pca,
-      weight.by.var = orig.commands$RunPCA.RNA$weight.by.var,
+      rev.pca =  orig.commands[[paste0("RunPCA.",assay)]]$rev.pca,
+      weight.by.var = orig.commands[[paste0("RunPCA.",assay)]]$weight.by.var,
       reduction.name='DOUBLETFINDER_PCA',
       verbose=FALSE
     )
@@ -186,7 +193,6 @@ parallel_paramSweep_v3_DWM <- function(
     }
 
     sweep.res.list[[list.ind]] <- pANN
-
   }
 
   return(sweep.res.list)
@@ -252,7 +258,8 @@ parallel_paramSweep_PCA <- function(
 paramSweep_v3_DWM <- function(
     seu,
     PCs=1:10,
-    assay='RNA', slot='counts',
+    assay='RNA',
+    slot='counts',
     reduction='pca', #only needed if running on PC values instead of RNA
     num.cores=1,
     is.pca = F, #if performing paramSweep on PCA values, not gene expression
@@ -279,12 +286,12 @@ paramSweep_v3_DWM <- function(
   }else if (nrow(seu@meta.data) <= 10000){
     real.cells <- rownames(seu@meta.data)
   }else{
-    cat("ERROR IN SUBSETTING THE DATA")
+    message("ERROR IN SUBSETTING THE DATA")
   }
 
   if(is.pca){
     if(is.null(seu@reductions[[reduction]])){
-      cat("Reduction ", reduction, " is missing. Try again... \n")
+      message("Reduction ", reduction, " is missing. Try again... \n")
       return(seu)
     }
     data <- t(seu@reductions[[reduction]]@cell.embeddings[real.cells,PCs])
@@ -403,8 +410,8 @@ doubletFinder_V3.DWM <- function(
 
   if (reuse.pANN == FALSE) {
     ## Make merged real-artifical data
-    real.cells <- rownames(seu@meta.data)
-    data <- seu@assays$RNA@counts[, real.cells]
+    real.cells <- Cells(seu)
+    data <- seu@assays[[assay]]@counts[, real.cells]
     n_real.cells <- length(real.cells)
     n_doublets <- round(n_real.cells/(1 - pN) - n_real.cells)
     print(paste("Creating",n_doublets,"artificial doublets...",sep=" "))
@@ -428,38 +435,38 @@ doubletFinder_V3.DWM <- function(
       cat("     Running PCA...\n")
       seu_wdoublets <- NormalizeData(
         seu_wdoublets,
-        normalization.method = orig.commands$NormalizeData.RNA@params$normalization.method,
-        scale.factor = orig.commands$NormalizeData.RNA@params$scale.factor,
-        margin = orig.commands$NormalizeData.RNA@params$margin
+        normalization.method = orig.commands[[paste0("NormalizeData.",assay)]]@params$normalization.method,
+        scale.factor = orig.commands[[paste0("NormalizeData.",assay)]]@params$scale.factor,
+        margin = orig.commands[[paste0("NormalizeData.",assay)]]@params$margin
       ) %>% FindVariableFeatures(
-        selection.method = orig.commands$FindVariableFeatures.RNA$selection.method,
-        loess.span = orig.commands$FindVariableFeatures.RNA$loess.span,
-        clip.max = orig.commands$FindVariableFeatures.RNA$clip.max,
-        mean.function = orig.commands$FindVariableFeatures.RNA$mean.function,
-        dispersion.function = orig.commands$FindVariableFeatures.RNA$dispersion.function,
-        num.bin = orig.commands$FindVariableFeatures.RNA$num.bin,
-        binning.method = orig.commands$FindVariableFeatures.RNA$binning.method,
-        nfeatures = orig.commands$FindVariableFeatures.RNA$nfeatures,
-        mean.cutoff = orig.commands$FindVariableFeatures.RNA$mean.cutoff,
-        dispersion.cutoff = orig.commands$FindVariableFeatures.RNA$dispersion.cutoff
+        selection.method = orig.commands[[paste0("FindVariableFeatures.",assay)]]$selection.method,
+        loess.span = orig.commands[[paste0("FindVariableFeatures.",assay)]]$loess.span,
+        clip.max = orig.commands[[paste0("FindVariableFeatures.",assay)]]$clip.max,
+        mean.function = orig.commands[[paste0("FindVariableFeatures.",assay)]]$mean.function,
+        dispersion.function = orig.commands[[paste0("FindVariableFeatures.",assay)]]$dispersion.function,
+        num.bin = orig.commands[[paste0("FindVariableFeatures.",assay)]]$num.bin,
+        binning.method = orig.commands[[paste0("FindVariableFeatures.",assay)]]$binning.method,
+        nfeatures = orig.commands[[paste0("FindVariableFeatures.",assay)]]$nfeatures,
+        mean.cutoff = orig.commands[[paste0("FindVariableFeatures.",assay)]]$mean.cutoff,
+        dispersion.cutoff = orig.commands[[paste0("FindVariableFeatures.",assay)]]$dispersion.cutoff
       ) %>% ScaleData(
-        features = orig.commands$ScaleData.RNA$features,
-        model.use = orig.commands$ScaleData.RNA$model.use,
-        do.scale = orig.commands$ScaleData.RNA$do.scale,
-        do.center = orig.commands$ScaleData.RNA$do.center,
-        scale.max = orig.commands$ScaleData.RNA$scale.max,
-        block.size = orig.commands$ScaleData.RNA$block.size,
-        min.cells.to.block = orig.commands$ScaleData.RNA$min.cells.to.block
+        features = orig.commands[[paste0("ScaleData.",assay)]]$features,
+        model.use = orig.commands[[paste0("ScaleData.",assay)]]$model.use,
+        do.scale = orig.commands[[paste0("ScaleData.",assay)]]$do.scale,
+        do.center = orig.commands[[paste0("ScaleData.",assay)]]$do.center,
+        scale.max = orig.commands[[paste0("ScaleData.",assay)]]$scale.max,
+        block.size = orig.commands[[paste0("ScaleData.",assay)]]$block.size,
+        min.cells.to.block = orig.commands[[paste0("ScaleData.",assay)]]$min.cells.to.block
       )%>% RunPCA(
-        features = orig.commands$ScaleData.RNA$features,
+        features = orig.commands[[paste0("ScaleData.",assay)]]$features,
         npcs = length(PCs),
-        rev.pca =  orig.commands$RunPCA.RNA$rev.pca,
-        weight.by.var = orig.commands$RunPCA.RNA$weight.by.var,
+        rev.pca =  orig.commands[[paste0("RunPCA.",assay)]]$rev.pca,
+        weight.by.var = orig.commands[[paste0("RunPCA.",assay)]]$weight.by.var,
         verbose=FALSE
       )
 
       pca.coord <- seu_wdoublets@reductions$pca@cell.embeddings[ , PCs]
-      cell.names <- rownames(seu_wdoublets@meta.data)
+      cell.names <- Cells(seu_wdoublets)
       nCells <- length(cell.names)
       rm(seu_wdoublets); gc() # Free up memory
     }
@@ -606,7 +613,7 @@ doubletFinder_V3.DWM_v2 <- function(
   }else{
 
     ## Make merged real-artifical data
-    real.cells <- rownames(seu@meta.data)
+    real.cells <- Cells(seu)
     data <- GetAssayData(seu, assay=assay, slot=slot)
     n_real.cells <- length(real.cells)
     n_doublets <- round(n_real.cells/(1 - pN) - n_real.cells)
@@ -630,9 +637,9 @@ doubletFinder_V3.DWM_v2 <- function(
       if(assay!='SCT'){
         seu_wdoublets <- NormalizeData(
           seu_wdoublets,
-          normalization.method = orig.commands$NormalizeData.RNA@params$normalization.method,
-          scale.factor = orig.commands$NormalizeData.RNA@params$scale.factor,
-          margin = orig.commands$NormalizeData.RNA@params$margin
+          normalization.method = orig.commands[[paste0("NormalizeData.",assay)]]@params$normalization.method,
+          scale.factor = orig.commands[[paste0("NormalizeData.",assay)]]@params$scale.factor,
+          margin = orig.commands[[paste0("NormalizeData.",assay)]]@params$margin
         )
       }
     }else if(slot=='data'){
@@ -666,29 +673,29 @@ doubletFinder_V3.DWM_v2 <- function(
       cat("     Piping FindVariableFeatures(), ScaleData(), and RunPCA()...\n")
       seu_wdoublets <- FindVariableFeatures(
         seu_wdoublets,
-        selection.method = orig.commands$FindVariableFeatures.RNA$selection.method,
-        loess.span = orig.commands$FindVariableFeatures.RNA$loess.span,
-        clip.max = orig.commands$FindVariableFeatures.RNA$clip.max,
-        mean.function = orig.commands$FindVariableFeatures.RNA$mean.function,
-        dispersion.function = orig.commands$FindVariableFeatures.RNA$dispersion.function,
-        num.bin = orig.commands$FindVariableFeatures.RNA$num.bin,
-        binning.method = orig.commands$FindVariableFeatures.RNA$binning.method,
-        nfeatures = orig.commands$FindVariableFeatures.RNA$nfeatures,
-        mean.cutoff = orig.commands$FindVariableFeatures.RNA$mean.cutoff,
-        dispersion.cutoff = orig.commands$FindVariableFeatures.RNA$dispersion.cutoff
+        selection.method = orig.commands[[paste0("FindVariableFeatures.",assay)]]$selection.method,
+        loess.span = orig.commands[[paste0("FindVariableFeatures.",assay)]]$loess.span,
+        clip.max = orig.commands[[paste0("FindVariableFeatures.",assay)]]$clip.max,
+        mean.function = orig.commands[[paste0("FindVariableFeatures.",assay)]]$mean.function,
+        dispersion.function = orig.commands[[paste0("FindVariableFeatures.",assay)]]$dispersion.function,
+        num.bin = orig.commands[[paste0("FindVariableFeatures.",assay)]]$num.bin,
+        binning.method = orig.commands[[paste0("FindVariableFeatures.",assay)]]$binning.method,
+        nfeatures = orig.commands[[paste0("FindVariableFeatures.",assay)]]$nfeatures,
+        mean.cutoff = orig.commands[[paste0("FindVariableFeatures.",assay)]]$mean.cutoff,
+        dispersion.cutoff = orig.commands[[paste0("FindVariableFeatures.",assay)]]$dispersion.cutoff
       ) %>% ScaleData(
-        features = orig.commands$ScaleData.RNA$features,
-        model.use = orig.commands$ScaleData.RNA$model.use,
-        do.scale = orig.commands$ScaleData.RNA$do.scale,
-        do.center = orig.commands$ScaleData.RNA$do.center,
-        scale.max = orig.commands$ScaleData.RNA$scale.max,
-        block.size = orig.commands$ScaleData.RNA$block.size,
-        min.cells.to.block = orig.commands$ScaleData.RNA$min.cells.to.block
+        features = orig.commands[[paste0("ScaleData.",assay)]]$features,
+        model.use = orig.commands[[paste0("ScaleData.",assay)]]$model.use,
+        do.scale = orig.commands[[paste0("ScaleData.",assay)]]$do.scale,
+        do.center = orig.commands[[paste0("ScaleData.",assay)]]$do.center,
+        scale.max = orig.commands[[paste0("ScaleData.",assay)]]$scale.max,
+        block.size = orig.commands[[paste0("ScaleData.",assay)]]$block.size,
+        min.cells.to.block = orig.commands[[paste0("ScaleData.",assay)]]$min.cells.to.block
       )%>% RunPCA(
-        features = orig.commands$ScaleData.RNA$features,
+        features = orig.commands[[paste0("ScaleData.",assay)]]$features,
         npcs = length(PCs),
-        rev.pca =  orig.commands$RunPCA.RNA$rev.pca,
-        weight.by.var = orig.commands$RunPCA.RNA$weight.by.var,
+        rev.pca =  orig.commands[[paste0("RunPCA.",assay)]]$rev.pca,
+        weight.by.var = orig.commands[[paste0("RunPCA.",assay)]]$weight.by.var,
         reduction.name='DOUBLETFINDER_PCA',
         verbose=FALSE
       )
