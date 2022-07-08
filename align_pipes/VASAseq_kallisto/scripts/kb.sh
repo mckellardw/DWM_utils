@@ -46,34 +46,34 @@ echo " " >> ${LOG}
 
 # Correct cell/spot barcodes
 echo "~~~Correcting barcodes... " >> ${LOG}
-bustools correct \
---whitelist ${WHITELIST} \
--o output.sorted.bus \
-output.bus 2>> ${LOG}
-echo " " >> ${LOG}
+# bustools correct \
+# --whitelist ${WHITELIST} \
+# -o output.corrected.bus \
+# output.bus 2>> ${LOG}
+# echo " " >> ${LOG}
 
 # Sort .bus file
 echo "~~~Sorting output bus... " >> ${LOG}
 bustools sort \
 -t ${THREADS} \
 -m ${MEMLIMIT} \
--o output.corrected.bus \
-output.sorted.bus 2>> ${LOG}
+-o output.sorted.bus \
+output.bus 2>> ${LOG}
 echo " " >> ${LOG}
 
 # Inspect outputs
-echo "~~~Inspecting sorted/corrected BUS file..." >> ${LOG}
+echo "~~~Inspecting sorted BUS file..." >> ${LOG}
 bustools inspect \
 --whitelist ${WHITELIST} \
 --ecmap matrix.ec \
-output.corrected.bus 2>> ${LOG}
+output.sorted.bus 2>> ${LOG}
 
-echo "~~~Writing to inspect.corrected.bus.json" >> ${LOG}
+echo "~~~Writing to inspect.sorted.bus.json" >> ${LOG}
 bustools inspect \
 --whitelist ${WHITELIST} \
 --ecmap matrix.ec \
---output inspect.corrected.bus.json \
-output.corrected.bus
+--output inspect.sorted.bus.json \
+output.sorted.bus
 echo "Done!" >> ${LOG}
 
 # Convert bus file to text for easier counting

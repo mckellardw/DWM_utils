@@ -45,9 +45,9 @@ rule all:
         expand('{OUTDIR}/{sample}/preTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # raw R2 fastQC results
         expand('{OUTDIR}/{sample}/postTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
         # expand('{OUTDIR}/{sample}/kb_wrapper/counts_unfiltered/adata.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        # expand('{OUTDIR}/{sample}/kb_standard/counts_unfiltered/genes.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        # expand('{OUTDIR}/{sample}/kb_standard2/counts_unfiltered/genes.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         # expand('{OUTDIR}/{sample}/kb_lamanno/counts_unfiltered/adata.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES),
-        expand('{OUTDIR}/{sample}/kb_standard/counts_unfiltered/output.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES)
+        expand('{OUTDIR}/{sample}/kb_standard2/counts_unfiltered/output.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES)
 
 
 #############################################
@@ -256,9 +256,9 @@ rule kallisto_bus_standard:
         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_final_R1.fastq.gz',
         FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_final_R2.fastq.gz'
     output:
-        BUSTEXT = temp('{OUTDIR}/{sample}/kb_standard/output.corrected.bus'),
-        TRANSCRIPTS = '{OUTDIR}/{sample}/kb_standard/transcripts.txt',
-        ECMAP = '{OUTDIR}/{sample}/kb_standard/matrix.ec'
+        BUSTEXT = temp('{OUTDIR}/{sample}/kb_standard2/output.sorted.bus'),
+        TRANSCRIPTS = '{OUTDIR}/{sample}/kb_standard2/transcripts.txt',
+        ECMAP = '{OUTDIR}/{sample}/kb_standard2/matrix.ec'
     params:
         OUTDIR = config['OUTDIR'],
         KALLISTO_EXEC = config['KALLISTO_EXEC'],
@@ -266,12 +266,12 @@ rule kallisto_bus_standard:
         CHEMISTRY = config['CHEMISTRY'], #Custom chemistry for VASAdrop
         MEMLIMIT = config['MEMLIMIT']
     log:
-        '{OUTDIR}/{sample}/kb_standard/kallisto_bus_standard.log'
+        '{OUTDIR}/{sample}/kb_standard2/kallisto_bus_standard.log'
     threads:
         config['CORES']
     shell:
         """
-        bash scripts/kb.sh {params.OUTDIR}/{wildcards.sample}/kb_standard \
+        bash scripts/kb.sh {params.OUTDIR}/{wildcards.sample}/kb_standard2 \
         {params.KB_IDX} \
         {input.CB_WHITELIST} \
         {params.CHEMISTRY} \
@@ -284,14 +284,14 @@ rule kallisto_bus_standard:
 #TODO- multimapping or EM?
 rule bus2mat_standard:
     input:
-        BUS = '{OUTDIR}/{sample}/kb_standard/output.corrected.bus',
-        TRANSCRIPTS = '{OUTDIR}/{sample}/kb_standard/transcripts.txt',
-        ECMAP = '{OUTDIR}/{sample}/kb_standard/matrix.ec'
+        BUS = '{OUTDIR}/{sample}/kb_standard2/output.sorted.bus',
+        TRANSCRIPTS = '{OUTDIR}/{sample}/kb_standard2/transcripts.txt',
+        ECMAP = '{OUTDIR}/{sample}/kb_standard2/matrix.ec'
     output:
-        MAT = '{OUTDIR}/{sample}/kb_standard/counts_unfiltered/output.mtx'
-        # EC = '{OUTDIR}/{sample}/kb_standard/counts_unfiltered/output.ec.txt'
+        MAT = '{OUTDIR}/{sample}/kb_standard2/counts_unfiltered/output.mtx'
+        # EC = '{OUTDIR}/{sample}/kb_standard2/counts_unfiltered/output.ec.txt'
     params:
-        MATDIR = directory('{OUTDIR}/{sample}/kb_standard/counts_unfiltered'),
+        MATDIR = directory('{OUTDIR}/{sample}/kb_standard2/counts_unfiltered'),
         OUTDIR = config['OUTDIR'],
         BUST_EXEC = config['BUST_EXEC'],
         KB_T2G = config['KB_T2G']
@@ -319,7 +319,7 @@ rule kallisto_quant_standard:
         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_final_R1.fastq.gz',
         FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_final_R2.fastq.gz'
     output:
-        GENOMEBAM = '{OUTDIR}/{sample}/kb_standard/quant/pseudoalignments.bam'
+        GENOMEBAM = '{OUTDIR}/{sample}/kb_standard2/quant/pseudoalignments.bam'
     params:
         OUTDIR = config['OUTDIR'],
         KALLISTO_EXEC = config['KALLISTO_EXEC'],
@@ -328,16 +328,16 @@ rule kallisto_quant_standard:
         GENES_GTF = config['GENES_GTF'],
         CHROMOSOMES = config['CHROMOSOMES']
     log:
-        '{OUTDIR}/{sample}/kb_standard/kallisto_quant_standard.log'
+        '{OUTDIR}/{sample}/kb_standard2/kallisto_quant_standard.log'
     threads:
         config['CORES']
     shell:
         """
-        mkdir -p {params.OUTDIR}/{wildcards.sample}/kb_standard/quant
+        mkdir -p {params.OUTDIR}/{wildcards.sample}/kb_standard2/quant
 
         {params.KALLISTO_EXEC} quant \
         -i {params.KB_IDX} \
-        -o {params.OUTDIR}/{wildcards.sample}/kb_standard/quant/ \
+        -o {params.OUTDIR}/{wildcards.sample}/kb_standard2/quant/ \
         -t {threads} \
         --fr-stranded \
         --single \
