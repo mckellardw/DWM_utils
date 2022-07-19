@@ -42,8 +42,9 @@ parallel_paramSweep_v3_DWM <- function(
   slot='counts',
   sct
 ){
+  #TODO add param checks
 
-  sweep.res.list = list()
+    sweep.res.list = list()
   list.ind = 0
 
   ## Make merged real-artifical data
