@@ -35,6 +35,9 @@ Just a compiled list of color palettes that I use. Includes palettes from R and 
 - `pals` - [link](https://cran.r-project.org/web/packages/pals/vignettes/pals_examples.html)
 - `ggsci` -  [link](https://cran.r-project.org/web/packages/ggsci/vignettes/ggsci.html)
 
+#### To-Add:
+- National Parks Palettes: https://github.com/kevinsblake/NatParksPalettes
+
 #### Example usage (in R):
 ```
 mckolors <- read.csv("/path/to/DWM_utils/plotting_utils/McKolors_v1.csv") %>%
