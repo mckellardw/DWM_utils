@@ -1,7 +1,5 @@
-# TODO:
-- Add Visium settings
-- Write README
-- Add custom .gtf filtering for intragenic features
+# `10x_kallisto`
+Snakemake pipeline for preprocessing, pseudoaligning, & quantifying single-cell and spatial RNAseq libraries w/ kallisto and BUStools
 
 #README TODO:
 - Required packages & dependencies (add installation via .yml file)
@@ -17,9 +15,11 @@
 `9K-LT-march-2021.txt.gz`:	Single Cell 3' LT
 `737k-fixed-rna-profiling.txt.gz`:	Fixed RNA Profiling (Present starting from Cell Ranger v7.0)
 
-# Sources: (#TODO)
-- kallisto/BUStools (`kb`)
-- https://github.com/torognes/vsearch
+# Sources:
+- kallisto/BUStools (`kb`) [link][https://www.kallistobus.tools/]
+- [kallisto manual](http://pachterlab.github.io/kallisto/manual.html)
+- [vsearch](https://github.com/torognes/vsearch)
+
 
 # Output for {sample}:
 *Note*- comment out undesired outputs in `Snakefile` to reduce run time
