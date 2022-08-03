@@ -43,7 +43,7 @@ grepGenes <- function(
 
   genes = SEU@assays[[assay]]@counts@Dimnames[[1]]
 
-  
+
 
   if(length(pattern)>1){
     if(verbose){
@@ -62,7 +62,7 @@ grepGenes <- function(
     }
     out.genes <- genes[grep(pattern=pattern,x=genes)] #get genes
   }
-  
+
   if(length(out.genes)==0){
     message("Nothing found!\n")
     return(NULL)
@@ -113,7 +113,7 @@ ens2gene <- function(
   verbose=F
 ){
   require(dplyr)
-  
+
   if(is.null(ens)){
     message("Need ensembl IDs to convert!")
     return(NULL)
@@ -130,7 +130,7 @@ ens2gene <- function(
     message("Gene ID column not found in biomaRt reference. Check input for 'gene.colname'")
     return(NULL)
   }
-  
+
   if(ncores==1){
     out <- lapply(
       ens,
@@ -147,20 +147,20 @@ ens2gene <- function(
           if(verbose){cat(paste0("Nothing found for ", ENS,", returning ensembl ID"))}
           feat = ENS
         }
-        
+
         if(feat==""){
           if(verbose){message(paste0("No gene name found in '", gene.colname,"', for",ENS, ", returning ensembl ID."))}
           feat = ENS
         }
-        
+
         return(feat)
       }
-    ) %>% 
+    ) %>%
       unlist()
   }else if(ncores>1){
     require(parallel)
     if(verbose){message(paste0("Running on ", ncores," threads..."))}
-    
+
     out <- mclapply(
       ens,
       FUN = function(ENS){
@@ -176,26 +176,178 @@ ens2gene <- function(
           if(verbose){cat(paste0("Nothing found for ", ENS,", returning ensembl ID"))}
           feat = ENS
         }
-        
+
         if(feat==""){
           if(verbose){message(paste0("No gene name found in '", gene.colname,"', for",ENS, ", returning ensembl ID."))}
           feat = ENS
         }
-        
+
         return(feat)
       },
       mc.cores = ncores
-    ) %>% 
+    ) %>%
       unlist()
   }
-  
+
   if(force.unique){
     out <- make.unique(out)
   }
-  
+
   return(
     out
   )
+}
+
+
+# Collapse cell/nuclei/spot counts for multimapped genes - these are features with a period ("\\.") in their name
+#TODO: parallelize!
+collapseMultimappers <- function(
+    SEU,
+    assay=NULL,
+    new.assay.name=NULL,
+    verbose=F
+){
+
+  if(is.null(new.assay.name)){
+    new.assay.name = paste0(assay,"_collpased")
+    message("Using ",new.assay.name, " as new.assay.name...")
+  }
+  if(is.null(new.assay.name)){
+    message("Need new.assay.name!")
+    return(SEU)
+  }
+
+  SEU@active.assay <- assay
+
+  multi.feats <- grepGenes( #Find genes with a period in them
+    SEU,
+    assay = assay,
+    pattern="\\.",
+    sort.by="abc",
+    verbose=verbose
+  )
+  if(length(multi.feats)==0){
+    message("No multimappers found!")
+    return(SEU)
+  }
+
+  multi.patterns <- stringr::str_split( #extract actual gene names
+    multi.feats,
+    pattern = "\\.",
+    n = 2
+  ) %>%
+    lapply(FUN=function(X) X[1]) %>%
+    unlist() %>%
+    unique()
+
+  if(verbose){
+    message(paste0("Found ", length(multi.patterns), " multimappers and ", length(multi.feats)," loci..."))
+  }
+
+  # Collapse counts for each gene
+  mat.multi <- GetAssayData(
+    SEU,
+    assay=assay,
+    slot="counts"
+  )
+
+  collapsed.list <- lapply(
+    multi.patterns,
+    FUN=function(X){
+      tmp.genes = rownames(mat.multi)[grep(rownames(mat.multi),pattern=X)]
+      tmp.mat = mat.multi[tmp.genes,]
+
+      if(length(tmp.genes)==1){
+        return(tmp.mat)
+      }else{
+        return(colSums(tmp.mat))
+      }
+    }
+  )
+  collapsed.mat <- do.call(rbind, collapsed.list) %>% as.sparse()
+  rownames(collapsed.mat) <- multi.patterns
+
+  # Add new assay with collapsed counts + the rest of the genes
+  if(verbose){cat(paste0("Adding back ", nrow(collapsed.mat), " features...\n"))}
+
+  solo.feats <- rownames(SEU)[!rownames(SEU)%in%c(multi.feats,multi.patterns)]
+
+  out.mat <- rbind(
+    GetAssayData(SEU,assay=assay, slot="counts")[solo.feats,],
+    collapsed.mat
+  )
+  SEU[[new.assay.name]] <- CreateAssayObject(counts=out.mat)
+
+  SEU@active.assay <- new.assay.name
+
+  # Return Seurat object!
+  return(SEU)
+}
+
+# Add spatial location for each cell/spot/bead in a Seurat object, given a whitelist of barcods/locations (X- & Y- coordinates)
+#TODO: generalize whitelist formatting/reading in
+addSpatialLocation <- function(
+  SEU,
+  whitelist="/home/dwm269/DWM_utils/align_pipes/10x_kallisto/resources/barcodes_10x/visium-v1_coordinates.txt",
+  assay="RNA",
+  reduction.name = "space",
+  verbose=F
+){
+  require(Seurat)
+  require(dplyr)
+
+  # Check assays
+  if(!assay %in% Assays(SEU)){
+    assay=SEU@active.assay
+    if(verbose){message("Using the default assay...")}
+  }
+
+  # Read in whitelist coordinates
+  if(file.exists(whitelist)){
+  bc.coords <- read.table(
+    whitelist,
+    row.names = 1,
+    col.names = c(
+      "X",
+      "Y"
+    )
+  )
+  }else{
+    cat("Whitelist file not found!")
+    return(SEU)
+  }
+  
+  # Build reduction based on spot barcodes & whitelist
+  bcs <- stringr::str_remove_all(
+    string=Cells(SEU), 
+    pattern="_"
+  )
+  
+  if(verbose){
+    message(paste0(
+      table(bcs %in% rownames(bc.coords))["TRUE"], " out of ", length(bcs), " barcodes found in whitelist..."
+    ))
+  }
+
+  #TODO- check/remove '-1'
+
+  tmp.mat <- lapply(
+    bcs,
+    FUN=function(BC) bc.coords[BC,]
+  ) %>%
+    do.call(what=rbind)
+
+  colnames(tmp.mat) <- paste0(reduction.name, 1:2)
+  rownames(tmp.mat) <- bcs
+
+  # Add reduc to seurat obj
+  SEU[[reduction.name]] <- CreateDimReducObject(
+    embeddings=as.matrix(tmp.mat),
+    assay = assay,
+    key = paste0(reduction.name,"_")
+  )
+
+  return(SEU)
 }
 
 ########################################
@@ -224,87 +376,6 @@ npcs <- function(
   return(n.pcs)
 }
 
-
-# Collapse cell/nuclei/spot counts for multimapped genes
-#TODO: parallelize!
-collapseMultimappers <- function(
-  SEU,
-  assay=NULL,
-  new.assay.name=NULL,
-  verbose=F
-){
-
-  if(is.null(new.assay.name)){
-    new.assay.name = paste0(assay,"_collpased")
-    message("Using ",new.assay.name, " as new.assay.name...")
-  }
-  if(is.null(new.assay.name)){
-    message("Need new.assay.name!")
-    return(SEU)
-  }
-
-  SEU@active.assay <- assay
-
-  multi.feats <- grepGenes( #Find genes with a period in them
-    SEU, 
-    assay = assay, 
-    pattern="\\.", 
-    sort.by="abc",
-    verbose=verbose
-  ) 
-  if(length(multi.feats)==0){
-    message("No multimappers found!")
-    return(SEU)
-  }
-
-  multi.patterns <- stringr::str_split( #extract actual gene names
-    multi.feats, 
-    pattern = "\\.",
-    n = 2
-  ) %>% 
-    lapply(FUN=function(X) X[1]) %>%
-    unlist() %>%
-    unique()
-
-  if(verbose){
-    message(paste0("Found ", length(multi.patterns), " multimappers and ", length(multi.feats)," loci..."))
-  }
-
-  # Collapse counts for each gene
-  mat.multi <- GetAssayData(SEU, assay=assay, slot="counts") # count mat
-
-  collapsed.list <- lapply(
-    multi.patterns,
-    FUN=function(X){
-      tmp.genes = rownames(mat.multi)[grep(rownames(mat.multi),pattern=X)]
-      tmp.mat = mat.multi[tmp.genes,]
-
-      if(length(tmp.genes)==1){
-        return(tmp.mat)
-      }else{
-        return(colSums(tmp.mat))
-      }
-    }
-  )
-  collapsed.mat <- do.call(rbind, collapsed.list) %>% as.sparse()
-  rownames(collapsed.mat) <- multi.patterns
-
-  # Add new assay with collapsed counts + the rest of the genes
-  if(verbose){cat(paste0("Adding back ", nrow(collapsed.mat), " features...\n"))}
-
-  solo.feats <- rownames(SEU)[!rownames(SEU)%in%multi.feats]
-
-  out.mat <- rbind(
-    GetAssayData(SEU,assay=assay, slot="counts")[solo.feats,],
-    collapsed.mat
-  )
-  SEU[[new.assay.name]] <- CreateAssayObject(counts=out.mat)
-
-  SEU@active.assay <- new.assay.name
-
-  # Return Seurat object!
-  return(SEU)
-}
 
 
 # Preprocessing wrapper function
@@ -350,11 +421,11 @@ seuPreProcess <- function(
 
   #find pcs to use
   n.pcs.use = npcs(
-    SEU=SEU, 
-    var.total = 0.95, 
+    SEU=SEU,
+    var.total = 0.95,
     reduction = pca.name
   )
-  
+
   # FindNeighbors %>% RunUMAP, FindClusters
   SEU <- FindNeighbors(
     SEU,
@@ -415,6 +486,73 @@ AddCellTypeIdents <- function(
 }
 
 
+# A 1-function wrapper for DoubletFinder
+RunDoubletFinder <- function(
+  SEU,
+  NCORES=1,
+  to.filter=F
+){
+  
+  # Estimated Doublet Rate for each dataset
+  edr <- estimateDoubletRate.DWM(seur.list = seu.list)/100 #use your own known EDR here
+  
+  for(i in 1:length(seu.list)){
+    cat(' --------------------------------------------\n',
+        '### DoubletFinder for dataset number ', i, '###\n',
+        '--------------------------------------------\n')
+    
+    n.pcs = npcs(SEU)
+    
+    # SEU@reductions$umap_RNA@misc$n.pcs.used
+    
+    ## pK Identification (no ground-truth)
+    bcmvn<- paramSweep_v3_DWM(
+      seu=SEU, 
+      PCs = 1:n.pcs, 
+      num.cores = ncores
+    ) %>% summarizeSweep(#sweep.res.list, 
+      GT = FALSE
+    ) %>% find.pK(#sweep.stats
+    ) 
+    
+    # Pull out max of bcmvn
+    pK <- as.numeric(as.character(bcmvn$pK[bcmvn$BCmetric==max(bcmvn$BCmetric)])) # ugly, but functional...
+    
+    ## Homotypic Doublet Proportion Estimate
+    homotypic.prop <- modelHomotypic(SEU$seurat_clusters) 
+    
+    nExp_poi <- round(edr*length(colnames(SEU)))  
+    nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+    
+    gc()
+  }
+  
+    rm(bcmvn, pK, nExp_poi, nExp_poi.adj)
+    gc()
+  
+  
+  SEU <- 
+    doubletFinder_V3.DWM_v2(
+      seu=SEU, 
+      PCs = 1:SEU@reductions$umap_RNA@misc$n.pcs.used, 
+      pN = 0.25, 
+      pK= pK, 
+      nExp = nExp_poi.adj,  
+      reuse.pANN = F,
+      classification.name='DF.individual', 
+      pANN.name='DF.pANN.individual'
+    )
+  gc()
+  
+  #Filter seurat objects
+  if(to.filter){
+    return()
+  }else{
+    return(SEU)
+  }
+  
+}
+
 # Borrowed/adapted from the Marioni Lab, DropletUtils package (https://rdrr.io/github/MarioniLab/DropletUtils/src/R/write10xCounts.R)
 #   (Had R version issues getting it to work as a dependency)
 #' @importFrom utils write.table
@@ -423,20 +561,29 @@ AddCellTypeIdents <- function(
 write_sparse <- function(
   path, # name of new directory
   x, # matrix to write as sparse
-  barcodes, # cell IDs, colnames
-  features # gene IDs, rownames
-
-  # gene.symbol,#not used
-  # gene.type
+  barcodes=NULL, # cell IDs, colnames
+  features=NULL, # gene IDs, rownames
+  overwrite=F,
+  verbose=F
 ){
   require(utils,quietly = T)
   require(Matrix,quietly = T)
   require(R.utils,quietly = T)
 
   if(!dir.exists(path)){
-    dir.create(path, showWarnings=FALSE)
+    dir.create(
+      path,
+      showWarnings=verbose,
+      recursive = T
+    )
   }
 
+  if(is.null(barcodes)){
+    barcodes=colnames(x)
+  }
+  if(is.null(features)){
+    features=rownames(x)
+  }
   # gene.info <- data.frame(gene.id, gene.symbol, stringsAsFactors=FALSE)
 
   # gene.info$gene.type <- rep(gene.type, length.out=nrow(gene.info))
@@ -448,9 +595,33 @@ write_sparse <- function(
     close(fhandle)
   })
 
+  if(overwrite){
+    if(verbose){message("Overwriting old files if they exist...")}
+
+    if(file.exists(paste0(mhandle,".gz"))){
+      file.remove(paste0(mhandle,".gz"))
+    }
+    if(file.exists(bhandle)){
+      file.remove(bhandle)
+    }
+    if(file.exists(fhandle)){
+      file.remove(fhandle)
+    }
+  }
+
   writeMM(x, file=mhandle)
-  write(barcodes, file=bhandle)
-  write.table(features, file=fhandle, row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
+  write(
+    barcodes, 
+    file=bhandle
+  )
+  write.table(
+    features, 
+    file=fhandle, 
+    row.names=FALSE, 
+    col.names=FALSE, 
+    quote=FALSE, 
+    sep="\t"
+  )
 
   # Annoyingly, writeMM doesn't take connection objects.
   gzip(mhandle)
@@ -589,6 +760,8 @@ seu_biotypes <- function(
   biotype.colname,
   add.as=c("metadata","assay"), # how percent features should be added
   assay="RNA",
+  prefix="pct.",
+  scale=c(1,100),
   verbose=TRUE
 ){
 
@@ -618,13 +791,21 @@ seu_biotypes <- function(
       if(add.as[1]=="metadata"){
         SEU <- PercentageFeatureSet(
           SEU,
-          col.name = paste0("pct.",biotype),
+          col.name = paste0(prefix, biotype),
           assay = assay,
           features=tmp.feat
         )
+        if(scale[1]==1){
+          SEU[[paste0(prefix, biotype)]] <- SEU[[paste0(prefix, biotype)]]/100
+        }else if(scale[1]==100){
+          #Do nothing...
+        }else{
+          message("Given scale was not found. Scaling to 100...")
+        }
       }
       if(add.as[1]=="assay"){
-
+        #TODO
+        message("Not implemented yet...")
       }
     }
   }

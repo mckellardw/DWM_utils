@@ -44,6 +44,7 @@ rule all:
     input:
         expand('{OUTDIR}/{sample}/preTrim_fastqc_R1_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # raw R2 fastQC results
         expand('{OUTDIR}/{sample}/postTrim_fastqc_R1_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
+        expand('{OUTDIR}/{sample}/Processed.out.bam', OUTDIR=config['OUTDIR'], sample=SAMPLES), # 
         expand('{OUTDIR}/{sample}/qualimap_out/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap
         expand('{OUTDIR}/{sample}/Aligned.sortedByCoord.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
         expand('{OUTDIR}/{sample}/ReadsPerGene.out.tab', OUTDIR=config['OUTDIR'], sample=SAMPLES), # count mats
@@ -151,10 +152,8 @@ rule postTrim_FastQC_R1:
 ## Alignment
 #############################################
 # Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
-#   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
-
-#TODO- gzip unmapped fastq's
-rule STARsolo_align:
+#   Info for STAR command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
+rule STAR_align:
     input:
         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz', # _final
         FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
@@ -195,7 +194,6 @@ rule STARsolo_align:
         --outFilterMultimapNmax 50
         """
 
-#TODO this is extraneous
 rule indexBAM:
     input:
         SORTEDBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.out.bam'
@@ -207,6 +205,46 @@ rule indexBAM:
         """
         samtools index -@ {threads} {input.SORTEDBAM}
         """
+
+# # Mark/remove duplicates - **STAR**
+# rule star_dedupBAM:
+#     input:
+#         CB_WHITELIST = config['CB_WHITELIST'],
+#         SORTEDBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.out.bam',
+#     output:
+#         DEDUPBAM = '{OUTDIR}/{sample}/Processed.out.bam'
+#     params:
+#         PICARD_EXEC = config['PICARD_EXEC'],
+#         OUTDIR = config['OUTDIR'],
+#         TMPDIR = '{OUTDIR}/{sample}/_STARtmp',
+#         STAR_EXEC = config['STAR_EXEC']
+#         # TMPBAM = '{OUTDIR}/{sample}/tmp.bam'
+#     threads:
+#         config['CORES']*2
+#     shell:
+#         """
+#         {params.STAR_EXEC} \
+#         --runMode inputAlignmentsFromBAM \
+#         --inputBAMfile {input.SORTEDBAM} \
+#         --readFilesType SAM SE \
+#         --outFileNamePrefix {params.OUTDIR}/{wildcards.sample}/ \
+#         --limitBAMsortRAM 32000000000 \
+#         --outTmpDir {params.TMPDIR} \
+#         --bamRemoveDuplicatesType UniqueIdentical
+#         """
+#
+# rule star_indexDedupBAM:
+#     input:
+#         SORTEDBAM = '{OUTDIR}/{sample}/Processed.out.bam'
+#     output:
+#         BAI = '{OUTDIR}/{sample}/Processed.out.bam.bai'
+#     threads:
+#         config['CORES']
+#     shell:
+#         """
+#         samtools index -@ {threads} {input.SORTEDBAM}
+#         """
+
 
 #############################################
 ## qualimap on aligned reads

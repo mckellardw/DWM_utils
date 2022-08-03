@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# USage:
+# Usage:
 # bash bam2splitBigWig /path/to/file.bam num_cores /path/to/outdir /path/to/genome.chrom.sizes
 
 # bam2splitBigWig (v1.0) - input a .bam file, output two bigWig files (one for each strand, positive/negative)

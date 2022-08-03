@@ -37,6 +37,10 @@ Just a compiled list of color palettes that I use. Includes palettes from R and 
 - `MetBrewer` - [link](https://github.com/BlakeRMills/MetBrewer)
 - `wesanderson` - [link](https://github.com/karthik/wesanderson)
 
+#### To-Add:
+- National Parks Palettes: https://github.com/kevinsblake/NatParksPalettes
+- MetBrewer - [link](https://github.com/BlakeRMills/MetBrewer)
+
 #### Example usage (in R):
 ```
 mckolors <- read.csv("/path/to/DWM_utils/plotting_utils/McKolors_v1.csv") %>%
