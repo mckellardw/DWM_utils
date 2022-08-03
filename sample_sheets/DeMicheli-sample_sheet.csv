@@ -1,0 +1,12 @@
+sampleID,fastq_R1,fastq_R2,SRR_ID
+D0_A,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870296_R1.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870296_R2.fastq.gz,SRR10870296
+D0_B,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870297_R1.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870297_R2.fastq.gz,SRR10870297
+D2_C,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870299_R1.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870299_R2.fastq.gz,SRR10870299
+D2_D,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870300_R1.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870300_R2.fastq.gz,SRR10870300
+D5_A,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870301_R1.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870301_R2.fastq.gz,SRR10870301
+D5_B,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870302_R1.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870302_R2.fastq.gz,SRR10870302
+D5_C,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870303_R1.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870303_R2.fastq.gz,SRR10870303
+D7_C,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870304_R1.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870304_R2.fastq.gz,SRR10870304
+D7_D,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870305_R1.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR10870305_R2.fastq.gz,SRR10870305
+D2_Ev3,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR12820638_R1.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR12820638_R2.fastq.gz,SRR12820638
+D7_Ev3,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR12820639_R1.fastq.gz,/workdir/dwm269/totalRNA/data/fastq/DeMicheli/SRR12820639_R2.fastq.gz,SRR12820639
