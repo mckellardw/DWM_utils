@@ -94,21 +94,16 @@ scThemes <-function(
 
   scTheme$vln <- theme(
     panel.background = element_blank(),
-    axis.line=element_line(color="black"),
+    axis.line.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.line.y = element_line(color="black", size = line.width),
+    axis.ticks.y = element_line(color="black", size = line.width),
     legend.text = element_text(size=small.font, color="black"),
     panel.grid = element_blank(),
     axis.title.x = element_blank(),
-    axis.title.y=element_text(size=big.font, color="black"),
-    axis.text = element_text(color="black",size=small.font),
-    axis.ticks.x = element_blank()
+    axis.title.y=element_text(size=small.font, color="black", face="bold"),
+    axis.text = element_text(color="black",size=small.font)
   )
-
-  scTheme$vln <- theme_minimal() +
-    theme(
-      axis.text=element_text(color="black",size=small.font),
-      axis.title=element_text(color="black",size=big.font, face="bold"),
-      panel.grid = element_blank()
-    )
 
   return(scTheme)
 }
