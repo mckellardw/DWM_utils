@@ -3,9 +3,14 @@
 
 ## Linux utils
 
-- Check memory usage in all sub-directories (of current directory), then sort outputs
+- Check disk usage in all sub-directories (of current directory), then sort outputs
 ```
 du -sh /path/to/base/directory/* | sort -hr
+```
+
+- Check memory usage acrosss current processes, by ****user***
+```
+ps aux | awk '{arr[$1]+=$4}; END {for (i in arr) {print i,arr[i]}}' | sort -k2
 ```
 
 ## `awk`, `sed`, etc.
@@ -48,6 +53,13 @@ samtools view sub.bam | grep CB:Z: | sed 's/.*CB:Z:\([ACGT]*\).*/\1/' | sort | u
 - Subset bam by strand
 ```
 samtools view -F 0x10 -b file.bam > file_pos.bam
+```
+
+## .fastq finagling
+
+- Get top 1000 most abundant sequences from a file.fastq, output as an out.fa
+```
+vsearch --sortbysize file.fastq --topn 1000 --output out.fa
 ```
 
 ## .gtf finagling
