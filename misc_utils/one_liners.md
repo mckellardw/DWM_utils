@@ -8,7 +8,7 @@
 du -sh /path/to/base/directory/* | sort -hr
 ```
 
-- Check memory usage acrosss current processes, by ****user***
+- Check memory usage across current processes, by ****user***
 ```
 ps aux | awk '{arr[$1]+=$4}; END {for (i in arr) {print i,arr[i]}}' | sort -k2
 ```
