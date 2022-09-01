@@ -1,32 +1,36 @@
 ########################################################################################################
-# STARsolo_10x
+# 10x_STARsolo
 #   Snakemake workflow to use STARsolo to align and quantify 10x Chromium datasets
 #   v1.0
 #   Written by David McKellar
-#   Last edited: 5/10/21, DWM
 ########################################################################################################
 
-import pdb
 import pandas as pd
-import glob
+import scipy.io
+import scipy.sparse
 
 ########################################################################################################
 # Config file
 ########################################################################################################
 configfile:'config.yaml'
+CHEMISTRY_SHEET = pd.read_csv(config["CHEMISTRY_SHEET"], na_filter=False,index_col=0) #"resources/chemistry_sheet.csv"
 ########################################################################################################
 # Directories and locations
 ########################################################################################################
 TMPDIR = config['TMPDIR']
 OUTDIR = config['OUTDIR']
 
+shell("mkdir -p {TMPDIR}")
+shell("mkdir -p {OUTDIR}")
+
 ########################################################################################################
 # Variables and references
 ########################################################################################################
-SAMPLES = list(pd.read_csv(config['SAMPLE_SHEET'])['sampleID'])
+SAMPLE_SHEET = pd.read_csv(config["SAMPLE_SHEET_PATH"], na_filter=False)
+SAMPLES = list(SAMPLE_SHEET['sampleID'])
 
-R1_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R1'])))
-R2_FQS = dict(zip(SAMPLES, list(pd.read_csv(config['SAMPLE_SHEET'])['fastq_R2'])))
+R1_FQS = dict(zip(SAMPLES, list(SAMPLE_SHEET['fastq_R1'])))
+R2_FQS = dict(zip(SAMPLES, list(SAMPLE_SHEET['fastq_R2'])))
 
 STAR_REF = config['STAR_REF']
 
@@ -36,10 +40,18 @@ STAR_REF = config['STAR_REF']
 STAR_EXEC = config['STAR_EXEC']
 
 ########################################################################################################
-#TODO: add miRge output(s)
+# Pre-run setup
+########################################################################################################
+#TODO
+# CHEM_DICT = {}
+# for i in range(0,SAMPLE_SHEET.shape[0]):
+#     CHEM_DICT[tmp_gsm] = list(SAMPLE_SHEET["chemistry"])[i]
+
+########################################################################################################
 rule all:
     input:
         expand('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES),
+        # expand('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw_feature_bc_matrix_h5.h5', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         # expand('{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES), # umi_tools deduplicated .bam
         # expand('{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
         # expand('{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out_merged.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), #
@@ -115,6 +127,7 @@ rule preTrim_FastQC_R2:
         {input.MERGED_R2_FQ}
         """
 
+# TSO & polyA trimming
 rule trimPolyA_R2:
     input:
         MERGED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz',
@@ -134,7 +147,6 @@ rule trimPolyA_R2:
         '{OUTDIR}/{sample}/cutadapt_polyA_report.txt'
     shell:
         """
-        # TSO & polyA trimming
         cutadapt \
         --minimum-length 10 \
         -A {params.THREE_PRIME_R2_POLYA} \
@@ -145,7 +157,6 @@ rule trimPolyA_R2:
         --cores {threads} \
         {input.MERGED_R1_FQ} {input.MERGED_R2_FQ} 1> {log}
         """
-        # 2> {output.POLYA_REPORT}
 
 #Additional trimming step, for 2-color Illumina chemistries (NextSeq, etc.)
 rule trimPolyG_R2:
@@ -242,10 +253,6 @@ rule STARsolo_align:
         SORTEDBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam', #TODO: add temp()
         UNMAPPED1 = '{OUTDIR}/{sample}/STARsolo/Unmapped.out.mate1',
         UNMAPPED2 = '{OUTDIR}/{sample}/STARsolo/Unmapped.out.mate2',
-        # UNIQUE_POS_BG = '{OUTDIR}/{sample}/Unique.pos.bedGraph',
-        # UNIQUE_NEG_BG = '{OUTDIR}/{sample}/Unique.neg.bedGraph',
-        # UNIQUE_MULTI_POS_BG = '{OUTDIR}/{sample}/UniqueMultiple.pos.bedGraph',
-        # UNIQUE_MULTI_NEG_BG = '{OUTDIR}/{sample}/UniqueMultiple.neg.bedGraph',
         GENE = directory('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene'),
         GENEFULL = directory('{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull'),
         SJ = directory('{OUTDIR}/{sample}/STARsolo/Solo.out/SJ'),
@@ -292,19 +299,6 @@ rule STARsolo_align:
         --soloMultiMappers EM
         """
 
-
-        # gzip -qf {output.GENE}/raw/*
-        # gzip -qf {output.GENE}/filtered/*
-        #
-        # gzip -qf {output.GENEFULL}/raw/*
-        # gzip -qf {output.GENEFULL}/filtered/*
-        #
-        # gzip -qf {output.SJ}/raw/*
-        #
-        # gzip -qf {output.VEL}/raw/*
-        # gzip -qf {output.VEL}/filtered/*
-
-
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
 rule compress_STAR_outs:
     input:
@@ -335,6 +329,46 @@ rule compress_STAR_outs:
             gzip -qf {params.SJDIR}/*/*.tsv {params.SJDIR}/*/*.mtx
             """
         )
+
+# convert .mtx format to .h5
+# SHout out Alex Wolf- https://falexwolf.me/2017/sparse-matrices-with-h5py/
+rule STAR_mtx2h5:
+    input:
+        # VELMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz",
+        # SJMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/SJ/raw/matrix.mtx.gz",
+        GENEMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx.gz",
+        GENEFULLMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz"
+    output:
+        # VELMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw_feature_bc_matrix_h5.h5",
+        # SJMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/SJ/raw_feature_bc_matrix_h5.h5",
+        GENEMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw_feature_bc_matrix_h5.h5",
+        GENEFULLMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw_feature_bc_matrix_h5.h5"
+    params:
+        # VELDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto"),
+        # SJDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/SJ"),
+        GENEDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/Gene"),
+        GENEFULLDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull")
+    threads:
+        1
+    run:
+
+        X = scipy.io.mmread(input.GENEFULLMAT)
+        bcs = pd.read_csv(
+            "features.tsv.gz",
+            sep="\t",
+            header=None,
+            usecols=[1]
+        )
+        feats = pd.read_csv(
+            "features.tsv.gz",
+            sep="\t",
+            header=None,
+            usecols=[1]
+        )
+        f = h5py.File(output.GENEFULLMAT)
+        f.create_dataset('X', data=X)
+
+        f.close()
 
 rule indexSortedBAM:
     input:
