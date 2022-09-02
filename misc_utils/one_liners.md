@@ -13,6 +13,12 @@ du -sh /path/to/base/directory/* | sort -hr
 ps aux | awk '{arr[$1]+=$4}; END {for (i in arr) {print i,arr[i]}}' | sort -k2
 ```
 
+- Broad memory usage stats
+```
+cat /proc/meminfo
+```
+[Useful guide from redhat for interpreting output](https://access.redhat.com/solutions/406773)
+
 ## `awk`, `sed`, etc.
 
 - Convert .csv to .tsv (note that .gtf files are also .tsv's)
