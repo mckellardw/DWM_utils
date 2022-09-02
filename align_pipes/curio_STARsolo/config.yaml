@@ -9,13 +9,13 @@
 #       --readFilesIn Read2_Lane1.fastq.gz,Read2_Lane2.fastq.gz,Read2_Lane3.fastq.gz  Read1_Lane1.fastq.gz,Read1_Lane2.fastq.gz,Read1_Lane3.fastq.gz
 
 ## ~~~~~ sample sheets ~~~~~
-SAMPLE_SHEET_PATH: ~/DWM_utils/sample_sheets/All-Vis_HeartREO-sample_sheet.csv
+# SAMPLE_SHEET_PATH: ~/DWM_utils/sample_sheets/SS_LKO_Rnd1-sample_sheet.csv
+SAMPLE_SHEET_PATH: ~/DWM_utils/sample_sheets/STRSHD_Rnd2-sample_sheet.csv
 
 
 # STARsolo parameters
-CORES: 2 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CORES: 36 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 50000000000 # limit in bytes
-UMIlen: 12 #v2=__, v3=12, visium=12
 
 
 ## Chemistry details (whitelists, barcode/UMI design, etc.)
@@ -26,18 +26,18 @@ CHEMISTRY_SHEET: resources/chemistry_sheet.csv
 # Important directory file paths
 ########################################################################################################
 # TMPDIR: /workdir/dwm269/totalRNA/tmp # directory for temporary files
-# OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM28_Chromium
-# OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM27_Visium
-# OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM28_Visium/FLExDUX4
 
-TMPDIR: /workdir/dwm269/scCardiacOrganoid/tmp
-OUTDIR: /workdir/dwm269/scCardiacOrganoid/data/STARsolo/GRCh38p13
+# TMPDIR: /workdir/dwm269/spatial_lmna/tmp
+# OUTDIR: /workdir/dwm269/spatial_lmna/data/STARsolo
+
+TMPDIR: /workdir/dwm269/totalRNA/STRS-HD/tmp
+OUTDIR: /workdir/dwm269/totalRNA/STRS-HD/data/STARsolo
 
 ########################################################################################################
 # Executables - file paths
 ########################################################################################################
 #TODO - add umi_tools, etc
-STAR_EXEC: /programs/STAR/STAR # 2.7.9a - *Note, had seg fault issues w/ conda version 2.7.10a
+STAR_EXEC: STAR # 2.7.9a - *Note, had seg fault issues w/ conda version 2.7.10a
 CUTADAPT_EXEC: cutadapt
 FASTQC_EXEC: fastqc
 SAMTOOLS_EXEC: samtools
