@@ -256,11 +256,11 @@ rule STARsolo_align:
         UNMAPPED2 = '{OUTDIR}/{sample}/STARsolo/Unmapped.out.mate2',
         GENE = directory('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene'),
         GENEFULL = directory('{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull'),
-        SJ = directory('{OUTDIR}/{sample}/STARsolo/Solo.out/SJ'),
+        # SJ = directory('{OUTDIR}/{sample}/STARsolo/Solo.out/SJ'),
         VEL = directory('{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto'),
         GENEMAT = '{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx',
         GENEFULLMAT = '{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/matrix.mtx',
-        SJMAT = '{OUTDIR}/{sample}/STARsolo/Solo.out/SJ/raw/matrix.mtx',
+        # SJMAT = '{OUTDIR}/{sample}/STARsolo/Solo.out/SJ/raw/matrix.mtx',
         VELMAT = '{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/spliced.mtx'
     params:
         OUTDIR = config['OUTDIR'],
