@@ -9,9 +9,9 @@
 #       --readFilesIn Read2_Lane1.fastq.gz,Read2_Lane2.fastq.gz,Read2_Lane3.fastq.gz  Read1_Lane1.fastq.gz,Read1_Lane2.fastq.gz,Read1_Lane3.fastq.gz
 
 ## ~~~~~ sample sheets ~~~~~
-# SAMPLE_SHEET_PATH: ~/DWM_utils/sample_sheets/SS_LKO_Rnd1-sample_sheet.csv
+SAMPLE_SHEET_PATH: ~/DWM_utils/sample_sheets/SS_LKO_Rnd1-sample_sheet.csv
 # SAMPLE_SHEET_PATH: ~/DWM_utils/sample_sheets/STRSHD_Rnd2-sample_sheet.csv
-SAMPLE_SHEET_PATH: ~/DWM_utils/sample_sheets/ChickenSurgerySlideSeq-sample_sheet.csv
+# SAMPLE_SHEET_PATH: ~/DWM_utils/sample_sheets/ChickenSurgerySlideSeq-sample_sheet.csv
 
 
 # STARsolo parameters
@@ -26,14 +26,14 @@ CHEMISTRY_SHEET: resources/chemistry_sheet.csv
 ########################################################################################################
 # TMPDIR: /workdir/dwm269/totalRNA/tmp # directory for temporary files
 
-# TMPDIR: /workdir/dwm269/spatial_lmna/tmp
-# OUTDIR: /workdir/dwm269/spatial_lmna/data/STARsolo
+TMPDIR: /workdir/dwm269/spatial_lmna/tmp
+OUTDIR: /workdir/dwm269/spatial_lmna/data/STARsolo
 
 # TMPDIR: /workdir/dwm269/totalRNA/STRS-HD/tmp
 # OUTDIR: /workdir/dwm269/totalRNA/STRS-HD/data/STARsolo
 
-TMPDIR: /workdir/dwm269/butcher_surgery/tmp
-OUTDIR: /workdir/dwm269/butcher_surgery/data/STARsolo
+# TMPDIR: /workdir/dwm269/butcher_surgery/tmp
+# OUTDIR: /workdir/dwm269/butcher_surgery/data/STARsolo
 
 ########################################################################################################
 # Executables - file paths

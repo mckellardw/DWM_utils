@@ -5,11 +5,18 @@ Preprocessing, alignment, QC, and quantification workflow for Curio Bioscience d
 
 ## Dependencies:
 - `cutadapt` [v3.4](https://cutadapt.readthedocs.io/en/stable/)
-- `fastqc` [vv0.11.8](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+- `fastqc` [v0.11.8](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 - `STAR` [v2.7.10a](https://github.com/alexdobin/STAR)
 - `qualimap` [v2.2.2a](http://qualimap.conesalab.org/)
 - `vsearch` [v2.17.0_linux_x86_64](https://github.com/torognes/vsearch)
 - `BLAST`
+
+## Barcode handling:
+#### STAR
+`0_0_2_-1 3_1_3_6`
+`--soloAdapterSequence TCTTCAGCGTTCCCGAGA`
+`3_7_3_14`
+#### kallisto/bustools
 
 ## Outputs:
 ```
