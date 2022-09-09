@@ -242,11 +242,11 @@ rule removeLinker_R1:
         config['CORES']
     run:
         shell(
-            """
+            f"""
             zcat {input.R1_FQ} | \
-            awk -v s={params.linkerStart} -v S={params.linkerStop} -f {params.script} > {OUTDIR}/{sample}/tmp/{sample}_R1_final.fq
+            awk -v s={params.linkerStart} -v S={params.linkerStop} -f {params.script} > {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_final.fq
 
-            pigz -p{threads} {OUTDIR}/{sample}/tmp/{sample}_R1_final.fq
+            pigz -p{threads} {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_final.fq
             """
         )
 
