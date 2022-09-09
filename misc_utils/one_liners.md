@@ -44,6 +44,15 @@ zcat your.fastq.gz | awk 'BEGIN {FS = "\t" ; OFS = "\n"} {header = $0 ; getline 
 zcat reads.fastq.gz | awk '(NR%4==2)' | sort | uniq
 ```
 
+- Remove a fixed length segment from all reads in a .fastq file
+```
+zcat chicken_D4_D7_sham_R1_final.fq.gz | \
+awk -v s=6 -v S=26 '(FNR-1) % 2 == 0 { name=$1; chr=$2; len=$3; next }
+                    (FNR-2) % 4 == 0 { seq=substr($0,s,S) }
+                                     { print name "." seq, chr, len
+                                       print substr($0,n+1) }'
+```
+
 ## TXG helpers
 - Number of reads per cell/spot barcode (.bam tag `CB`)
  ```
