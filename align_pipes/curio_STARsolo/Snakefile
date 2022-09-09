@@ -184,42 +184,12 @@ rule preTrim_FastQC_R2:
 #         {input.MERGED_R1_FQ} {input.MERGED_R2_FQ} 1> {log}
 #         """
 
-#Additional trimming step, for 2-color Illumina chemistries (NextSeq, etc.)
-# rule trimPolyG_R2:
-#     input:
-#         A_TRIMMED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_Atrimmed.fq.gz',
-#         A_TRIMMED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_Atrimmed.fq.gz'
-#     output:
-#         FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_Gtrimmed.fq.gz'),
-#         FINAL_R2_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R2_Gtrimmed.fq.gz')
-#     params:
-#         CUTADAPT_EXEC = CUTADAPT_EXEC,
-#         THREE_PRIME_R2_POLYG = "G"*100,
-#     threads:
-#         config['CORES']
-#         # min([config['CORES'],8]) # 8 core max based on recommendations from trim_galore authors
-#     log:
-#         log = '{OUTDIR}/{sample}/cutadapt_polyG_report.txt'
-#     conda:
-#         "STARsolo"
-#     shell:
-#         """
-#         {params.CUTADAPT_EXEC} \
-#         --minimum-length 12 \
-#         -A {params.THREE_PRIME_R2_POLYG} \
-#         --pair-filter=any \
-#  		-o {output.FINAL_R1_FQ} \
-#         -p {output.FINAL_R2_FQ} \
-#         --cores {threads} \
-#         {input.A_TRIMMED_R1_FQ} {input.A_TRIMMED_R2_FQ} 1> {log.log}
-#         """
-
 rule cutadapt_R2:
     input:
-        A_TRIMMED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz',
-        A_TRIMMED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
+        TRIMMED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz',
+        TRIMMED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
     output:
-        FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz'),
+        FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_adapterTrim.fq.gz'),
         FINAL_R2_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz')
     params:
         CUTADAPT_EXEC = CUTADAPT_EXEC,
@@ -242,8 +212,8 @@ rule cutadapt_R2:
         --quality-cutoff 20 \
         --overlap 3 \
         --match-read-wildcards \
+        --nextseq-trim=20 \
         -A {params.THREE_PRIME_R2_POLYA} \
-        -A {params.THREE_PRIME_R2_POLYG}X \
         -A {params.THREE_PRIME_R2_TSO} \
         -A {params.THREE_PRIME_R2_NEXTERA} \
         -A {params.THREE_PRIME_R2_rcNEXTERA} \
@@ -253,8 +223,32 @@ rule cutadapt_R2:
  		-o {output.FINAL_R1_FQ} \
         -p {output.FINAL_R2_FQ} \
         --cores {threads} \
-        {input.A_TRIMMED_R1_FQ} {input.A_TRIMMED_R2_FQ} 1> {log.log}
+        {input.TRIMMED_R1_FQ} {input.TRIMMED_R2_FQ} 1> {log.log}
         """
+        # -A {params.THREE_PRIME_R2_POLYG}X \
+
+# R1 trimming to remove the
+## Source: https://unix.stackexchange.com/questions/510164/remove-and-add-sequence-information-at-specific-position-in-a-file
+rule removeLinker_R1:
+    input:
+        R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_adapterTrim.fq.gz'
+    output:
+        FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz')
+    params:
+        script = "scripts/linkerRemove_R1.awk",
+        linkerStart = 9,
+        linkerStop = 26
+    threads:
+        config['CORES']
+    run:
+        shell(
+            """
+            zcat {input.R1_FQ} | \
+            awk -v s={params.linkerStart} -v S={params.linkerStop} -f {params.script} > {OUTDIR}/{sample}/tmp/{sample}_R1_final.fq
+
+            pigz -p{threads} {OUTDIR}/{sample}/tmp/{sample}_R1_final.fq
+            """
+        )
 
 # rule trim_galore:
     # input:
@@ -315,7 +309,7 @@ rule STARsolo_align:
     input:
         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
         FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
-        BB_1 = "{OUTDIR}/{sample}/tmp/whitelist_1.txt",
+        BB_WHITELIST = "{OUTDIR}/{sample}/tmp/whitelist.txt",
         BB_2 = "{OUTDIR}/{sample}/tmp/whitelist_2.txt"
     output:
         SORTEDBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam', #TODO: add temp()
@@ -343,8 +337,8 @@ rule STARsolo_align:
         # print(CHEM_DICT)
         tmp_chemistry = CHEM_DICT[wildcards.sample]
         STAR_REF = REF_DICT[wildcards.sample]
-        BB_WHITELIST = f"{input.BB_1} {input.BB_2}"
-        nBB = sum(1 for line in open(input.BB_1)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
+        # BB_WHITELIST = f"{input.BB_1} {input.BB_2}"
+        nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
 
         SOLOtype = CHEMISTRY_SHEET["STAR.soloType"][tmp_chemistry]
         soloUMIposition = CHEMISTRY_SHEET["STAR.soloUMIposition"][tmp_chemistry]
@@ -374,8 +368,8 @@ rule STARsolo_align:
             --soloType {SOLOtype} \
             --soloUMIposition {soloUMIposition} \
             --soloCBposition {soloCBposition} \
-            --soloCBwhitelist {BB_WHITELIST} \
-            --soloCBmatchWLtype 1MM \
+            --soloCBwhitelist {input.BB_WHITELIST} \
+            --soloCBmatchWLtype 1MM_multi \
             --soloCellFilter TopCells {nBB} \
             --soloUMIdedup 1MM_CR \
             --soloBarcodeReadLength 0 \
