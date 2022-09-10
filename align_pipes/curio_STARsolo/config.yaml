@@ -15,7 +15,7 @@ SAMPLE_SHEET_PATH: ~/DWM_utils/sample_sheets/SS_LKO_Rnd1-sample_sheet.csv
 
 
 # STARsolo parameters
-CORES: 40 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CORES: 20 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 500000000000 # limit in bytes
 
 ## Chemistry details (whitelists, barcode/UMI design, etc.)

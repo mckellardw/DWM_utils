@@ -341,8 +341,8 @@ rule STARsolo_align:
         nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
 
         SOLOtype = CHEMISTRY_SHEET["STAR.soloType"][tmp_chemistry]
-        soloUMIposition = CHEMISTRY_SHEET["STAR.soloUMIposition"][tmp_chemistry]
-        soloCBposition = CHEMISTRY_SHEET["STAR.soloCBposition"][tmp_chemistry]
+        soloUMI = CHEMISTRY_SHEET["STAR.soloUMI"][tmp_chemistry]
+        soloCB = CHEMISTRY_SHEET["STAR.soloCB"][tmp_chemistry]
 
         print("Using up to " + str(params.MEMLIMIT) + " of memory...")
         shell(
@@ -362,12 +362,12 @@ rule STARsolo_align:
             --outReadsUnmapped Fastx \
             --outFilterMultimapNmax 50 \
             --outFilterMismatchNoverLmax 0.05 \
-            --outFilterMatchNmin 16 \
+            --outFilterMatchNmin 12 \
             --outFilterScoreMinOverLread 0 \
             --outFilterMatchNminOverLread 0 \
             --soloType {SOLOtype} \
-            --soloUMIposition {soloUMIposition} \
-            --soloCBposition {soloCBposition} \
+            {soloUMI} \
+            {soloCB} \
             --soloCBwhitelist {input.BB_WHITELIST} \
             --soloCBmatchWLtype 1MM_multi \
             --soloCellFilter TopCells {nBB} \
