@@ -1,4 +1,4 @@
-(FNR-1) % 2 == 0 { name=$1; chr=$2; len=$3; next }
-(FNR-2) % 4 == 0 { seq=substr($0,s,S) }
-                 { print name "." seq, chr, len
-                   print substr($0,n+1) }
+(FNR-1) % 2 == 0 { name=$1; tag=$2; next }
+(FNR-2) % 4 == 0 { substr($0,0,s) substr($0,S) }
+                 { print name tag
+                   print substr($0,0,s) substr($0,S) }
