@@ -64,7 +64,7 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
 ########################################################################################################
 rule all:
     input:
-        # expand('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), #STAR count mats
+        expand('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), #STAR count mats
         expand('{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES), #kallisto count mats
         # expand('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw_feature_bc_matrix_h5.h5', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         expand('{OUTDIR}/{sample}/qualimap/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap | requires deduped input!
@@ -208,7 +208,7 @@ rule cutadapt_R2:
     shell:
         """
         {params.CUTADAPT_EXEC} \
-        --minimum-length 50:16 \
+        --minimum-length 50:10 \
         --quality-cutoff 20 \
         --overlap 3 \
         --match-read-wildcards \
@@ -236,8 +236,8 @@ rule removeLinker_R1:
         FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz')
     params:
         script = "scripts/linkerRemove_R1.awk",
-        linkerStart = 9,
-        linkerStop = 26
+        linkerStart = 8,
+        linkerStop = 27
     threads:
         config['CORES']
     run:
@@ -331,8 +331,6 @@ rule STARsolo_align:
         config['CORES']
     priority:
         42
-    # conda:
-    #     "STARsolo"
     run:
         # print(CHEM_DICT)
         tmp_chemistry = CHEM_DICT[wildcards.sample]
@@ -344,7 +342,6 @@ rule STARsolo_align:
         soloUMI = CHEMISTRY_SHEET["STAR.soloUMI"][tmp_chemistry]
         soloCB = CHEMISTRY_SHEET["STAR.soloCB"][tmp_chemistry]
 
-        print("Using up to " + str(params.MEMLIMIT) + " of memory...")
         shell(
             f"""
             mkdir -p {params.OUTDIR}/{wildcards.sample}/STARsolo
@@ -603,26 +600,27 @@ rule blast_unmapped:
         blastDB = config['BLASTDB'],
         FASTX_COLLAPSER = config['FASTX_COLLAPSER'],
         TMP_FA = '{OUTDIR}/{sample}/Unmapped.out.mate2.fa'
-    # conda:
-    #     "STARsolo"
-    shell:
-        """
-        zcat {input.UNMAPPED2_FQ} | sed -n '1~4s/^@/>/p;2~4p' > {params.TMP_FA}
+    run:
+        shell(
+            f"""
+            zcat {input.UNMAPPED2_FQ} | sed -n '1~4s/^@/>/p;2~4p' > {params.TMP_FA}
 
-        echo "Number of unmapped reads: "
-        grep -c ">" {params.TMP_FA}
+            echo "Number of unmapped reads: "
+            grep -c ">" {params.TMP_FA}
 
-        vsearch --sortbysize {params.TMP_FA} --topn 1000 --output tmp.fa
+            vsearch --sortbysize {params.TMP_FA} --topn 1000 --output tmp.fa
 
-        blastn -db {params.blastDB}/nt \
-        -query tmp.fa \
-        -out {output.BLAST_R2} \
-        -outfmt '6 qseqid sseqid stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore' \
-        -max_target_seqs 5 \
-        -num_threads {threads}
+            blastn -db {params.blastDB}/nt \
+            -query tmp.fa \
+            -out {output.BLAST_R2} \
+            -outfmt '6 qseqid sseqid stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore' \
+            -max_target_seqs 5 \
+            -num_threads {threads}
 
-        rm {params.TMP_FA}
-		"""
+            rm {params.TMP_FA}
+    		"""
+        )
+# mv {OUTDIR}/{wildcards.sample}/Unmapped.out.mate2_blastResults.txt {OUTDIR}/{wildcards.sample}/Unmapped.out.mate2_blastResults.tsv
 
 # cat {input.UNMAPPED1_FQ} | awk '{{if(NR%4==1) {{printf(">%s\n",substr($0,2));}} else if(NR%4==2) print;}}' > {params.TMP_FA}
 
@@ -684,7 +682,6 @@ rule kallisto_align:
 
         KB_X = CHEMISTRY_SHEET["kb.x"][tmp_chemistry]
 
-        print("Using up to " + str(params.MEMLIMIT) + " of memory...")
         shell(
             f"""
             bash scripts/kb.sh {params.OUTDIR}/{wildcards.sample}/kb \
