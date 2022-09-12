@@ -358,7 +358,7 @@ rotateClockwise90N <- function(
     verbose=F
 ){
   
-  for(i in N){
+  for(i in 1:N){
     # grab coordinates
     tmp <- SEU[[reduction]]@cell.embeddings
     
