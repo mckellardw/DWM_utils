@@ -23,7 +23,7 @@ Features <- function(
 # Check gene names for a pattern, using grep
 grepGenes <- function(
   SEU,
-  pattern=NULL, # pattern to look for
+  pattern="", # pattern to look for
   assay=NULL,
   filter.pattern=NULL, # pattern to remove
   sort.by = c("expression","abc"),
@@ -347,6 +347,30 @@ addSpatialLocation <- function(
     key = paste0(reduction.name,"_")
   )
 
+  return(SEU)
+}
+
+# Rotate spatial coordinates clockwise 90 degrees, N times 
+rotateClockwise90N <- function(
+    SEU,
+    reduction = "space",
+    N = 1, # number of times to rotate 90 degrees
+    verbose=F
+){
+  
+  for(i in N){
+    # grab coordinates
+    tmp <- SEU[[reduction]]@cell.embeddings
+    
+    # map (x,y) to (-y,x)
+    SEU[[reduction]]@cell.embeddings[,1] <- -1*tmp[,2]
+    SEU[[reduction]]@cell.embeddings[,2] <- tmp[,1]
+    
+    # translocate coordinates back into 1st quadrant
+    trans.factor = SEU[[reduction]]@cell.embeddings[,2]%>% na.omit()%>%range()%>%sum()%>%abs() # sum of min & max; abs() to make positive
+    SEU[[reduction]]@cell.embeddings[,2] <- SEU[[reduction]]@cell.embeddings[,2] + trans.factor
+  }
+  
   return(SEU)
 }
 
