@@ -357,6 +357,8 @@ rotateClockwise90N <- function(
     N = 1, # number of times to rotate 90 degrees
     verbose=F
 ){
+  require(Seurat)
+  require(dplyr)
   
   for(i in 1:N){
     # grab coordinates
@@ -369,6 +371,46 @@ rotateClockwise90N <- function(
     # translocate coordinates back into 1st quadrant
     trans.factor = SEU[[reduction]]@cell.embeddings[,2]%>% na.omit()%>%range()%>%sum()%>%abs() # sum of min & max; abs() to make positive
     SEU[[reduction]]@cell.embeddings[,2] <- SEU[[reduction]]@cell.embeddings[,2] + trans.factor
+  }
+  
+  return(SEU)
+}
+
+# Remove spots/beads that aren't within D units of another spot/bead
+removeSpatialSinglets <- function(
+    SEU,
+    reduction = "space",
+    K = 1, # minimum number of nearest neighbors within distance D
+    D = NULL, # minimum distance of a nearest neighbor; default is 1/100th of the x-axis range()
+    verbose=F
+){
+  require(Seurat)
+  require(dplyr)
+  
+  if(is.null(D)){
+    D <- SEU[[reduction]]@cell.embeddings%>%na.omit()%>%range()%>%diff()/100
+  }
+  
+  # Find euclidean distance matrix
+  distmat <- as.matrix(dist(SEU[[reduction]]@cell.embeddings, method = "euclidean"))
+  diag(distmat) <- NA # set diagonal to NA, to ignore self-distances
+  
+  # Find spots/beads without a nearest neighbor within D units
+  cells.remove <- apply(
+    distmat,
+    MARGIN = 1,
+    # FUN = function(X) min(X, na.rm = TRUE) >= D
+    FUN = function(X) na.omit(X)%>%subset(subset = X<D)%>%length() < K
+  )
+  
+  # Filter SEU
+  if(length(cells.remove)>0){
+    SEU <- subset(
+      SEU,
+      cells = Cells(SEU)[!cells.remove]
+    )
+  }else{
+    cat("No singlets found!")
   }
   
   return(SEU)
