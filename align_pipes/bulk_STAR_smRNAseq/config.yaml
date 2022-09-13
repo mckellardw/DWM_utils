@@ -1,4 +1,4 @@
-## Configuration for the STARsolo_10x Snakemake workflow.
+## Configuration for the bulk_STAR_smRNAseq Snakemake workflow.
 
 ########################################################################################################
 # Run settings
@@ -11,11 +11,14 @@
 # SAMPLE_SHEET: sample_sheet.csv
 # SAMPLE_SHEET: sample_sheets/Isakova_smRNA-sample_sheet.csv
 # SAMPLE_SHEET: sample_sheets/smC2C-sample_sheet.csv
-SAMPLE_SHEET: sample_sheets/AllClean-Vis_yPAP-sample_sheet.csv
+# SAMPLE_SHEET: sample_sheets/AllClean-Vis_yPAP-sample_sheet.csv
 # SAMPLE_SHEET: sample_sheets/Vis3_yPAP-sample_sheet.csv
+# SAMPLE_SHEET: sample_sheets/SkM_Heart-sample_sheet.csv
+# SAMPLE_SHEET: sample_sheets/snRNAseq_C2C_yPAP-sample_sheet.csv
+SAMPLE_SHEET: sample_sheets/STRS5_smRNA-sample_sheet.csv
 
 # Run parameters
-CORES: 8 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CORES: 12 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 50000000000 # STAR mem limit in bytes
 
 
@@ -28,6 +31,7 @@ OUTDIR: /workdir/dwm269/totalRNA/data/smRNAseq_STAR
 # Executables - file paths
 ########################################################################################################
 STAR_EXEC: /programs/STAR/STAR #biohpc current version of STAR
+CUTADAPT_EXEC: cutadapt
 MIRGE_EXEC: miRge3.0
 FASTQC_EXEC: fastqc
 BAM2SPLITBW: /home/dwm269/DWM_utils/seq_utils/bam2splitBigWig.sh #Custom function in DWM_utils that splits a bam file by strand and converts it into bigwig format
@@ -38,8 +42,8 @@ BLASTDB: /shared_data/genome_db/BLAST_NCBI # path to where the nt BLAST database
 # Resources - file paths
 ########################################################################################################
 ### Mouse ###
-STAR_REF: /workdir/dwm269/genomes/mm39_all/GRCm39_STAR_GENCODE_M27 # path to STAR-formatted reference genome
-GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M27/gencode.vM27.chr_patch_hapl_scaff.annotation.gtf
+STAR_REF: /workdir/dwm269/genomes/mm39_all/GRCm39_STAR_GENCODE_M28 # path to STAR-formatted reference genome
+GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M28/gencode.vM28.chr_patch_hapl_scaff.annotation.gtf
 SPECIES: mouse # species passed to mirge3.0
 MIRGE_LIB: /home/dwm269/usr/bin/miRge3_Lib
 
