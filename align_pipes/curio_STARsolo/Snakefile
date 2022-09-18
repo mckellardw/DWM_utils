@@ -237,14 +237,15 @@ rule removeLinker_R1:
     params:
         script = "scripts/linkerRemove_R1.awk",
         CB1end = 8,
-        CB2start = 27
+        CB2start = 27,
+        CB2end = 42
     threads:
         config['CORES']
     run:
         shell(
             f"""
             zcat {input.R1_FQ} | \
-            awk -v s={params.CB1end} -v S={params.CB2start} -f {params.script} > {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_final.fq
+            awk -v s={params.CB1end} -v S={params.CB2start} -v E={params.CB2end} -f {params.script} > {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_final.fq
 
             pigz -p{threads} {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_final.fq
             """

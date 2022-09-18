@@ -27,7 +27,6 @@ Preprocessing, alignment, QC, and quantification workflow for Curio Bioscience d
 --soloCBlen 14
 ```
 
-
 #### kallisto/bustools
 - Barcode & UMI paramters for `kallisto bus`
 ```
