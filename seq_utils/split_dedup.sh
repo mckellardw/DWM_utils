@@ -1,11 +1,12 @@
 #!/usr/bin/bash
-#TODO
+# split_dedup.sh - a bash script that sesuplicates TXG bam files, aligned with STARsolo
+#                - deduplicates chr-by-chr, to reduce run time and memory requirements
 # Usage:
 # bash chr_split_dedup.sh /path/to/file.bam /path/to/whitelist num_cores /path/to/output/directory file.LOG
 
 # bash /home/dwm269/DWM_utils/seq_utils/chr_split_dedup.sh ds.bam /workdir/dwm269/totalRNA/STRS-HD/data/STARsolo/SH2A/tmp/whitelist.txt 24 ./OUTPUT_DEDUP DEDUP.LOG
 
-# chr_split_dedup (v1.0) - input a .bam file, output the deduplicated .bam file
+# chr_split_dedup (v1.0) - input a .bam file, output the deduplicated .bam file in OUTDIR
 
 #TODO: python script instead of bash to make parallelization a bit easier?
 
