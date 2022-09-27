@@ -1,11 +1,13 @@
 # seurat_helpers/
 #### Wrapper/helper functions written to smooth out Seurat pipelines... See [this wonderful website](https://satijalab.org/seurat/index.html) from the Satija Lab to learn more about `Seurat`!
 
-## **seutils.R** (seurat utils)
+# **seutils.R** (seurat utils)
 `Seurat` utility functions, to make your life easier.
 
+## Generic Seurat utils
+
 #### `Features()`
-Grab feature names from any `Assay` within a `Seurat` object - analogous to `Seurat::Cells()`
+Quickly grab feature names from any `Assay` within a `Seurat` object - analogous to `Seurat::Cells()`
 
 #### `grepGene()`
 Quick function to look for genes in a `Seurat` object that match a certain pattern. Can also set a `filter.pattern` to exclude genes which contain the string. Built on `grep` and `Seurat`
@@ -23,9 +25,24 @@ Quickly collapse multimapper genes in a `Seurat` assay (non-unique features, mar
 Generic single-cell pipeline, based on [this vignette](https://satijalab.org/seurat/articles/pbmc3k_tutorial.html) from the Satija Lab
 
 #### `AddCellTypeIdents()`
+Add cell type labels given a clustering output
+
+## Single-cell
+TODO
+
+## Spatial tools
+#### `addSpatialLocation()`
+Add spatial location for each bead/spot within a Seurat object. Written to work with the whitelists from 10x Genomics (for Visium) and Curio Biosciences (for Seeker/SlideSeq)
+
+#### `removeSpatialSinglets()`
+Strategy to remove singlets based on spatial position/nearest neighbors - filters out beads/spots with fewer than `K` neighbors with `D` distance units
+
+#### `rotateClockwise90N()`
+Roteate the spatial embedding of a sample clockwise, 90 degrees, `N` times (i.e. N=2 to rotate 180 degrees clockwise). Useful if you have Visium/SlideSeq samples that were sectioned in different orientations.
 
 
-## **seuplots.R** (seurat plots)
+
+# **seuplots.R** (seurat plots)
 Additional plots not included in Seurat including
 
 #### `visListPlot()`
