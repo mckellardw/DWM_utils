@@ -254,7 +254,7 @@ visListPlot <- function(
   colormap="viridis", # either a viridis option, a vector of colors, or a list of options corresponding to `features`
   colormap.direction=1,
   colormap.same.scale=F, #whether (T) or not (F) to set all features to the same colormap scale
-  na.value=gray(0.69), # color for na.value (spot where gene is not detected)
+  na.value=gray(0.85), # color for na.value (spot where gene is not detected)
   min.value=10^-100, #minimum value use to label "na" spots
   verbose=FALSE
 ){

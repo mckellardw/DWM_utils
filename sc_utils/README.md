@@ -32,8 +32,8 @@ Additional plots not included in Seurat including
 Wrapper function for neatly plotting multiple Visium objects and multiple features into a grid. Input is a `list()` of `Seurat` objects. Includes automatic color scaling and lots of options for customization. Built on `patchwork`. Combine with `coord_fixed()` to maintain true spatial coordinates.
 ```
 visListPlot <- function(
-  seu.list,
-  features=NULL,
+  seu.list, # list of Seurat objects
+  features=NULL, # genes/metadata entries/etc to plot
   alt.titles=NULL, # alternative titles for genes/features being passed
   sample.titles=NULL, # Sample IDs (y-axis labels)
   assay='Spatial',
@@ -50,10 +50,16 @@ visListPlot <- function(
   colormap="viridis", # either a viridis option, a vector of colors, or a list of options corresponding to `features`
   colormap.direction=1,
   colormap.same.scale=F, #whether (T) or not (F) to set all features to the same colormap scale
-  na.value=gray(0.69), # color for na.value (spot where gene is not detected)
+  na.value=gray(0.85), # color for na.value (spot where gene is not detected)
   verbose=FALSE
 )
 ```
+**Usage notes on `visListPlot()`:**
+- Looks for the spatial position in the `reduction` passed (Check `SEU@reductions`), which means this also works with PCA/UMAP/PHATE/etc embeddings!
+- Only works with **continuous** variables for now (i.e. gene expression, nCounts, deconvolution estimates) - does NOT work with cluster IDs
+- Keeps the same color scale for all samples in each feature; use `colormap.same.scale=T` to force the same color scale across all samples AND features (i.e, when working with scaled gene expression values)
+- The `na.value` is the color used for cells/spots/beads where the feature value is either missing or `NA`. I recommend using the default light gray option (`gray(0.85)`)
+
 
 #### `visCoMap()`
 Plot co-expression of any two genes/features, where "co-expression" can be abstracted to an generic function (default is just `prod`, to see expression of Gene_A times expression of Gene_B). Built on top of visListPlot(), so it also takes a list of `Seurat` objects.
