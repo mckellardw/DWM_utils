@@ -19,7 +19,7 @@ Convert a list of ensembl IDs to gene symbols. Compatible with outputs from `bio
 Calculate how many principal components account for X% of the variance.
 
 #### `collapseMultimappers()`
-Quickly collapse multimapper genes in a `Seurat` assay (non-unique features, marked by a "." in the feature name)
+Quickly collapse multimapper genes in a `Seurat` assay (non-unique features, marked by a "." in the feature name). Note, the literal regex used is `\\.`
 
 #### `seuPreProcess()`
 Generic single-cell pipeline, based on [this vignette](https://satijalab.org/seurat/articles/pbmc3k_tutorial.html) from the Satija Lab
