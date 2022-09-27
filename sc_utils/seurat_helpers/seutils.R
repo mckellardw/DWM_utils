@@ -108,6 +108,7 @@ ens2gene <- function(
   biomart.info=NULL, # biomaRt database
   ens.colname="ensembl_gene_id",
   gene.colname="mgi_symbol",
+  min.cells,
   ncores=1,
   force.unique=F, # switch to make gene names unique (adds ".1", ".2", etc.)
   verbose=F
@@ -199,13 +200,115 @@ ens2gene <- function(
 }
 
 
+# Add a new assay from Market Matrix (.mtx) file to a Seurat object 
+addNewAssayMtx <- function(
+  SEU,
+  assay=NULL,
+  mtx=NULL,
+  cells=NULL,
+  features=NULL,
+  current.cells=T, #whether to only add counts for current cells/barcodes in the Seurat object
+  mtx.transpose=T,
+  feature.column=1,
+  min.cells=1, # feature filter for CreateAssayObject()
+  verbose=F
+){
+  # arg checks
+  if(is.null(mtx)){
+    message("Need to pass mtx filepath!")
+    return(SEU)
+  }else if(is.null(cells)){
+    message("Need to pass cells filepath!")
+    return(SEU)
+  }else if(is.null(features)){
+    message("Need to pass features filepath!")
+    return(SEU)
+  }
+  
+  # lib requirements
+  require(Seurat)
+  
+  # read mat
+  tmp.mat <- ReadMtx(
+    mtx = mtx,
+    cells = cells,
+    features = features,
+    feature.column = feature.column,
+    mtx.transpose = mtx.transpose
+  ) 
+  
+  if(current.cells){
+    tmp.mat <- tmp.mat[,Cells(SEU)]
+  }else{
+    message("Have not implemented current.cells=F yet!")
+    tmp.mat <- tmp.mat[,Cells(SEU)]
+  }
+  
+  SEU[[assay]] <- CreateAssayObject(
+    counts = tmp.mat,
+    min.cells = min.cells
+  )
+  
+  return(SEU)
+}
+
+# Change feature names in an Assay in a Seurat object
+changeAssayNames <- function(
+  SEU,
+  assay=NULL,
+  new.features=NULL,
+  verbose=F
+){
+  # lib requirements
+  require(Seurat)
+  
+  # arg checks
+  if(is.null(assay)){
+    message("Need an assay to change!")
+    return(SEU)
+  }else if(is.null(new.features)){
+    message("Need new feature names!")
+    return(SEU)
+  }
+  
+  # check feature lists to ensure lengths are the same
+  old.features <- Features(
+    SEU,
+    assay=assay
+  )
+  
+  if(length(new.features)!=length(old.features)){
+    message("Feature list is the wrong length!")
+    if(verbose){
+      cat(paste0("Trying to replace ", length(old.features), " features with ", length(new.features), "!"))
+    }
+  }
+  
+  if(verbose){
+    cat(paste0("Warning: removing normalized and scaled values if they were previously computed!\n"))
+  }
+  
+  counts.mat <- GetAssayData(
+    SEU, 
+    assay=assay, 
+    slot = "counts"
+  )
+  rownames(counts.mat) <- new.features
+  
+  new.assay <- CreateAssayObject(
+    counts = counts.mat
+  )
+  
+  return(SEU)
+}
+
 # Collapse cell/nuclei/spot counts for multimapped genes - these are features with a period ("\\.") in their name
 #TODO: parallelize!
 collapseMultimappers <- function(
-    SEU,
-    assay=NULL,
-    new.assay.name=NULL,
-    verbose=F
+  SEU,
+  assay=NULL,
+  new.assay.name=NULL,
+  verbose=F
 ){
 
   if(is.null(new.assay.name)){
