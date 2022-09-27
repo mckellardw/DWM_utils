@@ -5,9 +5,6 @@
 ## align_pipes
 Snakemake workflows for common alignment tasks
 
-## conda_ymls
-Exported conda environments which can be used to set up an environment for a variety of analyses.
-
 ## plotting_utils
 Themes and color palettes for plotting (focused on single-cell data visualization, of course)
 
