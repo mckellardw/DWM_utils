@@ -208,9 +208,17 @@ addNewAssayMtx <- function(
   cells=NULL,
   features=NULL,
   current.cells=T, #whether to only add counts for current cells/barcodes in the Seurat object
-  mtx.transpose=T,
-  feature.column=1,
-  min.cells=1, # feature filter for CreateAssayObject()
+  
+  # ReadMtx() params
+  cell.column = 1,
+  feature.column=2,
+  cell.sep = "\t",
+  feature.sep = "\t",
+  mtx.transpose=F,
+  
+  # CreateAssayObject() params
+  min.cells=1, 
+  
   verbose=F
 ){
   # arg checks
@@ -237,10 +245,51 @@ addNewAssayMtx <- function(
     mtx.transpose = mtx.transpose
   ) 
   
+  # get cell list for output matrix
+  keep.cells <- intersect(Cells(SEU), colnames(tmp.mat))
+  if(sum(Cells(SEU) %in% colnames(tmp.mat))==0){
+    message("Cells not found in the new count matrix!")
+    return(SEU)
+  }else{
+    if(verbose){
+      cat(paste0(
+        length(keep.cells)," out of ",length(Cells(SEU)), " cells found in new count matrix.\n"
+      ))
+    }
+  }
+  
   if(current.cells){
-    tmp.mat <- tmp.mat[,Cells(SEU)]
+    tmp.mat <- tmp.mat[,keep.cells]
   }else{
     message("Have not implemented current.cells=F yet!")
+    tmp.mat <- tmp.mat[,keep.cells]
+  }
+  
+  # Add zeroes for any cells not found in the new matrix
+  if(length(Cells(SEU)) > length(keep.cells)){
+    num.zeroes <- length(Cells(SEU)) - length(keep.cells)
+    missing.cells <- Cells(SEU)[!Cells(SEU) %in% keep.cells]
+    
+    if(verbose){
+      cat(paste0("Adding zeroes for ",num.zeroes," barcodes not found in the Seurat object...\n"))
+    }
+    
+    # Add zeroes to the matrix for missing cell barcodes
+    zero.mat <- matrix(
+      0,
+      nrow=nrow(tmp.mat),
+      ncol=num.zeroes,
+      dimname = list(
+        rownames(tmp.mat),
+        missing.cells
+      ) 
+    )
+    tmp.mat <- cbind(
+      tmp.mat,
+      zero.mat
+    )
+    
+    # Re-order matrix to match the input Seurat object
     tmp.mat <- tmp.mat[,Cells(SEU)]
   }
   
@@ -295,7 +344,7 @@ changeAssayNames <- function(
   )
   rownames(counts.mat) <- new.features
   
-  new.assay <- CreateAssayObject(
+  SEU[[assay]] <- CreateAssayObject(
     counts = counts.mat
   )
   
