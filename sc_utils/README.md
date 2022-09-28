@@ -1,10 +1,10 @@
 # seurat_helpers/
 #### Wrapper/helper functions written to smooth out Seurat pipelines... See [this wonderful website](https://satijalab.org/seurat/index.html) from the Satija Lab to learn more about `Seurat`!
 
-# **seutils.R** (seurat utils)
+## **seutils.R** (seurat utils)
 `Seurat` utility functions, to make your life easier.
 
-## Generic Seurat utils
+### Generic Seurat utils
 
 #### `Features()`
 Quickly grab feature names from any `Assay` within a `Seurat` object - analogous to `Seurat::Cells()`
@@ -27,10 +27,8 @@ Generic single-cell pipeline, based on [this vignette](https://satijalab.org/seu
 #### `AddCellTypeIdents()`
 Add cell type labels given a clustering output
 
-## Single-cell
-TODO
 
-## Spatial tools
+### Spatial tools
 #### `addSpatialLocation()`
 Add spatial location for each bead/spot within a Seurat object. Written to work with the whitelists from 10x Genomics (for Visium) and Curio Biosciences (for Seeker/SlideSeq)
 
@@ -41,8 +39,10 @@ Strategy to remove singlets based on spatial position/nearest neighbors - filter
 Roteate the spatial embedding of a sample clockwise, 90 degrees, `N` times (i.e. N=2 to rotate 180 degrees clockwise). Useful if you have Visium/SlideSeq samples that were sectioned in different orientations.
 
 
+### Single-cell
+TODO
 
-# **seuplots.R** (seurat plots)
+## **seuplots.R** (seurat plots)
 Additional plots not included in Seurat including
 
 #### `visListPlot()`
@@ -110,7 +110,18 @@ visCoMap <- function(
 - Volcano plots (ggvolcano_v2)
 - Silhouette plot
 
-## `DWM_DoubletFinder_v1.R`
+### `DWM_DoubletFinder_v1.R`
 Has not been used in a while, *user beware*.
 
 Partially re-written `DoubletFinder` functions with added functionalities like naming the output metadata columns, `DoubletFinder` in integrated reduced dimensional space, etc.
+
+
+# `scanpy_helpers/`
+## `scantils`
+#### `npcs()`
+
+#### `reorder_reduction()`
+
+## `scanplots`
+
+#### `knee_plot()`
