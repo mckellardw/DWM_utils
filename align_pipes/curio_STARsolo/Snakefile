@@ -72,7 +72,7 @@ rule all:
         # expand('{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs
         # expand('{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out_merged.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), #
         expand('{OUTDIR}/{sample}/preTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # raw R2 fastQC results
-        expand('{OUTDIR}/{sample}/postTrim_fastqc_R2_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), # adapter/polyA/ployG-trimmed R2 fastQC results
+        expand('{OUTDIR}/{sample}/postTrim_fastqc_{READ}_out', OUTDIR=config['OUTDIR'], sample=SAMPLES, READ=["R1","R2"]), # adapter/polyA/ployG-trimmed R1/R2 fastQC results
         expand('{OUTDIR}/{sample}/cutadapt.log', OUTDIR=config['OUTDIR'], sample=SAMPLES),
         expand('{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES), #non-deduplicated .bam; used for saturation estimation
         expand('{OUTDIR}/{sample}/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
@@ -134,11 +134,12 @@ rule preTrim_FastQC_R2:
     input:
         MERGED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{sample}/preTrim_fastqc_R2_out'),
-        # fastqcReport = ''
+        fastqcDir = directory('{OUTDIR}/{sample}/preTrim_fastqc_R2_out')
+    params:
+        adapters = config['FASTQC_ADAPTERS']
     threads:
-        config['CORES']
-        # min([config['CORES'],8]) # 8 core max based on recommendations from trim_galore authors
+        # config['CORES']
+        min([config['CORES'],8]) # 8 core max
     shell:
         """
         mkdir -p {output.fastqcDir}
@@ -147,43 +148,11 @@ rule preTrim_FastQC_R2:
         fastqc \
         --outdir {output.fastqcDir} \
         --threads {threads} \
-        -a /home/dwm269/DWM_utils/align_pipes/curio_kallisto/resources/fastqc_adapters.txt \
+        -a {params.adapters} \
         {input.MERGED_R2_FQ}
         """
 
 # TSO & polyA trimming
-# rule trimPolyA_R2:
-#     input:
-#         MERGED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz',
-#         MERGED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
-#     output:
-#         A_TRIMMED_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_Atrimmed.fq.gz'),
-#         A_TRIMMED_R2_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R2_Atrimmed.fq.gz')
-#     params:
-#         CUTADAPT_EXEC = CUTADAPT_EXEC,
-#         THREE_PRIME_R2_POLYA = "A"*100,
-#         # FIVE_PRIME_R2 = "CCCATTCACTCTGCGTTGATACCACTGCTT" #10x TSO sequence
-#         # FIVE_PRIME_R2 = "TTCGTCACCATAGTTGCGTCTCATGTACCC" #rev 10x TSO sequence
-#         FIVE_PRIME_R2 = "AAGCTGGTATCAACGCAGAGTGAATGGG" # SLideSeq TSO
-#     threads:
-#         config['CORES']
-#         # min([config['CORES'],8]) # 8 core max based on recommendations from trim_galore authors
-#     log:
-#         '{OUTDIR}/{sample}/cutadapt_polyA_report.txt'
-#     conda:
-#         "STARsolo"
-#     shell:
-#         """
-#         {params.CUTADAPT_EXEC} \
-#         --minimum-length 12 \
-#         -A {params.THREE_PRIME_R2_POLYA} \
-#         --pair-filter=any \
-#  		-o {output.A_TRIMMED_R1_FQ} \
-#         -p {output.A_TRIMMED_R2_FQ} \
-#         --cores {threads} \
-#         {input.MERGED_R1_FQ} {input.MERGED_R2_FQ} 1> {log}
-#         """
-
 rule cutadapt_R2:
     input:
         TRIMMED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz',
@@ -251,31 +220,27 @@ rule removeLinker_R1:
             """
         )
 
-# rule trim_galore:
-    # input:
-    #     CUT_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
-    #     CUT_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
-    # output:
-    #     FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_val_1.fq.gz',
-    #     FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_val_2.fq.gz',
-    #     TRIM_REPORT = '{OUTDIR}/{sample}/trim_galore_report.txt'
-    # params:
-    #     OUTDIR = '{OUTDIR}/{sample}/tmp',
-    #     TG_EXEC = config["TRIMGALORE_EXEC"]
-    # threads:
-    #     config['CORES']
-    # shell:
-    #     """
-    #     {params.TG_EXEC} \
-    #     --paired \
-    #     --length 12 \
-    #     --quality 30 \
-    #     -o {params.OUTDIR} \
-    #     --cores {threads} \
-    #     {input.CUT_R1_FQ} {input.CUT_R2_FQ}
-    #
-    #     mv {params.OUTDIR}/{wildcards.sample}_R2_final.fq.gz_trimming_report.txt {output.TRIM_REPORT}
-    #     """
+rule postTrim_FastQC_R1:
+    input:
+        FINAL_R1_FQ =  '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz'
+    output:
+        fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R1_out'),
+        # fastqcReport = ''
+    threads:
+        # config['CORES']
+        min([config['CORES'],8]) # 8 core max
+    params:
+        adapters = config['FASTQC_ADAPTERS']
+    shell:
+        """
+        mkdir -p {output.fastqcDir}
+
+        fastqc \
+        --outdir {output.fastqcDir} \
+        --threads {threads} \
+        -a {params.adapters} \
+        {input.FINAL_R1_FQ}
+        """
 
 rule postTrim_FastQC_R2:
     input:
@@ -284,19 +249,18 @@ rule postTrim_FastQC_R2:
         fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R2_out'),
         # fastqcReport = ''
     threads:
-        config['CORES']
-        # min([config['CORES'],8]) # 8 core max based on recommendations from trim_galore authors
-    conda:
-        "STARsolo"
+        # config['CORES']
+        min([config['CORES'],8]) # 8 core max
+    params:
+        adapters = config['FASTQC_ADAPTERS']
     shell:
         """
         mkdir -p {output.fastqcDir}
-        cd {output.fastqcDir}
 
         fastqc \
         --outdir {output.fastqcDir} \
         --threads {threads} \
-        -a /home/dwm269/DWM_utils/align_pipes/curio_kallisto/resources/fastqc_adapters.txt \
+        -a {params.adapters} \
         {input.FINAL_R2_FQ}
         """
 
@@ -369,7 +333,8 @@ rule STARsolo_align:
             --soloCBwhitelist {input.BB_WHITELIST} \
             --soloCBmatchWLtype 1MM_multi \
             --soloCellFilter TopCells {nBB} \
-            --soloUMIdedup 1MM_Directional_UMItools \
+            --soloUMIfiltering MultiGeneUMI CR \
+            --soloUMIdedup 1MM_CR \
             --soloBarcodeReadLength 0 \
             --soloFeatures Gene GeneFull Velocyto \
             --soloMultiMappers EM
