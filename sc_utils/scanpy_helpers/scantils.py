@@ -6,15 +6,15 @@ def npcs(
   var_perc=0.95,
   reduction="pca"
 ):
-    import numpy as np
-    get_var = lambda i: np.var(ADATA.obsm[reduction][:,i])
+    from numpy import sum, var
+    get_var = lambda i: var(ADATA.obsm[reduction][:,i])
 
     if ADATA.obsm[reduction] is None:
-        print(f"Reduction {reduction}, not found!")
+        print(f"Reduction '{reduction}', not found!")
         return None
     else:
         var_tmp = [get_var(i) for i in list(range(0,ADATA.obsm[reduction].shape[1]))]
-        var_cut = var_perc * np.sum(var_tmp)
+        var_cut = var_perc * sum(var_tmp)
         n_pcs = 0
         var_sum = 0
         while var_sum<var_cut and n_pcs<ADATA.obsm[reduction].shape[1]-1:
@@ -30,10 +30,16 @@ def reorder_reduction(
     reduction="pca",
     verbose=False
 ):
-    get_var = lambda i: np.var(ADATA.obsm[reduction][:,i])
-    var_tmp = [get_var(i) for i in list(range(0,ADATA.obsm[reduction].shape[1]))]
-    print("Harmony PC variance:")
-    print(var_tmp)
+    from numpy import var, argsort
 
-    pc_order = np.argsort(var_tmp)[::-1]
-    ADATA.obsm[reduction] = ADATA.obsm[reduction][:,pc_order]
+    if reduction in ADATA.obsm:
+        get_var = lambda i: var(ADATA.obsm[reduction][:,i])
+        var_tmp = [get_var(i) for i in list(range(0,ADATA.obsm[reduction].shape[1]))]
+        if verbose:
+            print("Reduction variance by dimension:")
+            print(var_tmp)
+
+        pc_order = argsort(var_tmp)[::-1]
+        ADATA.obsm[reduction] = ADATA.obsm[reduction][:,pc_order]
+    else:
+        print(f"The reduction '{reduction}' was not found...")
