@@ -1,4 +1,4 @@
-# `scanpy` tips and code snippets
+# `scanpy_helpers` tips and code snippets
 
 ## Preprocessing
 #TODO
