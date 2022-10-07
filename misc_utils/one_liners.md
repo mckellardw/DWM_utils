@@ -1,7 +1,20 @@
 # One-liners: useful code snippets
+## Table of Contents
+<!---toc start-->
+  * [Other one-liner resources](#Other one-liner resources)
+  * [General utils](#General utils)
+  * [`awk`, `sed`, etc.](#`awk`, `sed`, etc.)
+  * [bam wrangling](#bam wrangling)
+  * [fastq finagling](#fastq finagling)
+  * [gtf finagling](#gtf finagling)
+<!---toc end-->
+
+## Other one-liner resources
+Other people's one-liners that are more useful...
+- Stephen Turner [[link](https://github.com/stephenturner/oneliners#etc)]
 
 
-## Linux utils
+## General utils
 
 - Check disk usage in all sub-directories (of current directory), then sort outputs
 ```
@@ -46,14 +59,14 @@ zcat reads.fastq.gz | awk '(NR%4==2)' | sort | uniq
 
 - Remove a fixed length segment from all reads in a .fastq file
 ```
-zcat chicken_D4_D7_sham_R1_final.fq.gz | \
+zcat file.fastq.gz | \
 awk -v s=6 -v S=26 '(FNR-1) % 2 == 0 { name=$1; chr=$2; len=$3; next }
                     (FNR-2) % 4 == 0 { seq=substr($0,s,S) }
                                      { print name "." seq, chr, len
                                        print substr($0,n+1) }'
 ```
 
-## TXG helpers
+## bam wrangling
 - Number of reads per cell/spot barcode (.bam tag `CB`)
  ```
 samtools view sub.bam | grep CB:Z: | sed 's/.*CB:Z:\([ACGT]*\).*/\1/' | sort | uniq -c > reads_per_umi.txt
@@ -64,13 +77,12 @@ samtools view sub.bam | grep CB:Z: | sed 's/.*CB:Z:\([ACGT]*\).*/\1/' | sort | u
  samtools view sub.bam | grep CR:Z: | sed 's/.*CR:Z:\([ACGT]*\).*/\1/' | sort | uniq -c > reads_per_umi.txt
  ```
 
-## samtools
 - Subset bam by strand
 ```
 samtools view -F 0x10 -b file.bam > file_pos.bam
 ```
 
-## .fastq finagling
+## fastq finagling
 
 - Get top 1000 most abundant sequences from a file.fastq, output as an out.fa
 ```
