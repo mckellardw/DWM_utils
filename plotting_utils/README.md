@@ -31,11 +31,12 @@ scThemes$scatter
 ## **McKolors**
 Just a compiled list of color palettes that I use. Includes palettes from R and python packages, plus some other random ones. Sources below.
 #### Color palette sources & resources
-- `seaborn` - [link](https://seaborn.pydata.org/tutorial/color_palettes.html)
-- `pals` - [link](https://cran.r-project.org/web/packages/pals/vignettes/pals_examples.html)
-- `ggsci` -  [link](https://cran.r-project.org/web/packages/ggsci/vignettes/ggsci.html)
-- `MetBrewer` - [link](https://github.com/BlakeRMills/MetBrewer)
-- `wesanderson` - [link](https://github.com/karthik/wesanderson)
+- `scico` - [[link](https://github.com/thomasp85/scico)]
+- `seaborn` - [[link](https://seaborn.pydata.org/tutorial/color_palettes.html)]
+- `pals` - [[link](https://cran.r-project.org/web/packages/pals/vignettes/pals_examples.html)]
+- `ggsci` -  [[link](https://cran.r-project.org/web/packages/ggsci/vignettes/ggsci.html)]
+- `MetBrewer` - [[link](https://github.com/BlakeRMills/MetBrewer)]
+- `wesanderson` - [[link](https://github.com/karthik/wesanderson)]
 
 #### To-Add:
 - National Parks Palettes: https://github.com/kevinsblake/NatParksPalettes
