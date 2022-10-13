@@ -1,6 +1,6 @@
 ########################################################################################################
-# 10x_STARsolo
-#   Snakemake workflow to use STARsolo to align and quantify 10x Chromium datasets
+# curio_STARsolo
+#   Snakemake workflow to align and quantify Seeker/SlideSeq datasets from Curio Biosciences
 #   v1.0
 #   Written by David McKellar
 ########################################################################################################
