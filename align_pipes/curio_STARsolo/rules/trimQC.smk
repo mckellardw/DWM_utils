@@ -1,4 +1,6 @@
-# Read trimming & QC rules
+#############################################
+## Read trimming & QC rules
+#############################################
 
 # fastqc before trimming
 rule preTrim_FastQC_R2:
@@ -67,7 +69,7 @@ rule cutadapt_R2:
         """
         # -A {params.THREE_PRIME_R2_POLYG}X \
 
-# R1 trimming to remove the
+# R1 trimming to remove the linker sequence
 ## Source: https://unix.stackexchange.com/questions/510164/remove-and-add-sequence-information-at-specific-position-in-a-file
 rule removeLinker_R1:
     input:
@@ -91,6 +93,7 @@ rule removeLinker_R1:
             """
         )
 
+# fastqc on R1 after linker removal & R2 trimming/filtering
 rule postTrim_FastQC_R1:
     input:
         FINAL_R1_FQ =  '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz'
@@ -113,6 +116,7 @@ rule postTrim_FastQC_R1:
         {input.FINAL_R1_FQ}
         """
 
+# fastqc after trimming on R2
 rule postTrim_FastQC_R2:
     input:
         FINAL_R2_FQ =  '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
