@@ -601,7 +601,7 @@ npcs <- function(
 
 # Preprocessing wrapper function
 #   (1) NormalizeData(SEU) %>% FindVariableFeatures() %>% ScaleData() %>% RunPCA()
-#   (2) FindNeighbors %>% RunUMAP, FindClusters
+#   (2) FindNeighbors, RunUMAP (optional), FindClusters (optional)
 seuPreProcess <- function(
   SEU=NULL,
   assay='RNA',
@@ -622,7 +622,6 @@ seuPreProcess <- function(
   # NormalizeData(SEU) %>% FindVariableFeatures() %>% ScaleData() %>% RunPCA()
   pca.name = paste0('pca_', assay)
   pca.key = paste0(pca.name,'_')
-  umap.name = paste0('umap_', assay)
 
   SEU = NormalizeData(
     SEU
@@ -657,6 +656,8 @@ seuPreProcess <- function(
   )
   
   if(run.umap){
+    umap.name = paste0('umap_', assay)
+    
     SEU <- RunUMAP(
       SEU,
       reduction = pca.name,
@@ -674,9 +675,9 @@ seuPreProcess <- function(
       SEU <- FindClusters(
         object = SEU,
         resolution = tmp.res,
+        graph.name = paste0(assay,"_snn"),
         verbose = verbose
       )
-      SEU[[paste0(assay,'_res_',tmp.res)]] <- as.numeric(SEU@active.ident)
     }
   }
   
