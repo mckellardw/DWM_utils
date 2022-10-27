@@ -29,6 +29,9 @@ grepGenes <- function(
   sort.by = c("expression","abc"),
   verbose=T
 ){
+  require(Seurat)
+  require(dplyr)
+  
   if(is.null(pattern)){
     if(verbose){message("Need a pattern to look for!")}
     return(NULL)
@@ -604,6 +607,7 @@ seuPreProcess <- function(
   assay='RNA',
   n.pcs=50,
   res=0.8,
+  run.umap=F,
   verbose=F
 ){
   if(is.null(SEU)){
@@ -637,36 +641,47 @@ seuPreProcess <- function(
     npcs = n.pcs
   )
 
-  #find pcs to use
+  #find num pcs to use (for NN graph, UMAP etc)
   n.pcs.use = npcs(
     SEU=SEU,
     var.total = 0.95,
     reduction = pca.name
   )
 
-  # FindNeighbors %>% RunUMAP, FindClusters
   SEU <- FindNeighbors(
     SEU,
     reduction = pca.name,
     dims = 1:n.pcs.use,
     force.recalc = TRUE,
     verbose = verbose
-  ) %>% RunUMAP(
-    reduction = pca.name,
-    dims = 1:n.pcs.use,
-    verbose = verbose,
-    reduction.name=umap.name
   )
-
-  SEU@reductions[[umap.name]]@misc$n.pcs.used <- n.pcs.use
-
-  SEU <- FindClusters(
-    object = SEU,
-    resolution = res,
-    verbose = verbose
-  )
-  # SEU[[paste0('RNA_res.',res)]] <- as.numeric(SEU@active.ident)
+  
+  if(run.umap){
+    SEU <- RunUMAP(
+      SEU,
+      reduction = pca.name,
+      dims = 1:n.pcs.use,
+      verbose = verbose,
+      reduction.name=umap.name
+    )
+    SEU@reductions[[umap.name]]@misc$n.pcs.used <- n.pcs.use
+  }
+  
+  if(length(res)<1){
+    message("Need resolution parameter to run clustering...\n Returning Seurat object without clusters.")
+  }else{
+    for(tmp.res in res){
+      SEU <- FindClusters(
+        object = SEU,
+        resolution = tmp.res,
+        verbose = verbose
+      )
+      SEU[[paste0(assay,'_res_',tmp.res)]] <- as.numeric(SEU@active.ident)
+    }
+  }
+  
   gc()
+  
   return(
     tryCatch(
       SEU,
