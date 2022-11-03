@@ -9,19 +9,19 @@
 #       --readFilesIn Read2_Lane1.fastq.gz,Read2_Lane2.fastq.gz,Read2_Lane3.fastq.gz  Read1_Lane1.fastq.gz,Read1_Lane2.fastq.gz,Read1_Lane3.fastq.gz
 
 ## ~~~~~ Visium sample sheets ~~~~~
-# SAMPLE_SHEET_PATH: /home/dwm269/DWM_utils/sample_sheets/All-Vis_HeartREO-sample_sheet.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/DWM_utils/sample_sheets/AllClean-Vis_yPAP-sample_sheet.csv
-# SAMPLE_SHEET_PATH: ~/DWM_utils/sample_sheets/All-Vis_SkM-sample_sheet.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/DWM_utils/sample_sheets/test-sample_sheet.csv
-# SAMPLE_SHEET_PATH: ~/DWM_utils/sample_sheets/vy5-sample_sheet.csv
+# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/All-Vis_HeartREO-sample_sheet.csv
+# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/AllClean-Vis_yPAP-sample_sheet.csv
+# SAMPLE_SHEET_PATH: ~/private_utils/sample_sheets/All-Vis_SkM-sample_sheet.csv
+# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/test-sample_sheet.csv
+# SAMPLE_SHEET_PATH: ~/private_utils/sample_sheets/vy5-sample_sheet.csv
 
 ## ~~~~~ Chromium sample sheets ~~~~~
-# SAMPLE_SHEET_PATH: /home/dwm269/DWM_utils/sample_sheets/C2Cnuc_yPAP-sample_sheet.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/DWM_utils/sample_sheets/All_yPAP_chromium-sample_sheet.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/DWM_utils/sample_sheets/All_primary_yPAP_chromium-sample_sheet.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/DWM_utils/sample_sheets/scMuscle2-sample_sheet.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/DWM_utils/sample_sheets/Ma_iPSC-sample_sheet_v2.csv
-SAMPLE_SHEET_PATH: /home/dwm269/DWM_utils/sample_sheets/Butcher_KD-sample_sheet.csv
+# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/C2Cnuc_yPAP-sample_sheet.csv
+# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/All_yPAP_chromium-sample_sheet.csv
+# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/All_primary_yPAP_chromium-sample_sheet.csv
+# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/scMuscle2-sample_sheet.csv
+# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/Ma_iPSC-sample_sheet_v2.csv
+SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/Butcher_KD-sample_sheet.csv
 
 
 # STARsolo parameters
@@ -93,6 +93,6 @@ PICARD_EXEC: /home/dwm269/miniconda3/envs/STARsolo/share/picard-2.26.10-0/picard
 
 ### Pig (Sus scrofa)###
 STAR_REF: /workdir/dwm269/genomes/sus_scrofa/sus_scrofa_EGFP_STAR
-GENES_GTF: /workdir/dwm269/genomes/sus_scrofa/sus_scrofa_EGFP_STAR/Sus_scrofa_EGFP.gtf
+GENES_GTF: /workdir/dwm269/genomes/sus_scrofa/concatenated/Sus_scrofa_EGFP.gtf
 SPECIES: pig # species passed to mirge3.0
 MIRGE_LIB: /home/dwm269/usr/bin/miRge3_Lib
