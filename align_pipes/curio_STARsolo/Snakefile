@@ -115,8 +115,6 @@ rule splitBBList:
         bc_1.to_csv(output.BB_1, sep="\t", header=False, index=False) # Bead barcode #1
         bc_2.to_csv(output.BB_2, sep="\t", header=False, index=False) # Bead Barcode #2
 
-
-
 #############################################
 ## Additional files for visualization
 #############################################

@@ -12,7 +12,8 @@ rule unmapped_fastqc:
         UNMAPPED2_FQ = '{OUTDIR}/{sample}/STARsolo/Unmapped.out.mate2.fastq.gz',
         FQC_DIR = directory('{OUTDIR}/{sample}/Unmapped_fastqc_out')
     params:
-        FASTQC_EXEC = config['FASTQC_EXEC']
+        FASTQC_EXEC = config['FASTQC_EXEC'],
+        FASTQC_ADAPTERS = config['FASTQC_ADAPTERS']
     threads:
         config['CORES']
     shell:
@@ -27,7 +28,7 @@ rule unmapped_fastqc:
         {params.FASTQC_EXEC} \
         -o {output.FQC_DIR} \
         -t {threads} \
-        -a /home/dwm269/DWM_utils/align_pipes/curio_kallisto/resources/fastqc_adapters.txt \
+        -a {params.FASTQC_ADAPTERS} \
         {output.UNMAPPED1_FQ} {output.UNMAPPED2_FQ}
         """
 
