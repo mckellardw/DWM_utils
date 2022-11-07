@@ -6,10 +6,11 @@
 
 rule STARsolo_align:
     input:
-        FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
+        FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_adapterTrim.fq.gz', #*Note*- change to "_R1_Final..." to include adapter hard trimming
         FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
-        BB_WHITELIST = "{OUTDIR}/{sample}/tmp/whitelist.txt"
-        # BB_2 = "{OUTDIR}/{sample}/tmp/whitelist_2.txt"
+        BB_WHITELIST = "{OUTDIR}/{sample}/tmp/whitelist.txt",
+        BB_1 = "{OUTDIR}/{sample}/tmp/whitelist_1.txt",
+        BB_2 = "{OUTDIR}/{sample}/tmp/whitelist_2.txt"
     output:
         SORTEDBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam', #TODO: add temp()
         UNMAPPED1 = '{OUTDIR}/{sample}/STARsolo/Unmapped.out.mate1',
@@ -37,9 +38,17 @@ rule STARsolo_align:
         # BB_WHITELIST = f"{input.BB_1} {input.BB_2}"
         nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
 
-        SOLOtype = CHEMISTRY_SHEET["STAR.soloType"][tmp_chemistry]
+        #TODO: check for empty values
+        soloType = CHEMISTRY_SHEET["STAR.soloType"][tmp_chemistry]
         soloUMI = CHEMISTRY_SHEET["STAR.soloUMI"][tmp_chemistry]
         soloCB = CHEMISTRY_SHEET["STAR.soloCB"][tmp_chemistry]
+        soloCBmatchWLtype = CHEMISTRY_SHEET["STAR.soloCBmatchWLtype"][tmp_chemistry]
+        soloAdapter = CHEMISTRY_SHEET["STAR.soloAdapter"][tmp_chemistry]
+
+        if tmp_chemistry == "seeker_v3.1_noTrimMatchLinker":
+            whitelist = f"{input.BB_1} {input.BB_2}"
+        else:
+            whitelist = input.BB_WHITELIST
 
         shell(
             f"""
@@ -61,11 +70,10 @@ rule STARsolo_align:
             --outFilterMatchNmin 12 \
             --outFilterScoreMinOverLread 0 \
             --outFilterMatchNminOverLread 0 \
-            --soloType {SOLOtype} \
-            {soloUMI} \
-            {soloCB} \
-            --soloCBwhitelist {input.BB_WHITELIST} \
-            --soloCBmatchWLtype 1MM_multi \
+            --soloType {soloType} \
+            {soloUMI} {soloCB} {soloAdapter} \
+            --soloCBwhitelist {whitelist} \
+            --soloCBmatchWLtype {soloCBmatchWLtype} \
             --soloCellFilter TopCells {nBB} \
             --soloUMIfiltering MultiGeneUMI CR \
             --soloUMIdedup 1MM_CR \
