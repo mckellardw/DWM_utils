@@ -96,19 +96,23 @@ ggVolcano_v2 <- function(
   markers=NULL,
   expression=NULL,
   seu=NULL,
-                      logFC_filter = 1,
-                      neg.log.pval.Thresh=50,
-                      pct.thresh = 0.4,
-                      plotTitle='Volcano Plot',
-                      pseudocount=10^-300,
-                      fill.cols = c("#000000","#cf4c59","#2c30a8"),
-                      xlim=NULL, ylim=NULL,
-                      genes=NULL,
-                      gene.text.size=6,  repel=T, nudge_x=-0.1,
-                      dot.scale=1,
-                      line.width=0.5, segment.color="gray",
-                      pt.size=1, pt.alpha=1
-                    ){
+  logFC_filter = 1,
+  neg.log.pval.Thresh=50,
+  pct.thresh = 0.4,
+  plotTitle='Volcano Plot',
+  pseudocount=10^-300,
+  fill.cols = c("#000000","#cf4c59","#2c30a8"),
+  xlim=NULL, ylim=NULL,
+  genes=NULL,
+  gene.text.size=6, 
+  repel=T, 
+  nudge_x=-0.1,
+  dot.scale=1,
+  line.width=0.5, 
+  segment.color="gray",
+  pt.size=1,
+  pt.alpha=1
+){
   # TODO: add split.by - generalize?
 
   require(ggrepel)
@@ -176,28 +180,30 @@ ggVolcano_v2 <- function(
       )
     )
   if(repel){
-    out.gg <- out.gg + geom_text_repel(
-      data=df[df$cols!="none" & df$expr.filter,],
-      size=gene.text.size*(5/14), #convert to same scale as normal ggplot
-      segment.size=0.25,
-      segment.alpha = 0.8,
-      segment.color = segment.color,
-      point.padding = 0.4,
-      aes(
-        label=genes,
-        col=cols
+    out.gg <- out.gg +
+      geom_text_repel(
+        data=df[df$cols!="none" & df$expr.filter,],
+        size=gene.text.size*(5/14), #convert to same scale as normal ggplot
+        segment.size=0.25,
+        segment.alpha = 0.8,
+        segment.color = segment.color,
+        point.padding = 0.4,
+        aes(
+          label=genes,
+          col=cols
+        )
       )
-    )
   }else{
-    out.gg <- out.gg + geom_text(
-      data=df[df$cols=="both" & df$expr.filter,],
-      size=gene.text.size*(5/14), #convert to same scale as normal ggplot
-      # position=position_dodge(width = 1),
-      nudge_x = nudge_x,
-      aes(
-        label=genes,
-        col=cols
-      )
+    out.gg <- out.gg + 
+      geom_text(
+        data=df[df$cols=="both" & df$expr.filter,],
+        size=gene.text.size*(5/14), #convert to same scale as normal ggplot
+        # position=position_dodge(width = 1),
+        nudge_x = nudge_x,
+        aes(
+          label=genes,
+          col=cols
+        )
     )
   }
   # Finish plot ####
@@ -612,7 +618,7 @@ visCoMap <- function(
   colormap=NULL, # either a viridis option, a vector of colors, or a list of options corresponding to `features`
   colormap.direction=1,
   colormap.same.scale=F, #whether (T) or not (F) to set all features to the same colormap scale
-  na.value=gray(0.69), # color for na.value (spot where gene is not detected)
+  na.value=gray(0.85), # color for na.value (spot where gene is not detected)
   comap.fxn = prod,
   coex.name = NULL, # plot title for computed co-expression values
   include.scatter = F,
