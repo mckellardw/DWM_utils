@@ -44,7 +44,7 @@ rule STARsolo_align:
         --clipAdapterType CellRanger4 \
         --outReadsUnmapped Fastx \
         --outFilterMismatchNoverLmax 0.05 \
-        --outFilterMatchNmin 16 \
+        --outFilterMatchNmin 12 \
         --outFilterScoreMinOverLread 0 \
         --outFilterMatchNminOverLread 0 \
         --outFilterMultimapNmax 50 \
