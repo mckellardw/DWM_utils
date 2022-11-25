@@ -5,17 +5,19 @@ rule preTrim_FastQC_R2:
     output:
         fastqcDir = directory('{OUTDIR}/{sample}/preTrim_fastqc_R2_out'),
         # fastqcReport = ''
+    params:
+        adapters = config['FASTQC_ADAPTERS']
     threads:
         config['CORES']
         # min([config['CORES'],8]) # 8 core max based on recommendations from trim_galore authors
     shell:
         """
         mkdir -p {output.fastqcDir}
-        cd {output.fastqcDir}
 
         fastqc \
         --outdir {output.fastqcDir} \
         --threads {threads} \
+        -a {params.adapters} \
         {input.MERGED_R2_FQ}
         """
 
@@ -59,16 +61,18 @@ rule postTrim_FastQC_R2:
     output:
         fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R2_out'),
         # fastqcReport = ''
+    params:
+        adapters = config['FASTQC_ADAPTERS']
     threads:
         config['CORES']
         # min([config['CORES'],8]) # 8 core max based on recommendations from trim_galore authors
     shell:
         """
         mkdir -p {output.fastqcDir}
-        cd {output.fastqcDir}
 
         fastqc \
         --outdir {output.fastqcDir} \
         --threads {threads} \
+        -a {params.adapters} \
         {input.FINAL_R2_FQ}
         """
