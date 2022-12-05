@@ -220,7 +220,7 @@ readSTARsolo <- function(
     data <- readMM(file = matrix.loc)
     cell.names <- readLines(barcode.loc)
     if (all(grepl(pattern = "\\-1$", x = cell.names))) {
-      cell.names <- as.vector(x = as.character(x = sapply(X = cell.names,FUN = ExtractField, field = 1, delim = "-")))
+      cell.names <- as.vector(x = as.character(x = sapply(X = cell.names, FUN = ExtractField, field = 1, delim = "-")))
     }
     if (is.null(x = names(x = data.dir))) {
       if (i < 2) {
