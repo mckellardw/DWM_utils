@@ -9,10 +9,11 @@
 #       --readFilesIn Read2_Lane1.fastq.gz,Read2_Lane2.fastq.gz,Read2_Lane3.fastq.gz  Read1_Lane1.fastq.gz,Read1_Lane2.fastq.gz,Read1_Lane3.fastq.gz
 
 ## ~~~~~ sample sheets ~~~~~
-# SAMPLE_SHEET_PATH: ~/private_utils/sample_sheets/slideseq_rnd1-sample_sheet.csv
-# SAMPLE_SHEET_PATH: ~/private_utils/sample_sheets/SS_LKO_Rnd1-sample_sheet.csv
-SAMPLE_SHEET_PATH: ~/private_utils/sample_sheets/STRSHD_Rnd2-sample_sheet.csv
-# SAMPLE_SHEET_PATH: ~/private_utils/sample_sheets/ChickenSurgerySlideSeq-sample_sheet.csv
+# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/slideseq_rnd1-sample_sheet.csv
+# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/SS_LKO_Rnd1-sample_sheet.csv
+# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/STRSHD_Rnd2-sample_sheet.csv
+SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/SS_cohen_testes.csv
+# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/ChickenSurgerySlideSeq-sample_sheet.csv
 
 
 # STARsolo parameters
@@ -30,11 +31,14 @@ CHEMISTRY_SHEET: resources/chemistry_sheet.csv
 # TMPDIR: /workdir/dwm269/spatial_lmna/tmp
 # OUTDIR: /workdir/dwm269/spatial_lmna/data/STARsolo
 
-TMPDIR: /workdir/dwm269/totalRNA/STRS-HD/tmp
-OUTDIR: /workdir/dwm269/totalRNA/STRS-HD/data/STARsolo
+# TMPDIR: /workdir/dwm269/totalRNA/STRS-HD/tmp
+# OUTDIR: /workdir/dwm269/totalRNA/STRS-HD/data/STARsolo
 
 # TMPDIR: /workdir/dwm269/butcher_surgery/tmp
 # OUTDIR: /workdir/dwm269/butcher_surgery/data/STARsolo
+
+TMPDIR: /workdir/dwm269/cohen_testes/tmp
+OUTDIR: /workdir/dwm269/cohen_testes/data/STARsolo
 
 ########################################################################################################
 # Executables - file paths
@@ -56,7 +60,7 @@ PICARD_EXEC: /home/dwm269/miniconda3/envs/STARsolo/share/picard-2.26.10-0/picard
 ########################################################################################################
 # Resources - file paths
 ########################################################################################################
-FASTQC_ADAPTERS: ./resources/fastqc_adapters.txt
+FASTQC_ADAPTERS: /home/dwm269/DWM_utils/align_pipes/curio_STARsolo/resources/fastqc_adapters.txt
 
 ### Mouse ###
 # STAR_REF: /workdir/dwm269/genomes/mm39_all/STAR_GRCm39_GENCODEM28 # path to STAR-formatted reference genome

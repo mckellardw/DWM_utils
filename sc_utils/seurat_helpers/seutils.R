@@ -607,6 +607,7 @@ seuPreProcess <- function(
   assay='RNA',
   n.pcs=50,
   res=0.8,
+  nVarFeatures = 2000,
   run.umap=F,
   verbose=F
 ){
@@ -628,7 +629,7 @@ seuPreProcess <- function(
   ) %>% FindVariableFeatures(
     assay = assay,
     selection.method = "vst",
-    nfeatures = 2000,
+    nfeatures = nVarFeatures,
     verbose = verbose
   ) %>% ScaleData(
     assay = assay
