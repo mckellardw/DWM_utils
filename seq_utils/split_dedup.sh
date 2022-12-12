@@ -54,6 +54,10 @@ fi
 # Remove reads that don't have a barcode (CB)
 echo "Removing reads without 'CB' tags..." >> ${LOGFULL}
 date >> ${LOGFULL}
+
+# Option w/ grep, which doesn't require the barcode whitelist
+# samtools view -h Aligned.sortedByCoord.out.bam | grep -v "CB:Z:-" > yestag.sam
+
 samtools view -1 -b \
 -@ ${CORE} \
 --tag-file CB:${BB} \
