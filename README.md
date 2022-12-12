@@ -1,7 +1,7 @@
 # DWM_utils
  Sandbox of useful helper functions, code snippets, utilities, and assorted resources for bioinformatic analyses
 
-Check out these repos that I have forked out of `DWM_utils`:
+Check out these repos that I have cleaned up and forked out of `DWM_utils`:
 - [`slide_snake`](https://github.com/mckellardw/slide_snake)
 - [`txg_snake`](https://github.com/mckellardw/txg_snake)
 
