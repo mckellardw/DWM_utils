@@ -8,31 +8,20 @@
 #     For multi-lane inputs, use the following format (from STARsolo github page):
 #       --readFilesIn Read2_Lane1.fastq.gz,Read2_Lane2.fastq.gz,Read2_Lane3.fastq.gz  Read1_Lane1.fastq.gz,Read1_Lane2.fastq.gz,Read1_Lane3.fastq.gz
 
-## ~~~~~ Visium sample sheets ~~~~~
-# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/All-Vis_HeartREO-sample_sheet.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/AllClean-Vis_yPAP-sample_sheet.csv
-# SAMPLE_SHEET_PATH: ~/private_utils/sample_sheets/All-Vis_SkM-sample_sheet.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/test-sample_sheet.csv
-# SAMPLE_SHEET_PATH: ~/private_utils/sample_sheets/vy5-sample_sheet.csv
+SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/visium/uSTRS1b.csv
 
-## ~~~~~ Chromium sample sheets ~~~~~
-# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/C2Cnuc_yPAP-sample_sheet.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/All_yPAP_chromium-sample_sheet.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/All_primary_yPAP_chromium-sample_sheet.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/scMuscle2-sample_sheet.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/Ma_iPSC-sample_sheet_v2.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/Butcher_KD-sample_sheet.csv
-SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/microSTRS1.csv
-
-
-# STARsolo parameters
-CORES: 16 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
-MEMLIMIT: 50000000000 # limit in bytes
-UMIlen: 12 #v2=10, v3=12, visium=12
 
 ## Chemistry details (whitelists, barcode/UMI design, etc.)
 CHEMISTRY_SHEET: resources/chemistry_sheet.csv
-CHEMISTRY: 3p_v3
+CHEMISTRY: visium
+
+FASTQC_ADAPTERS: resources/fastqc_adapters.txt
+
+#TODO- transition to adding chemistry/alignment/whitelist info in ^^CHEMISTRY_SHEET
+# STARsolo parameters
+CORES: 12 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+MEMLIMIT: 50000000000 # limit in bytes
+UMIlen: 12 #v2=10, v3=12, visium=12
 
 ## Cell Barcode white lists - https://kb.10xgenomics.com/hc/en-us/articles/115004506263-What-is-a-barcode-whitelist-
 # CB_WHITELIST: resources/barcodes_10x/3M-february-2018.txt # path to cell barcodes (CB) whitelist for v3/3.1 chromium chemistries, gunzipped (without the .gz extension) -
@@ -45,7 +34,7 @@ TMPDIR: /workdir/dwm269/totalRNA/tmp # directory for temporary files
 # OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM28_Chromium
 # OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM27_Visium
 # OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/GRCm39_GENCODEM28_Visium/FLExDUX4
-OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/microSTRS
+OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/uSTRS
 
 # TMPDIR: /workdir/dwm269/scCardiacOrganoid/tmp
 # OUTDIR: /workdir/dwm269/scCardiacOrganoid/data/STARsolo/GRCh38p13
@@ -57,8 +46,7 @@ OUTDIR: /workdir/dwm269/totalRNA/data/STARsolo/microSTRS
 ########################################################################################################
 # Executables - file paths
 ########################################################################################################
-#TODO - add umi_tools, etc
-STAR_EXEC: /programs/STAR-2.7.10a/STAR # 2.7.9a - *Note, had seg fault issues w/ conda version 2.7.10a
+STAR_EXEC: /programs/STAR-2.7.10a/STAR #Important improvements in v2.7.10a
 KB_EXEC: kb
 KALLISTO_EXEC: kallisto
 BUST_EXEC: bustools
@@ -78,11 +66,11 @@ PICARD_EXEC: /home/dwm269/miniconda3/envs/STARsolo/share/picard-2.26.10-0/picard
 #TODO- add this to the sample sheets!
 
 ### Mouse ###
-# STAR_REF: /workdir/dwm269/genomes/mm39_all/STAR_GRCm39_GENCODEM28 # path to STAR-formatted reference genome
-# GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M28/gencode.vM28.chr_patch_hapl_scaff.annotation.gtf
-# STAR_MIRBASE_REF: /workdir/dwm269/genomes/mm39_all/STAR_mirbase_mirge
-# SPECIES: mouse # species passed to mirge3.0
-# MIRGE_LIB: /home/dwm269/usr/bin/miRge3_Lib
+STAR_REF: /workdir/dwm269/genomes/mm39_all/STAR_GRCm39_GENCODEM31 # path to STAR-formatted reference genome
+GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M31/gencode.vM31.annotation.gtf
+STAR_MIRBASE_REF: /workdir/dwm269/genomes/mm39_all/STAR_mirbase_mirge
+SPECIES: mouse # species passed to mirge3.0
+MIRGE_LIB: /home/dwm269/usr/bin/miRge3_Lib
 
 ### Mouse + Reovirus-T1L###
 # STAR_REF: /workdir/dwm269/genomes/mm39_all/STAR_GRCm39_GENCODEM28_REOT1L-as # path to STAR-formatted reference genome
@@ -100,10 +88,10 @@ PICARD_EXEC: /home/dwm269/miniconda3/envs/STARsolo/share/picard-2.26.10-0/picard
 # MIRGE_LIB: /home/dwm269/usr/bin/miRge3_Lib
 
 ### Pig (Sus scrofa)###
-STAR_REF: /workdir/dwm269/genomes/sus_scrofa/sus_scrofa_EGFP_STAR
-GENES_GTF: /workdir/dwm269/genomes/sus_scrofa/concatenated/Sus_scrofa_EGFP.gtf
-SPECIES: pig # species passed to mirge3.0
-MIRGE_LIB: /home/dwm269/usr/bin/miRge3_Lib
+# STAR_REF: /workdir/dwm269/genomes/sus_scrofa/sus_scrofa_EGFP_STAR
+# GENES_GTF: /workdir/dwm269/genomes/sus_scrofa/concatenated/Sus_scrofa_EGFP.gtf
+# SPECIES: pig # species passed to mirge3.0
+# MIRGE_LIB: /home/dwm269/usr/bin/miRge3_Lib
 
 
 ########################################################################################################

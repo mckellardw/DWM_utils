@@ -17,7 +17,7 @@ SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/SS_cohen_testes.csv
 
 
 # STARsolo parameters
-CORES: 20 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CORES: 39 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 500000000000 # limit in bytes
 
 ## Chemistry details (whitelists, barcode/UMI design, etc.)
@@ -29,21 +29,21 @@ CHEMISTRY_SHEET: resources/chemistry_sheet.csv
 # TMPDIR: /workdir/dwm269/totalRNA/tmp # directory for temporary files
 
 # TMPDIR: /workdir/dwm269/spatial_lmna/tmp
-# OUTDIR: /workdir/dwm269/spatial_lmna/data/STARsolo
+# OUTDIR: /workdir/dwm269/spatial_lmna/data/align_out
 
 # TMPDIR: /workdir/dwm269/totalRNA/STRS-HD/tmp
-# OUTDIR: /workdir/dwm269/totalRNA/STRS-HD/data/STARsolo
+# OUTDIR: /workdir/dwm269/totalRNA/STRS-HD/data/align_out
 
 # TMPDIR: /workdir/dwm269/butcher_surgery/tmp
-# OUTDIR: /workdir/dwm269/butcher_surgery/data/STARsolo
+# OUTDIR: /workdir/dwm269/butcher_surgery/data/align_out
 
 TMPDIR: /workdir/dwm269/cohen_testes/tmp
-OUTDIR: /workdir/dwm269/cohen_testes/data/STARsolo
+OUTDIR: /workdir/dwm269/cohen_testes/data/align_out
 
 ########################################################################################################
 # Executables - file paths
 ########################################################################################################
-STAR_EXEC: STAR # v2.7.10a /programs/STAR/STAR
+STAR_EXEC: /programs/STAR-2.7.10a/STAR # v2.7.10a /programs/STAR/STAR
 KALLISTO_EXEC: kallisto
 BUST_EXEC: bustools
 CUTADAPT_EXEC: cutadapt

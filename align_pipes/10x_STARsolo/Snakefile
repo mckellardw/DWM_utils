@@ -27,13 +27,15 @@ shell("mkdir -p {OUTDIR}")
 # Variables and references
 ########################################################################################################
 SAMPLE_SHEET = pd.read_csv(config["SAMPLE_SHEET_PATH"], na_filter=False)
-SAMPLES = list(SAMPLE_SHEET['sampleID'])
+SAMPLES = [i for i in list(SAMPLE_SHEET['sampleID']) if i] #grab non-empty entries in SAMPLE_SHEET$sampleID
 
 R1_FQS = dict(zip(SAMPLES, list(SAMPLE_SHEET['fastq_R1'])))
 R2_FQS = dict(zip(SAMPLES, list(SAMPLE_SHEET['fastq_R2'])))
 
 STAR_REF = config['STAR_REF']
 
+
+print(SAMPLES)
 ########################################################################################################
 # Executables
 ########################################################################################################

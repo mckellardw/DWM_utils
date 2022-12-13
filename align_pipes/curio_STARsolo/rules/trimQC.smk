@@ -34,9 +34,12 @@ rule cutadapt_R2:
         FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_adapterTrim.fq.gz'),
         FINAL_R2_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz')
     params:
+        R1_SIZE = 50,
+        MIN_R2_SIZE = 16,
         CUTADAPT_EXEC = CUTADAPT_EXEC,
         THREE_PRIME_R2_POLYA = "A"*100,
         THREE_PRIME_R2_POLYG = "G"*100,
+        THREE_PRIME_R2_POLYT = "T"*100,
         THREE_PRIME_R2_NEXTERA = "CTGTCTCTTATA", # Nextera sequence
         THREE_PRIME_R2_rcNEXTERA = "TATAAGAGACAG", # Rev Comp of Nextera sequence
         THREE_PRIME_R2_TSO = "AAGCTGGTATCAACGCAGAGTGAATGGG", # SlideSeq TSO - remove any polyadenylated TSOs
@@ -50,12 +53,13 @@ rule cutadapt_R2:
     shell:
         """
         {params.CUTADAPT_EXEC} \
-        --minimum-length 50:10 \
+        --minimum-length {params.R1_SIZE}:{params.MIN_R2_SIZE} \
         --quality-cutoff 20 \
         --overlap 3 \
         --match-read-wildcards \
         --nextseq-trim=20 \
         -A {params.THREE_PRIME_R2_POLYA} \
+        -A {params.THREE_PRIME_R2_POLYT} \
         -A {params.THREE_PRIME_R2_TSO} \
         -A {params.THREE_PRIME_R2_NEXTERA} \
         -A {params.THREE_PRIME_R2_rcNEXTERA} \
