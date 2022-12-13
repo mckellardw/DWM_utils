@@ -82,6 +82,11 @@ samtools view sub.bam | grep CB:Z: | sed 's/.*CB:Z:\([ACGT]*\).*/\1/' | sort | u
 samtools view -F 0x10 -b file.bam > file_pos.bam
 ```
 
+- Remove reads that don't have a cell barcode tag
+```
+samtools view -h Aligned.sortedByCoord.out.bam | grep -v "CB:Z:-" > yestag.sam
+```
+
 ## fastq finagling
 
 - Get top 1000 most abundant sequences from a file.fastq, output as an out.fa

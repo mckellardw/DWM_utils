@@ -16,6 +16,7 @@ R2FQ=$9
 
 # Check params
 #TODO
+PIPE_DIR=$(pwd)
 
 # Set up output directory
 mkdir -p ${OUTDIR}
@@ -26,7 +27,7 @@ touch ${LOG}
 echo "~~ Parameters ~~~" >> ${LOG}
 echo "Output directory: " ${OUTDIR}  >> ${LOG}
 echo "Index used: " ${KB_IDX} >> ${LOG}
-echo "Whitelist used: " ${WHITELIST} >> ${LOG}
+echo "Whitelist used: " ${PIPE_DIR}/${WHITELIST} >> ${LOG}
 echo "Chemistry: " ${CHEMISTRY} >> ${LOG}
 echo "Barcode/UMI read file: " ${R1FQ} >> ${LOG}
 echo "RNA read file:" ${R2FQ} >> ${LOG}
@@ -47,7 +48,7 @@ echo " " >> ${LOG}
 # Correct cell/spot barcodes
 echo "~~~Correcting barcodes... " >> ${LOG}
 bustools correct \
---whitelist ${WHITELIST} \
+--whitelist ${PIPE_DIR}/${WHITELIST} \
 -o output.sorted.bus \
 output.bus 2>> ${LOG}
 echo " " >> ${LOG}
@@ -64,13 +65,13 @@ echo " " >> ${LOG}
 # Inspect outputs
 echo "~~~Inspecting sorted/corrected BUS file..." >> ${LOG}
 bustools inspect \
---whitelist ${WHITELIST} \
+--whitelist ${PIPE_DIR}/${WHITELIST} \
 --ecmap matrix.ec \
 output.corrected.bus 2>> ${LOG}
 
 echo "~~~Writing to inspect.corrected.bus.json" >> ${LOG}
 bustools inspect \
---whitelist ${WHITELIST} \
+--whitelist ${PIPE_DIR}/${WHITELIST} \
 --ecmap matrix.ec \
 --output inspect.corrected.bus.json \
 output.corrected.bus
