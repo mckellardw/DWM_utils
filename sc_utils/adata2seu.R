@@ -11,15 +11,16 @@
 #' @param
 #' @param verbose 
 adata2seu <- function(
-  adata_path=NULL,
-  counts = "X", # where the counts are stored. Can also be the name of a `layer`
-  data = NULL,
-  layers = NULL, #additional `layer`s, that will be added as `Assay`s 
-  project = "SeuratProject",
-  meta.data = "obs",
-  reductions = "obsm",
-  graphs = "obsp", # set to NULL to ignore graphs
-  verbose=T
+    adata_path=NULL,
+    counts = "X", # where the counts are stored. Can also be the name of a `layer`
+    data = NULL,
+    layers = NULL, #additional `layer`s, that will be added as `Assay`s 
+    project = "SeuratProject",
+    meta.data = "obs",
+    reductions = "obsm",
+    graphs = "obsp", # set to NULL to ignore graphs
+    save.rdata = NULL, # filepath for .RData file to be saved; default is to not save (NULL)
+    verbose=T
 ){
   require(anndata)
   require(SeuratObject)
@@ -45,8 +46,7 @@ adata2seu <- function(
       meta.data = adata[[meta.data]]
     )
   }else if(counts %in% names(adata$layers)){
-    counts.mat <- t(ad$layers[[counts]])
-    print(dim(counts.mat))
+    counts.mat <- t(adata$layers[[counts]])
     
     if(!is.null(data)){
       message("I haven't implemented the conversion of normalized counts yet... Only raw counts will be converted.")
@@ -109,6 +109,14 @@ adata2seu <- function(
   }
   if(verbose){message("Done!")}
   
+  if(!is.null(save.rdata)){
+    if(verbose){message(paste0("Saving Seurat object as ",save.rdata,"..."))}
+    save(
+      seu,
+      file=save.rdata
+    )
+    if(verbose){message("Done!")}
+  }
   # Return
   return(seu)
 }
