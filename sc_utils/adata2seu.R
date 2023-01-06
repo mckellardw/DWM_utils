@@ -110,12 +110,21 @@ adata2seu <- function(
   if(verbose){message("Done!")}
   
   if(!is.null(save.rdata)){
-    if(verbose){message(paste0("Saving Seurat object as ",save.rdata,"..."))}
-    save(
-      seu,
-      file=save.rdata
-    )
-    if(verbose){message("Done!")}
+    if(grepl("rds", save.rdata,ignore.case = )){ # save as .Rds file
+      if(verbose){message(paste0("Saving Seurat object as ",save.rdata,"..."))}
+      saveRDS(
+        object = seu,
+        file = save.rdata
+      )
+      if(verbose){message("Done!")}
+    }else{ # save as .Rdata file
+      if(verbose){message(paste0("Saving Seurat object as ",save.rdata,"..."))}
+      save(
+        seu,
+        file=save.rdata
+      )
+      if(verbose){message("Done!")}
+    }
   }
   # Return
   return(seu)
