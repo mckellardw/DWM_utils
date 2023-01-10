@@ -443,7 +443,7 @@ collapseMultimappers <- function(
 #TODO: generalize whitelist formatting/reading in
 addSpatialLocation <- function(
   SEU,
-  whitelist="/home/dwm269/DWM_utils/align_pipes/10x_kallisto/resources/barcodes_10x/visium-v1_coordinates.txt",
+  whitelist="~/txg_snake/resources/whitelists/visium-v1_coordinates.txt",
   assay="RNA",
   reduction.name = "space",
   verbose=F
