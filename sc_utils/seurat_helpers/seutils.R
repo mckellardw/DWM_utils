@@ -72,7 +72,7 @@ grepGenes <- function(
   }
 
   if(!is.null(filter.pattern)){ # filter out filter.pattern
-    if(verbose){message(paste0("Removing features containing '", filter.pattern,"' from output..."))}
+    if(verbose){message(paste0("Removing features containing '", filter.pattern,"' from output...\n"))}
     for(fp in filter.pattern){
       out.genes <- out.genes[!grepl(pattern=fp, x=out.genes)]
     }
@@ -444,6 +444,8 @@ collapseMultimappers <- function(
 addSpatialLocation <- function(
   SEU,
   whitelist="~/txg_snake/resources/whitelists/visium-v1_coordinates.txt",
+  cb_prefix=NULL, # prefix on cell barcodes; useful if cells have been merged/renamed
+  loupe.json=NULL, # path to a .json file which contains the absolute spatial position (TXG Visium data only)
   assay="RNA",
   reduction.name = "space",
   verbose=F
@@ -472,15 +474,18 @@ addSpatialLocation <- function(
     return(SEU)
   }
   
+  #Add prefix to whitelist, if required
+  if(!is.null(cb_prefix)){
+    if(verbose)(message(paste0()))
+    rownames(bc.coords) <- paste0(cb_prefix, rownames(bc.coords))
+  }
+  
   # Build reduction based on spot barcodes & whitelist
-  bcs <- stringr::str_remove_all(
-    string=Cells(SEU), 
-    pattern="_"
-  )
+  bcs <- Cells(SEU)
   
   if(verbose){
     message(paste0(
-      table(bcs %in% rownames(bc.coords))["TRUE"], " out of ", length(bcs), " barcodes found in whitelist..."
+      table(bcs %in% rownames(bc.coords))["TRUE"], " out of ", length(bcs), " barcodes found in whitelist...\n"
     ))
   }
 
@@ -495,6 +500,14 @@ addSpatialLocation <- function(
   colnames(tmp.mat) <- paste0(reduction.name, 1:2)
   rownames(tmp.mat) <- bcs
 
+  if(!.is.null(loupe.json)){
+    #TODO
+    #read json in as a dataframe/mat
+    
+    # replace the entries in `tmp.mat` (relative positions) with the absolute positions
+  }
+  
+  
   # Add reduc to seurat obj
   SEU[[reduction.name]] <- CreateDimReducObject(
     embeddings=as.matrix(tmp.mat),
@@ -531,7 +544,7 @@ rotateClockwise90N <- function(
   return(SEU)
 }
 
-# Remove spots/beads that aren't within D units of another spot/bead
+# Remove spots/beads that have fewer than `K` neighbors within `D` units of another spot/bead
 removeSpatialSinglets <- function(
     SEU,
     reduction = "space",
