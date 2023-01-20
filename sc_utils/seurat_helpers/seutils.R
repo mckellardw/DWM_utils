@@ -500,7 +500,7 @@ addSpatialLocation <- function(
   colnames(tmp.mat) <- paste0(reduction.name, 1:2)
   rownames(tmp.mat) <- bcs
 
-  if(!.is.null(loupe.json)){
+  if(!is.null(loupe.json)){
     #TODO
     #read json in as a dataframe/mat
     
