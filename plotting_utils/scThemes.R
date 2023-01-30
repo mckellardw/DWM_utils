@@ -25,6 +25,7 @@ scThemes <-function(
     legend.title = element_text(size=big.font,color="black")
   )
 
+  # Spatial transcriptomics plots (gene expression, metadata, etc)
   scTheme$space <- theme(
     axis.line = element_blank(),
     axis.title = element_blank(),
@@ -34,13 +35,31 @@ scThemes <-function(
     legend.title = element_text(size=big.font,color="black")
   )
   
+  # general scatter plot theme
   scTheme$scatter <- theme_minimal()+
     theme(
       axis.line = element_blank(),
       panel.grid.major = element_line(color='gray'),
       panel.grid.minor = element_line(color='light gray'),
-      panel.border = element_rect(colour = "black", fill=NA, size=line.width),
+      panel.border = element_rect(colour = "black", fill=NA, linewidth=line.width),
       axis.title = element_text(face = 'bold',size = big.font, hjust = 0.5, vjust = 0.5),
+      axis.text = element_text(size = small.font, color = "black",hjust=0.5),
+      axis.ticks = element_line(color="black"),
+      # legend.background = element_rect(color = "black", fill='white', size=0.5),
+      legend.text = element_text(size = small.font, hjust = 0, vjust = 0.5),
+      legend.title = element_text(face = 'bold',size = small.font, hjust = 0.5, vjust = 0.5),
+      legend.position = "right"
+    )
+  
+  # theme for knee plots (no x-axis labels)
+  scTheme$knee <- theme_minimal()+
+    theme(
+      axis.line = element_blank(),
+      panel.grid.major = element_line(color='gray'),
+      panel.grid.minor = element_line(color='light gray'),
+      panel.border = element_rect(colour = "black", fill=NA, linewidth=line.width),
+      axis.title.x=element_blank(),
+      axis.title.y = element_text(face = 'bold',size = big.font, hjust = 0.5, vjust = 0.5),
       axis.text = element_text(size = small.font, color = "black",hjust=0.5),
       axis.ticks = element_line(color="black"),
       # legend.background = element_rect(color = "black", fill='white', size=0.5),
@@ -57,7 +76,7 @@ scThemes <-function(
       panel.grid.minor = element_blank(),
       legend.text = element_text(size=small.font, color="black"),
       legend.title = element_text(size=big.font, color="black"),
-      axis.line = element_line(color='black',size = line.width),
+      axis.line = element_line(color='black',linewidth = line.width),
       axis.title = element_text(face = 'bold',size = small.font, hjust = 0.5, vjust = 1),
       axis.text.x=element_text(size = small.font, color = "black",angle = 0,hjust=0.5),
       axis.text.y=element_text(size = small.font, color = "black",hjust=0.5,angle = 90),
@@ -65,6 +84,7 @@ scThemes <-function(
       legend.position="none"
     )
 
+  # Pie chart theme
   scTheme$pie <-
     theme_minimal() +
     theme(
@@ -80,9 +100,10 @@ scThemes <-function(
       legend.position="none"
     )
 
+  # Seurat DotPlot theme
   scTheme$dot <- theme(
     axis.line = element_blank(),
-    panel.border = element_rect(colour = "black", fill=NA, size=1),
+    panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
     axis.title.x = element_blank(),
     axis.title.y = element_blank(),
     axis.text.x=element_text(angle = 90,hjust = 1,vjust= 0.5, size=small.font),
@@ -92,6 +113,7 @@ scThemes <-function(
     panel.grid.major = element_line(colour = "gray", size = 0.5)
   )
 
+  # Violin plot theme
   scTheme$vln <- theme(
     panel.background = element_blank(),
     axis.line.x = element_blank(),
