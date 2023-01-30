@@ -240,11 +240,16 @@ kneePlot <- function(
     SEU,
     nUMI = "nCount_STAR", #nUMIs metadata column
     assay = NULL,
-    alpha = 0.4,
+    alpha = 0.2,
+    umi.threshold = NULL,
+    umi.threshold.color = "red",
     color.by = NULL, #TODO
     verbose = FALSE
 ){
-  # require(forcats)
+  #TODO
+  # Warning message:
+  #   In xtfrm.data.frame(x) : cannot xtfrm data frames
+  
   if(is.null(assay)){
     assay <- SEU@active.assay
   }
@@ -252,7 +257,7 @@ kneePlot <- function(
   # add plottting order
   # SEU$plotting_order <- order(SEU[[nUMI]], decreasing = TRUE)
   
-  ggplot(
+  out.plot <- ggplot(
     SEU@meta.data[order(SEU[[nUMI]], decreasing = TRUE), ],
     aes(
       x = 1:ncol(SEU),
@@ -266,8 +271,17 @@ kneePlot <- function(
       axis.text.x = element_blank(),
       axis.title.x = element_blank(),
       axis.ticks.x = element_blank()
-    )%>%
+    )
+  
+  if(!is.null(umi.threshold) & is.numeric(umi.threshold)){
+    out.plot +
+      geom_hline(
+        yintercept = umi.threshold,
+        color = umi.threshold.color
+      )
+  }else{
     return()
+  }
 }
 
 ## Spatial/Visium plot functions --------------------------------------------
