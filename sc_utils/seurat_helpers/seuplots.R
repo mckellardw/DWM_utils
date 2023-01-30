@@ -234,6 +234,42 @@ ggVolcano_v2 <- function(
 
 
 #############################################################################
+## QC plots  ----------------------------------------------------------------
+
+kneePlot <- function(
+    SEU,
+    nUMI = "nCount_STAR", #nUMIs metadata column
+    assay = NULL,
+    alpha = 0.4,
+    color.by = NULL, #TODO
+    verbose = FALSE
+){
+  # require(forcats)
+  if(is.null(assay)){
+    assay <- SEU@active.assay
+  }
+  
+  # add plottting order
+  # SEU$plotting_order <- order(SEU[[nUMI]], decreasing = TRUE)
+  
+  ggplot(
+    SEU@meta.data[order(SEU[[nUMI]], decreasing = TRUE), ],
+    aes(
+      x = 1:ncol(SEU),
+      y = .data[[nUMI]]
+    )
+  ) +
+    geom_point(
+      alpha=alpha
+    )+
+    theme(
+      axis.text.x = element_blank(),
+      axis.title.x = element_blank(),
+      axis.ticks.x = element_blank()
+    )%>%
+    return()
+}
+
 ## Spatial/Visium plot functions --------------------------------------------
 
 
