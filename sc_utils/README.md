@@ -36,7 +36,13 @@ Add spatial location for each bead/spot within a Seurat object. Written to work 
 Strategy to remove singlets based on spatial position/nearest neighbors - filters out beads/spots with fewer than `K` neighbors with `D` distance units
 
 #### `rotateClockwise90N()`
-Roteate the spatial embedding of a sample clockwise, 90 degrees, `N` times (i.e. N=2 to rotate 180 degrees clockwise). Useful if you have Visium/SlideSeq samples that were sectioned in different orientations.
+Rotate the spatial embedding of a sample clockwise, 90 degrees, `N` times (i.e. N=2 to rotate 180 degrees clockwise). Useful if you have Visium/SlideSeq samples that were sectioned in different orientations.
+
+#### `spatialRel2Abs()`
+Convert relative (row/col) positions to absolute (X/Y) positions
+
+#### `subsetLoupeJson()`
+Subset Visium Seurat object based on spots manually selected via loupe browser
 
 
 ### Single-cell
