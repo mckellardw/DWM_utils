@@ -446,15 +446,15 @@ addSpatialLocation <- function(
   whitelist="~/txg_snake/resources/whitelists/visium-v1_coordinates.txt",
   cb_prefix=NULL, # prefix on cell barcodes; useful if cells have been merged/renamed
   loupe.json=NULL, # path to a .json file which contains the absolute spatial position (TXG Visium data only)
-  assay="RNA",
   reduction.name = "space",
+  assay=NULL,
   verbose=F
 ){
   require(Seurat)
   require(dplyr)
 
   # Check assays
-  if(!assay %in% Assays(SEU)){
+  if(is.null(assay) | !assay %in% Assays(SEU)){
     assay=SEU@active.assay
     if(verbose){message("Using the default assay...")}
   }
@@ -511,8 +511,9 @@ addSpatialLocation <- function(
   # Add reduc to seurat obj
   SEU[[reduction.name]] <- CreateDimReducObject(
     embeddings=as.matrix(tmp.mat),
-    assay = assay,
-    key = paste0(reduction.name,"_")
+    key = paste0(reduction.name,"_"),
+    assay=assay,
+    global=TRUE
   )
 
   return(SEU)
@@ -586,11 +587,11 @@ removeSpatialSinglets <- function(
 
 
 # Convert relative (row/col) positions to absolute (X/Y) positions
-spatialRel2Abs <- function( #TODO
+spatialRel2Abs <- function( 
     SEU,
     reduction.rowcol.in="space",
     reduction.xy.out="space.xy",
-    spatial_format=c("row_col","x_y"),
+    assay=NULL,
     json_path=NULL,
     verbose=FALSE
 ){
@@ -605,7 +606,10 @@ spatialRel2Abs <- function( #TODO
     message("Need `json_path`...")
   }
   
-  spatial_format <- spatial_format[1]
+  if(is.null(assay) | !assay %in% Assays(SEU)){
+    assay=SEU@active.assay
+    if(verbose){message("Using the default assay...")}
+  }
   
   # read in json
   df <- jsonlite::fromJSON(
@@ -613,8 +617,34 @@ spatialRel2Abs <- function( #TODO
     flatten = T
   )
   
-  # add new reduction
+  rc.coords <- df$oligo[!is.na(df$oligo$tissue),c("row", "col")]
+  xy.coords <- df$oligo[!is.na(df$oligo$tissue),c("x", "y")]
   
+  row_col <- SEU@reductions[[reduction.rowcol.in]]@cell.embeddings
+  
+  out.xy <- list()
+  missing.spot.count = 0
+  for(i in 1:nrow(row_col)){
+    tmp.coords <- xy.coords[rc.coords[,1]==row_col[i,2] & rc.coords[,2]==row_col[i,1], ]
+    if(is.null(tmp.coords)){
+      out.xy[[ Cells(SEU)[i] ]] <- c(0,0)
+      missing.spot.count = missing.spot.count + 1
+    }else{
+      out.xy[[ Cells(SEU)[i] ]] <- tmp.coords
+    }
+  }
+  
+  out.xy <- do.call(rbind,out.xy) #concatenate list into data.frame
+  if(verbose){message("  ",c(ncol(SEU)-missing.spot.count)," out of ", ncol(SEU)," spots found...")}
+  
+  # add new reduction
+  colnames(out.xy) <- paste(reduction.xy.out,c(1,2),sep="_")
+  SEU[[reduction.xy.out]] <- CreateDimReducObject(
+    embeddings=as.matrix(out.xy),
+    assay=assay,
+    key = paste0(reduction.xy.out,"_"),
+    global=TRUE
+  )
   
   return(SEU)
 }
