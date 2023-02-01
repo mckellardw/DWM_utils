@@ -584,6 +584,106 @@ removeSpatialSinglets <- function(
   return(SEU)
 }
 
+
+# Convert relative (row/col) positions to absolute (X/Y) positions
+spatialRel2Abs <- function( #TODO
+    SEU,
+    reduction.rowcol.in="space",
+    reduction.xy.out="space.xy",
+    spatial_format=c("row_col","x_y"),
+    json_path=NULL,
+    verbose=FALSE
+){
+  require(jsonlite)
+  
+  # param checks
+  if(is.null(SEU)){
+    message("Need Seurat object to subset...")
+  }
+  
+  if(is.null(json_path)){
+    message("Need `json_path`...")
+  }
+  
+  spatial_format <- spatial_format[1]
+  
+  # read in json
+  df <- jsonlite::fromJSON(
+    txt = json_path,
+    flatten = T
+  )
+  
+  # add new reduction
+  
+  
+  return(SEU)
+}
+
+# Subset Visium Seurat object based on spots manually selected via loupe browser
+subsetLoupeJson <- function(
+  SEU,
+  reduction="space",
+  spatial_format=c("row_col","x_y"),
+  json_path=NULL,
+  verbose=FALSE
+){
+  require(jsonlite)
+  require(dplyr)
+  
+  # param checks
+  if(is.null(SEU)){
+    message("Need Seurat object to subset...")
+  }
+  
+  if(is.null(json_path)){
+    message("Need `json_path`...")
+  }
+  
+  spatial_format <- spatial_format[1]
+  
+  # read in json
+  df <- jsonlite::fromJSON(
+    txt = json_path,
+    flatten = T
+  )
+  
+  if(spatial_format == "row_col"){
+    out.coords <- df$oligo[!is.na(df$oligo$tissue),c("row", "col")]
+  }else if(spatial_format == "x_y"){
+    out.coords <- df$oligo[!is.na(df$oligo$tissue),c("x", "y")]
+  }else{
+    message("Incorrect `spatial_format` given...")
+    return(SEU)
+  }
+  
+  # paste coord pairs to make them unique for easy filtering
+  out.coords <- apply(
+    out.coords,
+    MARGIN = 1, # each row-col or x-y pair
+    FUN = function(COORDS){
+      paste(COORDS[1], COORDS[2],sep = "_")
+    }
+  )%>%
+    as.vector()
+  
+  # Get cell barcodes to keep 
+  out.cells <- list()
+  for(i in 1:nrow(SEU@reductions[['space']]@cell.embeddings)){
+    tmp.cell = SEU@reductions[['space']]@cell.embeddings[i,]
+    tmp.coords = paste(tmp.cell[2], tmp.cell[1],sep = "_")
+    if(tmp.coords %in% out.coords){
+      out.cells <- append(out.cells, rownames(SEU@reductions[['space']]@cell.embeddings)[i])
+    }
+  }
+  
+  # Subset Seurat object
+  SEU <- subset(
+    SEU,
+    cells = unlist(out.cells)
+  )
+  return(SEU)
+}
+
 ########################################
 ## General Seurat workflow helpers
 ########################################
