@@ -298,6 +298,7 @@ visListPlot <- function(
   slot="data",
   legend.position="bottom",
   pt.size=1,
+  order=FALSE,
   font.size=8,
   axis.title.angle.y=90, #y-axis title angle (parameter for ggplot::element_text)
   combine=TRUE,
@@ -478,6 +479,7 @@ visListPlot <- function(
         tmp.plot = FeaturePlot(
           SEU,
           slot = slot[i],
+          order = order,
           features = tmp.features[i],
           pt.size = pt.size,
           reduction = reduction
