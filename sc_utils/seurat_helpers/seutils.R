@@ -646,6 +646,8 @@ spatialRel2Abs <- function(
     global=TRUE
   )
   
+  gc()
+  
   return(SEU)
 }
 
@@ -711,6 +713,9 @@ subsetLoupeJson <- function(
     SEU,
     cells = unlist(out.cells)
   )
+  
+  gc()
+  
   return(SEU)
 }
 
