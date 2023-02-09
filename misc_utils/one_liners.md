@@ -52,7 +52,7 @@ zcat your.fastq.gz | awk 'BEGIN {FS = "\t" ; OFS = "\n"} {header = $0 ; getline 
 ```
 
 - Extract (unique) sequences from a .fastq.gz file
-    - Remove `|sort | uniq` if you want all sequences...
+    - Remove `| sort | uniq` if you want all sequences...
 ```
 zcat reads.fastq.gz | awk '(NR%4==2)' | sort | uniq
 ```
@@ -66,7 +66,26 @@ awk -v s=6 -v S=26 '(FNR-1) % 2 == 0 { name=$1; chr=$2; len=$3; next }
                                        print substr($0,n+1) }'
 ```
 
-## bam wrangling
+- Extract sequences in a .fasta based on a pattern in the header
+*Note:* `FS` here is the "field separator", which may need to be changed for your .fasta
+```
+zcat gencode.vM31.transcripts.fa.gz | awk -v RS="\n>" -v FS="|" '$8=="rRNA" {print ">"$0}'
+```
+*Example output:*
+```
+>ENSMUST00000240339.1|ENSMUSG00000119695.1|-|-|n-R5s209-201|n-R5s209|119|rRNA|
+GTCTAGGGCCATACCACCCTGAACGCGCCCAATCTCGTCTGTTCTCAGAAGCTAAGCAGG
+GTTGGGCCTGGTTAGTACTTGGATGGGAGACTGTCCAGGATTACCGGGTGCTGTAGGAT
+>ENSMUST00020182636.1|ENSMUSG00002076113.1|-|-|Gm55778-201|Gm55778|138|rRNA|
+ATCTATGGCCATAGTGTATACGCACCTGATCTCATCTGATCTCAGATGAAATATCTGTGT
+ATAACACAGTACAATTTACAATGCACACATACAGTGCTGGTCAGGAGAAAGGTTAAAGTA
+GGATGTAGCCTGCAGGTC
+>ENSMUST00000177688.3|ENSMUSG00000119706.1|-|-|n-R5s210-201|n-R5s210|119|rRNA|
+GTCTATGGCCATACCACCCTGAACATGCCTGATCTCATCTGATCTCGGAAGCTAAGCAGG
+GTCGGGCCTTGTTAGTACTTGGATGGGAGACCGCCTGAAAATACCAGGTTCTGTAGGCT
+```
+
+## .bam-boozling
 - Number of reads per cell/spot barcode (.bam tag `CB`)
  ```
 samtools view sub.bam | grep CB:Z: | sed 's/.*CB:Z:\([ACGT]*\).*/\1/' | sort | uniq -c > reads_per_umi.txt
@@ -87,14 +106,14 @@ samtools view -F 0x10 -b file.bam > file_pos.bam
 samtools view -h Aligned.sortedByCoord.out.bam | grep -v "CB:Z:-" > yestag.sam
 ```
 
-## fastq finagling
+## .fastq finagling
 
 - Get top 1000 most abundant sequences from a file.fastq, output as an out.fa
 ```
 vsearch --sortbysize file.fastq --topn 1000 --output out.fa
 ```
 
-## .gtf finagling
+## .gtf jamboree
 - Convert .gtf (from GENCODE) to a .bed
 ```
 tail -n +6 /path/to/gencode.vM28.chr_patch_hapl_scaff.annotation.gtf | \
