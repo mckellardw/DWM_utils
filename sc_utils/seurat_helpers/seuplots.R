@@ -671,6 +671,7 @@ visCoMap <- function(
   colormap.direction=1,
   colormap.same.scale=F, #whether (T) or not (F) to set all features to the same colormap scale
   na.value=gray(0.85), # color for na.value (spot where gene is not detected)
+  min.value=10^-100, #minimum value use to label "na" spots
   comap.fxn = prod,
   coex.name = NULL, # plot title for computed co-expression values
   include.scatter = F,
@@ -788,6 +789,7 @@ visCoMap <- function(
       colormap.direction=colormap.direction,
       colormap.same.scale=colormap.same.scale,
       na.value=na.value,
+      min.value=min.value,
       verbose=verbose
     )
   
