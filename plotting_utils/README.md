@@ -37,10 +37,14 @@ Just a compiled list of color palettes that I use. Includes palettes from R and 
 - `ggsci` -  [[link](https://cran.r-project.org/web/packages/ggsci/vignettes/ggsci.html)]
 - `MetBrewer` - [[link](https://github.com/BlakeRMills/MetBrewer)]
 - `wesanderson` - [[link](https://github.com/karthik/wesanderson)]
+- "gadenbuie/ggpomological"
+- "m-clark/NineteenEightyR"
+- "oompaBase"
 
 #### To-Add:
 - National Parks Palettes: https://github.com/kevinsblake/NatParksPalettes
 - MetBrewer - [link](https://github.com/BlakeRMills/MetBrewer)
+- "gadenbuie/ggpomological"
 
 #### Example usage (in R):
 ```
