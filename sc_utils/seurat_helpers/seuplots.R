@@ -318,7 +318,7 @@ visListPlot <- function(
   colormap.direction=1,
   colormap.same.scale=F, #whether (T) or not (F) to set all features to the same colormap scale
   na.value=gray(0.85), # color for na.value (spot where gene is not detected)
-  min.value=10^-100, #minimum value use to label "na" spots
+  min.value=10^-100, #minimum value use to label "NA" spots
   verbose=FALSE
 ){
   require(dplyr)
@@ -328,7 +328,7 @@ visListPlot <- function(
   
   if(is.null(seu.list)){message("List of Seurat objects to plot is NULL!")}
   
-  if(verbose){cat(paste0("Plotting Visium data, using the assay ",assay,"!\n"))}
+  if(verbose){cat(paste0("Plotting data, using the assay ",assay,"\n"))}
   
   # Check colormap
   if(length(colormap)==1){ # single colormap option
@@ -393,6 +393,16 @@ visListPlot <- function(
     message("Error with `y.window` - incorrect parameterization!")
   }
   
+  # Check for spatial info in Reductions
+  ##TODO: fix the assumption to look just in seu.list[[1]]
+  if(is.null(reduction)){
+    reductions <- Reductions(seu.list[[1]])[1]
+    if(verbose){message(paste0("Using ", reduction, " as spatial location..."))}
+  }else if(! reduction %in% Reductions(seu.list[[1]])){
+    reductions <- Reductions(seu.list[[1]])[1]
+    if(verbose){message(paste0("Reduction not found. Using ", reduction, " as spatial location..."))}
+  }
+  
   # Check for genes
   tmp.features = paste0("tmp.",features) # place-holder name for features; allows assay-specific feature plotting in FeaturePlot
   
@@ -425,10 +435,22 @@ visListPlot <- function(
       out.max <- lapply(
         seu.list,
         FUN = function(SEU){
-          if(FEAT %in% Features(SEU, assay=ASS)){
-            return(max(GetAssayData(SEU,assay=ASS,slot=SLOT)[FEAT,]))
-          }else if(FEAT %in% colnames(SEU@meta.data)){
-            return(max(SEU@meta.data[,FEAT]))
+          if(FEAT %in% colnames(SEU@meta.data)){
+            return(
+              max(
+                SEU@meta.data[[FEAT]],
+                na.rm = TRUE
+              )
+            )
+            
+          }else if(FEAT %in% Features(SEU, assay=ASS)){
+            return(
+              max(
+                GetAssayData(SEU,assay=ASS,slot=SLOT)[FEAT,],
+                na.rm = TRUE
+              )
+            )
+            
           }else{
             if(verbose){message(FEAT, " not found!")}
             return(0)
@@ -438,6 +460,7 @@ visListPlot <- function(
         unlist() %>% 
         max()
       
+      if(verbose){message(paste0("Using ", out.max, " as the max value for ", FEAT,"\n"))}
       return(c(min.value, out.max))
     },
     SIMPLIFY = F,
@@ -461,12 +484,18 @@ visListPlot <- function(
     if(flip_row_col){
       column = 1
     }else{
-      column=2
+      column = 2
     }
     
     heights <- lapply(
       seu.list,
-      FUN=function(SEU) abs(diff(range(SEU@reductions[[reduction]]@cell.embeddings[,column])))
+      FUN=function(SEU) abs(
+        diff(
+          range(
+            SEU@reductions[[reduction]]@cell.embeddings[,column]
+          )
+        )
+      )
     ) %>% unlist()
     if(verbose){
       message(paste0("Using these plot ",c("widths","heights")[column],":"))
@@ -493,11 +522,11 @@ visListPlot <- function(
           theme(
             plot.margin = unit(rep(0,4), "inches"),
             axis.ticks = element_blank(),
-            axis.text=element_blank(),
+            axis.text = element_blank(),
             axis.title = element_blank(),
-            axis.line=element_blank(),
+            axis.line = element_blank(),
             plot.title = element_blank(),
-            legend.position=legend.position,
+            legend.position = legend.position,
             legend.title = element_text(size=font.size,face="bold", hjust=0.5),
             legend.text = element_text(size=font.size,face="bold")
           )
@@ -522,13 +551,13 @@ visListPlot <- function(
           
           # Flip colormap if direction is `-1`
           if(colormap.direction==-1){
-            colormap=rev(colormap[[i]])
+            colormap = rev(colormap[[i]])
           }
           
           tmp.plot = tmp.plot + 
             scale_color_gradientn(
-              limits=unlist(gene.lims[i]),
-              colors=colormap[[i]],
+              limits = unlist(gene.lims[i]),
+              colors = colormap[[i]],
               na.value = na.value
             )
         }
@@ -586,6 +615,14 @@ visListPlot <- function(
       }
     }
     
+    # TEST
+    # if(abs.heights){
+    #   plot.list <- lapply(
+    #     plot.list,
+    #     FUN = function(PLOT) align_patches(PLOT, align)
+    #   )
+    # }
+    
     #Wrap
       plot.list <- lapply(
         plot.list,
@@ -607,12 +644,12 @@ visListPlot <- function(
       plot.list[[1]][[i]] <- plot.list[[1]][[i]] +
         theme(
           axis.title.y = element_text(
-            size=font.size,
-            face="bold",
-            color="black",
-            hjust=0.5,
-            vjust=0.5,
-            angle=axis.title.angle.y
+            size = font.size,
+            face = "bold",
+            color = "black",
+            hjust = 0.5,
+            vjust = 0.5,
+            angle = axis.title.angle.y
           )
         )
       
@@ -621,6 +658,14 @@ visListPlot <- function(
           labs(y=sample.titles[i])
       }
     }
+    
+    # TEST
+    # if(abs.heights){
+    #   plot.list <- lapply(
+    #     plot.list,
+    #     FUN = function(PLOT) align_patches(PLOT, align)
+    #   )
+    # }
     
     # Sample axis title
     plot.list <- lapply(
@@ -638,7 +683,14 @@ visListPlot <- function(
       }
     )
   }
-  if(verbose){cat("Done plotting Visium data!\n")}
+  
+  # # TEST
+  # if(abs.heights){
+  #   plot.list <- lapply(
+  #     plot.list,
+  #     FUN = function(PLOT) align_patches(PLOT, align)
+  #   )
+  # }
   
   if(combine){
     return(
