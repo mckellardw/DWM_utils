@@ -440,7 +440,7 @@ collapseMultimappers <- function(
 }
 
 # Add spatial location for each cell/spot/bead in a Seurat object, given a whitelist of barcods/locations (X- & Y- coordinates)
-#TODO: generalize whitelist formatting/reading in
+#TODO: generalize whitelist formatting/reading in; add option for passing vector instead of file
 addSpatialLocation <- function(
   SEU,
   whitelist="~/txg_snake/resources/whitelists/visium-v1_coordinates.txt",
@@ -485,7 +485,7 @@ addSpatialLocation <- function(
   
   if(verbose){
     message(paste0(
-      table(bcs %in% rownames(bc.coords))["TRUE"], " out of ", length(bcs), " barcodes found in whitelist...\n"
+      table(bcs %in% rownames(bc.coords))["TRUE"], " out of ", length(bcs), " barcodes found in whitelist..."
     ))
   }
 
@@ -606,9 +606,12 @@ spatialRel2Abs <- function(
     message("Need `json_path`...")
   }
   
-  if(is.null(assay) | !assay %in% Assays(SEU)){
+  if(is.null(assay)){
     assay=SEU@active.assay
     if(verbose){message("Using the default assay...")}
+  }else if(!assay %in% Assays(SEU)){
+    assay=SEU@active.assay
+    if(verbose){message(paste0("Assay `",assay, "` not found. Using the default assay..."))}
   }
   
   # read in json
