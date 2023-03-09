@@ -17,7 +17,7 @@ scThemes <-function(
   scTheme <- list()
 
   scTheme$umap <- theme(
-    axis.line = element_line(color = "black", size = line.width),
+    axis.line = element_line(color = "black", linewidth = line.width),
     axis.title = element_text(face='bold',size = small.font, hjust = 0, vjust = 1),
     axis.text = element_blank(),
     axis.ticks = element_blank(),
@@ -60,8 +60,10 @@ scThemes <-function(
       panel.border = element_rect(colour = "black", fill=NA, linewidth=line.width),
       axis.title.x=element_blank(),
       axis.title.y = element_text(face = 'bold',size = big.font, hjust = 0.5, vjust = 0.5),
-      axis.text = element_text(size = small.font, color = "black",hjust=0.5),
+      axis.text.x = element_text(size = small.font, color = "black",hjust=1,vjust=1,angle=45),
+      axis.text.y = element_text(size = small.font, color = "black",hjust=1, vjust=0.5),
       axis.ticks = element_line(color="black"),
+      plot.title = element_text(face="bold",color="black",hjust=0.5),
       # legend.background = element_rect(color = "black", fill='white', size=0.5),
       legend.text = element_text(size = small.font, hjust = 0, vjust = 0.5),
       legend.title = element_text(face = 'bold',size = small.font, hjust = 0.5, vjust = 0.5),
@@ -118,8 +120,8 @@ scThemes <-function(
     panel.background = element_blank(),
     axis.line.x = element_blank(),
     axis.ticks.x = element_blank(),
-    axis.line.y = element_line(color="black", size = line.width),
-    axis.ticks.y = element_line(color="black", size = line.width),
+    axis.line.y = element_line(color="black", linewidth = line.width),
+    axis.ticks.y = element_line(color="black", linewidth = line.width),
     legend.text = element_text(size=small.font, color="black"),
     panel.grid = element_blank(),
     axis.title.x = element_blank(),
