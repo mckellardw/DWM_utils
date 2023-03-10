@@ -112,7 +112,7 @@ scThemes <-function(
     axis.text.y=element_text(angle=0,hjust = 1,vjust= 0.5, size=small.font),
     legend.text = element_text(size=small.font,color="black"),
     legend.title = element_text(size=big.font,color="black"),
-    panel.grid.major = element_line(colour = "gray", size = 0.5)
+    panel.grid.major = element_line(colour = "gray", linewidth = 0.5)
   )
 
   # Violin plot theme
