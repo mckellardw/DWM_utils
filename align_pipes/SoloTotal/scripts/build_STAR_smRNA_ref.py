@@ -5,10 +5,10 @@
 #####################################
 
 # usage:
-#      python build_smRNA_STAR_ref.py mirbase_mature_fasta gtrnadb_fasta species output_directory
+#      python build_smRNA_STAR_ref.py mirbase_mature_fasta gtrnadb_fasta species output_directory n_threads
 #
 # example:
-#      /home/dwm269/miniconda3/envs/STARsolo/bin/python build_STAR_smRNA_ref.py /workdir/dwm269/genomes/mirbase/mature.fa /workdir/dwm269/genomes/mm39_all/gtrnadb/mm39-mature-tRNAs.fa "Mus musculus" /workdir/dwm269/genomes/mm39_all/mm39_smRNA_STAR 20
+#      /home/dwm269/miniconda3/envs/STARsolo/bin/python /home/dwm269/DWM_utils/align_pipes/SoloTotal/scripts/build_STAR_smRNA_ref.py /workdir/dwm269/genomes/mirbase/mature.fa /workdir/dwm269/genomes/mm39_all/gtrnadb/mm39-mature-tRNAs.fa "Mus musculus" /workdir/dwm269/genomes/mm39_all/STAR_smRNA_comp 20
 
 import sys
 import os.path
@@ -90,17 +90,30 @@ print("     Checking for '"+species+"' or '"+species_dict[species]+"'")
 # open up new fasta
 fasta_out_f = open(fasta_out_path,"w")
 
+# dict for genereating RNA to DNA complement
+complement = {'A': 'T', 'C': 'G', 'G': 'C', 'U': 'A'}
+
 print("     Adding miRNAs...")
+mir_counter = 0
 for i in list(range(0,num_miRNAs)):
     if species_dict[species] in fasta_mir[i].id:
+        mir_counter += 1
         fasta_out_f.write(">" + fasta_mir[i].id + "\n")
-        fasta_out_f.write(str(fasta_mir[i].seq).replace("U", "T") + "\n") #switch U -> T
+        # fasta_out_f.write(str(fasta_mir[i].seq).replace("U", "T") + "\n") #switch U -> T
+        fasta_mir[i].seq = "".join(complement.get(base, base) for base in fasta_mir[i].seq)
+        fasta_out_f.write(str(fasta_mir[i].seq) + "\n")
+print(f"     Found {mir_counter} miRNAs for {species}...")
 
 print("     Adding tRNAs...")
+tr_counter = 0
 for i in list(range(0,num_tRNAs)):
     if species.replace(" ","_") in fasta_tr[i].id:
+        tr_counter += 1
         fasta_out_f.write(">" + fasta_tr[i].id + "\n")
-        fasta_out_f.write(str(fasta_tr[i].seq).replace("U", "T") + "\n") #switch U -> T
+        # fasta_out_f.write(str(fasta_tr[i].seq).replace("U", "T") + "\n") #switch U -> T
+        fasta_tr[i].seq = "".join(complement.get(base, base) for base in fasta_tr[i].seq)
+        fasta_out_f.write(str(fasta_tr[i].seq) + "\n")
+print(f"     Found {tr_counter} tRNAs for {species}...")
 
 fasta_out_f.close()
 
@@ -156,16 +169,31 @@ for i in list(range(0,len(fasta_out))):
 
     # buld string to write using rec
     to_write = \
-    chrom + "\t" + \
+    str(chrom) + "\t" + \
     "miRBase/GtRNADB" + "\t" + \
     "transcript" + "\t" + \
     str(start) + "\t"+\
     str(end)+ "\t" +\
-    qualifiers['score'][0] +"\t" +\
+    str(qualifiers['score'][0]) +"\t" +\
     str(strand) +"\t" +\
     "."+"\t"+ \
-    "gene_name \""+ str(rec.id)+"\"; transcript_name \"" + str(rec.id) +"\"; gene_id \""+ fasta_out[i].id +"\";\n"
-    #+ "; gene_biotype 'miRNA'\n" # everything else #TODO- add biotype
+    "gene_name \""+ str(rec.id)+"\"; transcript_name \"" + str(rec.id) +"\"; transcript_id \""+ str(fasta_out[i].id) +"\"; gene_id \""+ str(fasta_out[i].id) +"\";" + "\"; pct_A \""+ str(pct_A) +"\";\n"
+    #+ "; gene_biotype 'miRNA'\n"  #TODO- add biotype
+
+    tmp_file.write(to_write)
+
+    # Repeat to add exon features
+    to_write = \
+    str(chrom) + "\t" + \
+    "miRBase/GtRNADB" + "\t" + \
+    "exon" + "\t" + \
+    str(start) + "\t" + \
+    str(end)+ "\t" +\
+    str(qualifiers['score'][0]) +"\t" +\
+    str(strand) +"\t" +\
+    "."+"\t"+ \
+    "gene_name \""+ str(rec.id)+"\"; transcript_name \"" + str(rec.id) +"\"; transcript_id \""+ str(fasta_out[i].id) +"\"; gene_id \""+ str(fasta_out[i].id) +"\";" + "\"; pct_A \""+ str(pct_A) +"\";\n"
+    #+ "; gene_biotype 'miRNA'\n"  #TODO- add biotype
 
     tmp_file.write(to_write)
 
