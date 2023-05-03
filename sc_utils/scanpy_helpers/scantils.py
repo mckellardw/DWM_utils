@@ -117,3 +117,43 @@ def export_dgea_to_csv(
             csv_out,
             index=False
         )
+
+# Function to convert feature names 
+def convert_feature_names(
+        adata: ad.AnnData, 
+        gtf_info: pd.DataFrame, 
+        from_col: str='GENEID',
+        to_col: str='GeneSymbol',
+        inplace: bool=True,
+        verbose: bool=True
+) -> ad.AnnData:
+    if not inplace:
+        adata = adata.copy()
+
+    # Filter gtf_info to keep only the gene names found in the anndata object
+    gtf_info_filtered = gtf_info[gtf_info[from_col].isin(adata.var_names)]
+    
+    if verbose:
+        num_found = len(gtf_info_filtered)
+        num_total = len(adata.var_names)
+        # fraction_found = num_found / num_total
+        print(f"Fraction of adata.var_names found in gtf_info[{from_col}]: {num_found} out of {num_total}")
+    
+    gene_name_mapping = dict(zip(
+        gtf_info[from_col], 
+        gtf_info[to_col]
+        ))
+    
+    adata.var[from_col] = adata.var_names
+    adata.var[to_col] = adata.var[from_col].map(gene_name_mapping)
+
+    adata.var.dropna(subset=[to_col], inplace=True)
+    adata.var.reset_index(drop=True, inplace=True)
+
+    # mask = adata.var_names.isin(adata.var[to_col].values)
+    # adata = adata[:, mask].copy()
+    adata.var_names = adata.var[to_col]
+    adata.var_names_make_unique()
+
+    if not inplace:
+        return adata
