@@ -41,6 +41,8 @@ Just a compiled list of color palettes that I use. Includes palettes from R and 
 - "m-clark/NineteenEightyR"
 - "oompaBase"
 
+https://coolors.co/palettes/popular
+
 #### To-Add:
 - National Parks Palettes: https://github.com/kevinsblake/NatParksPalettes
 - MetBrewer - [link](https://github.com/BlakeRMills/MetBrewer)
