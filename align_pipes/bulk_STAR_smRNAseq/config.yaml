@@ -8,24 +8,17 @@
 #     For multi-lane inputs, use the following format (from STAR github page):
 #       --readFilesIn Read2_Lane1.fastq.gz,Read2_Lane2.fastq.gz,Read2_Lane3.fastq.gz  Read1_Lane1.fastq.gz,Read1_Lane2.fastq.gz,Read1_Lane3.fastq.gz
 
-# SAMPLE_SHEET: sample_sheet.csv
-# SAMPLE_SHEET: sample_sheets/Isakova_smRNA-sample_sheet.csv
-# SAMPLE_SHEET: sample_sheets/smC2C-sample_sheet.csv
-# SAMPLE_SHEET: sample_sheets/AllClean-Vis_yPAP-sample_sheet.csv
-# SAMPLE_SHEET: sample_sheets/Vis3_yPAP-sample_sheet.csv
-# SAMPLE_SHEET: sample_sheets/SkM_Heart-sample_sheet.csv
-# SAMPLE_SHEET: sample_sheets/snRNAseq_C2C_yPAP-sample_sheet.csv
-SAMPLE_SHEET: sample_sheets/STRS5_smRNA-sample_sheet.csv
+SAMPLE_SHEET: /home/dwm269/private_utils/sample_sheets/smRNA/SH_4_5.csv
 
 # Run parameters
-CORES: 12 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CORES: 24 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 50000000000 # STAR mem limit in bytes
 
 
 ########################################################################################################
 # Important directory file paths
 ########################################################################################################
-OUTDIR: /workdir/dwm269/totalRNA/data/smRNAseq_STAR
+OUTDIR: /workdir/dwm269/totalRNA/STRS-HD/data/smRNAseq_STAR
 
 ########################################################################################################
 # Executables - file paths

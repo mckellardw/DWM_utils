@@ -6,11 +6,13 @@
 
 # Usage: ----
 # Rscript /path/to/SeqSatUMI.R BamPath tmpDir outDir N.Iter N.Cores
-#
+#  
 #     FullBamPath:
 #     DedupBamPath
 #     outDir: path/name of file to write results to
 #     N: number of iterations to check saturation at each sampling rate
+#
+# Rscript /home/dwm269/DWM_utils/seq_utils
 
 # Outputs ---- 
 
@@ -20,6 +22,7 @@
 require("data.table")
 require("ggplot2")
 require("parallel")
+require("dplyr")
 
 # Get args ----
 args=(commandArgs(TRUE))
@@ -34,7 +37,7 @@ n.cores <- args[5] # default to 4
 
 # Arg checks ----
 
-if(is.null("tmpdir")){
+if(!exists("tmpdir")){
   if(dir.exists("/workdir/dwm269/tmp")){
     tmpdir <- "/workdir/dwm269/tmp" 
   }else{
@@ -42,11 +45,11 @@ if(is.null("tmpdir")){
   }
 }
 
-if(is.null("n.iter")){
+if(!exists("n.iter")){
   n.iter=3
 }
 
-if(is.null("s.range")){
+if(!exists("s.range")){
   s.range <- seq(0.1,0.9,0.1) # sampling range
 }
 
@@ -72,22 +75,36 @@ umitable <- data.table::fread(
 total.reads = sum(umitable$V1)
 total.umis = nrow(umitable)
 
+message(paste("Found", total.umis, "in", total.reads,"reads, now calculating saturation..."))
+
 # Run saturation calculations ----
 run.permuts <- expand.grid(s.range,1:n.iter)%>%
-  apply(MARGIN = 1, function(X) data.frame(s.perc=X[1],iter=X[2]))
+  apply(
+    MARGIN = 1, 
+    function(X) data.frame(s.perc=X[1], iter=X[2]),
+    simplify = T
+  )
 
-saturation.outs <- lapply(
-  run.permuts[1:6],
+# Check n.core request to make sure it's necessary; update if not
+if(n.cores>length(run.permuts)){
+  n.cores <- length(run.permuts)
+}
+
+saturation.outs <- mclapply(
+  run.permuts[c(seq(1,20,9),seq(2,21,9))],
   FUN=function(X){
-    tmpfile = paste0(tmpdir,"_",X$s.perc,"_",X$iter,".txt") # file containing 
+    tmpfile = paste0(tmpdir,"/sub_",X$s.perc,"_",X$iter,".txt") # file containing 
     
     # subsample bam file
+    #TODO: not returning unique reads; need to incorporate sequence info
+    tmp.cmd = paste(
+      "samtools view -s", X$s.perc, bampath, 
+      "| grep CR:Z: | grep CB:Z: ",
+      "| sed 's/.*sS:Z:\\([ACGT]*\\).*/\\1/'",
+      "| sort | uniq -c >",tmpfile
+    )
     system(
-      paste(
-        "samtools view -s ", X$s.perc, bampath, 
-        "| grep sS:Z: | sed 's/.*sS:Z:\\([ACGT]*\\).*/\\1/'",
-        "| sort | uniq -c >",tmpfile
-      )
+      tmp.cmd
     )
     
     # count number of UMIs
@@ -106,6 +123,7 @@ saturation.outs <- lapply(
     
     # return formatted data.frame for plotting
     return(
+      # umitable
       data.frame(
         sample.perc = X$s.perc,
         unique.sub.reads = unique.sub.reads,
@@ -113,8 +131,8 @@ saturation.outs <- lapply(
         iter = X$iter
       )
     )
-  }
-  # mc.cores = n.cores
+  },
+  mc.cores = n.cores
 )
 
 # Clean-up and plotting ----
