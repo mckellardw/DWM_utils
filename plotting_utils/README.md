@@ -56,17 +56,17 @@ mckolors <- read.csv("/path/to/DWM_utils/plotting_utils/McKolors_v1.csv") %>%
     FUN=function(X) X[X!=""]
   )
 
-  ggplot(
-    df,
-    aes(
-      x=x,
-      y=y,
-      color=color
-    )
-  ) +
-  geom_point() +
-  scThemes$scatter +
-  scale_color_manual(
-    values=mckolors$ldw29
+ggplot(
+  df,
+  aes(
+    x=x,
+    y=y,
+    color=color
   )
+) +
+geom_point() +
+scThemes$scatter +
+scale_color_manual(
+  values=mckolors$ldw29
+)
 ```
