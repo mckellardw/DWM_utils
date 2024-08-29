@@ -14,8 +14,8 @@ mkdir -p ${OUTDIR}
 cd ${OUTDIR}
 
 kb ref \
--i mixed_index.idx \
--g mixed_t2g.txt \
--f1 mixed_cdna.fa \
-${GENOME_FASTA},${Reo_FASTA} \
-${GENES_GTF},${Reo_GENES}
+    -i mixed_index.idx \
+    -g mixed_t2g.txt \
+    -f1 mixed_cdna.fa \
+    ${GENOME_FASTA},${Reo_FASTA} \
+    ${GENES_GTF},${Reo_GENES}
