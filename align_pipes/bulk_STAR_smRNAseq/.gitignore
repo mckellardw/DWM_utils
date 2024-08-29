@@ -1,0 +1,24 @@
+# Snakemake garbage
+**.snakemake/**
+
+# Slurm garbage
+*slurm*
+
+# VScode garbage
+.vscode/*
+
+# data files
+out/**
+**.bam
+**.bw
+**.bw.gz
+**.fa
+**.fa.gz
+**.fastq
+**.fastq.gz
+**.fq
+**.fq.gz
+**.sam
+
+# Misc.
+.~lock.*
