@@ -1,3 +1,14 @@
 sampleID,fastq_R1,fastq_R2
-smC2C_cell1,/workdir/dwm269/totalRNA/data/fastq/c2c12_smRNAseq/12625_10135_142451_HNVYJBGXJ_3059S-5378-DM1_CACGAT_R1.fastq.gz,
-smC2C_nuc1,/workdir/dwm269/totalRNA/data/fastq/c2c12_smRNAseq/12625_10135_142452_HNVYJBGXJ_3059S-5379-DM2_CACTCA_R1.fastq.gz,
+ChRO_36,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115698_HHLV3BGXF_ChRO_36_CTTGTA_R1.fastq.gz,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115698_HHLV3BGXF_ChRO_36_CTTGTA_R2.fastq.gz
+ChRO_37,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115699_HHLV3BGXF_ChRO_37_ATCACG_R1.fastq.gz,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115699_HHLV3BGXF_ChRO_37_ATCACG_R2.fastq.gz
+ChRO_38,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115700_HHLV3BGXF_ChRO_38_CGATGT_R1.fastq.gz,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115700_HHLV3BGXF_ChRO_38_CGATGT_R2.fastq.gz
+ChRO_40,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115701_HHLV3BGXF_ChRO_40_TGACCA_R1.fastq.gz,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115701_HHLV3BGXF_ChRO_40_TGACCA_R2.fastq.gz
+ChRO_41,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115702_HHLV3BGXF_ChRO_41_AGTCAA_R1.fastq.gz,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115702_HHLV3BGXF_ChRO_41_AGTCAA_R2.fastq.gz
+ChRO_42,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115703_HHLV3BGXF_ChRO_42_AGTTCC_R1.fastq.gz,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115703_HHLV3BGXF_ChRO_42_AGTTCC_R2.fastq.gz
+ChRO_43,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115704_HHLV3BGXF_ChRO_43_TTAGGC_R1.fastq.gz,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115704_HHLV3BGXF_ChRO_43_TTAGGC_R2.fastq.gz
+ChRO_44,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115705_HHLV3BGXF_ChRO_44_GCCAAT_R1.fastq.gz,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115705_HHLV3BGXF_ChRO_44_GCCAAT_R2.fastq.gz
+ChRO_45,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115706_HHLV3BGXF_ChRO_45_CAGATC_R1.fastq.gz,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115706_HHLV3BGXF_ChRO_45_CAGATC_R2.fastq.gz
+ChRO_46,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115707_HHLV3BGXF_ChRO_46_ACTTGA_R1.fastq.gz,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115707_HHLV3BGXF_ChRO_46_ACTTGA_R2.fastq.gz
+ChRO_47,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115708_HHLV3BGXF_ChRO_47_ATGTCA_R1.fastq.gz,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115708_HHLV3BGXF_ChRO_47_ATGTCA_R2.fastq.gz
+ChRO_48,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115709_HHLV3BGXF_ChRO_48_CCGTCC_R1.fastq.gz,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115709_HHLV3BGXF_ChRO_48_CCGTCC_R2.fastq.gz
+ChRO_49,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115710_HHLV3BGXF_ChRO_49_GATCAG_R1.fastq.gz,/gpfs/commons/groups/innovation/dwm/DATA/chroseq/11566_11006_115710_HHLV3BGXF_ChRO_49_GATCAG_R2.fastq.gz
